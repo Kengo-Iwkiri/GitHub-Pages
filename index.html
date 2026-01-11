@@ -532,6 +532,7 @@
     </div>
 
     <script>
+        // --- 1. Global Store ---
         const store = {
             key: localStorage.getItem('n_key') || '',
             db: localStorage.getItem('n_db') || '',
@@ -575,6 +576,7 @@
         let mapInstance = null;
         let alertMapInstance = null;
 
+        // --- 2. Helper Functions ---
         function getWeatherIcon(code, isNight) {
             const size = 80; const color = 'rgba(255,255,255,0.95)';
             if (code === 0) return isNight ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>` : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
@@ -587,6 +589,7 @@
         }
         function getWeatherDesc(code) { return code === 0 ? "快晴" : code <= 3 ? "曇り" : "雨/雪"; }
 
+        // --- 3. UI Logic ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
@@ -630,6 +633,7 @@
             document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
         }
 
+        // --- Calendar Logic ---
         function renderCalendar() {
             const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const todayDate = now.getDate();
             const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
@@ -675,6 +679,8 @@
             } catch(e) { listEl.innerHTML = '<div class="text-xs opacity-50 text-red-300 mt-4">Calendar Error</div>'; }
         }
 
+        // --- 4. Main Features ---
+        // Notion
         async function fetchNotion() {
             if(!store.key || !store.db) return;
             try {
@@ -716,6 +722,7 @@
             });
         }
 
+        // Weather
         async function fetchWeather() {
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto`;
@@ -750,6 +757,7 @@
             } catch(e) {}
         }
 
+        // Podcasts
         async function fetchPodcasts() {
             try {
                 const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://itunes.apple.com/jp/rss/toppodcasts/limit=3/json'));
@@ -765,22 +773,41 @@
             } catch(e) { document.getElementById('podcast-list').innerHTML = `<div class="text-center opacity-30 text-xs">Failed to load podcasts</div>`; }
         }
 
+        // Music
         async function fetchMusic() {
             const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
             const c = document.getElementById('music-container'); c.innerHTML = '';
             for(const i of items) {
-                if(!i.k) continue;
-                try {
-                    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&entity=song&limit=1`));
-                    const data = await res.json();
-                    if(data.resultCount > 0) {
-                        const t = data.results[0]; const img = t.artworkUrl100.replace('100x100bb', '600x600bb');
-                        c.innerHTML += `<a href="${i.l||t.trackViewUrl}" target="_blank" class="music-item group"><img src="${img}" class="music-img group-hover:scale-105 transition-transform duration-500"><div class="music-overlay"><div class="text-xs font-bold truncate">${t.trackName}</div><div class="text-[10px] opacity-70 truncate">${t.artistName}</div></div></a>`;
-                    } else { c.innerHTML += `<div class="bg-white/10 rounded-2xl aspect-square flex items-center justify-center flex-col gap-2"><i class="fas fa-question opacity-30 text-2xl"></i></div>`; }
-                } catch(e) {}
+                if(!i.k && !i.l) continue;
+                
+                let imgUrl = null;
+                let title = i.k || "No Title";
+                let artist = "";
+                let linkUrl = i.l || "#";
+
+                if (i.k) {
+                    try {
+                        const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&limit=1`));
+                        const data = await res.json();
+                        if(data.resultCount > 0) {
+                            const t = data.results[0];
+                            imgUrl = t.artworkUrl100.replace('100x100bb', '600x600bb');
+                            title = t.trackName || t.collectionName;
+                            artist = t.artistName;
+                            if (!linkUrl || linkUrl === "#") linkUrl = t.trackViewUrl || t.collectionViewUrl;
+                        }
+                    } catch(e) {}
+                }
+
+                if (imgUrl) {
+                    c.innerHTML += `<a href="${linkUrl}" target="_blank" class="music-item group"><img src="${imgUrl}" class="music-img group-hover:scale-105 transition-transform duration-500"><div class="music-overlay"><div class="text-xs font-bold truncate">${title}</div><div class="text-[10px] opacity-70 truncate">${artist}</div></div></a>`;
+                } else {
+                     c.innerHTML += `<a href="${linkUrl}" target="_blank" class="bg-white/10 rounded-2xl aspect-square flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition"><i class="fas fa-music opacity-30 text-4xl"></i><div class="text-xs font-bold truncate px-2 w-full text-center">${title}</div></a>`;
+                }
             }
         }
         
+        // Timer
         let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
         function toggleTimer() {
             if(timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-icon').className='fas fa-play text-lg ml-1'; }
