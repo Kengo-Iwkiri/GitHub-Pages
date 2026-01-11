@@ -9,6 +9,8 @@
     <!-- Leaflet (Map) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- ical.js for Calendar Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.5.0/ical.min.js"></script>
     <style>
         /* --- Base Setup --- */
         body, html {
@@ -58,7 +60,7 @@
         }
         /* Night (19:00-5:00): 濃紺の美しい夜空 */
         .theme-night { 
-            background-image: url('https://fujifilmsquare.jp/assets/img/photo_event_240726_01_mv.jpg');
+            background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2560&auto=format&fit=crop');
         }
         
         /* Alert Theme: 暗い赤のオーバーレイ */
@@ -268,6 +270,21 @@
         .podcast-small-img {
             width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
         }
+
+        /* Calendar Styles */
+        .calendar-grid {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+            width: 100%; text-align: center;
+        }
+        .cal-day {
+            font-size: 16px; padding: 10px; border-radius: 8px; color: rgba(255,255,255,0.7);
+        }
+        .cal-day.today {
+            background: white; color: black; font-weight: bold;
+        }
+        .cal-header {
+            font-size: 12px; color: rgba(255,255,255,0.4); font-weight: bold; margin-bottom: 8px;
+        }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -283,7 +300,7 @@
 
     <!-- コンテンツ -->
     <main class="max-w-7xl mx-auto w-full gap-6">
-        <!-- 時計エリア -->
+        <!-- 時計エリア (Updated: Only Clock) -->
         <div class="h-[40%] flex items-center justify-center px-4">
             <div class="text-center">
                 <div id="time-disp" class="text-[140px] md:text-[200px] font-medium leading-none tracking-widest drop-shadow-lg">--:--</div>
@@ -330,7 +347,7 @@
                             </div>
                         </div>
                         
-                        <!-- Middle Section: 3h Forecast -->
+                        <!-- Lower Section: 3h Forecast -->
                         <div class="w-full pt-2 mb-2 mt-auto">
                             <div class="flex justify-between items-center h-full">
                                 <div class="flex flex-col items-center justify-center gap-1 w-1/3">
@@ -381,19 +398,14 @@
                     
                     <!-- 2. Earthquake Map -->
                     <div class="snap-item p-0 w-full relative overflow-hidden group">
-                        <!-- Map Background -->
                         <div id="quake-map" class="w-full h-full rounded-[32px] overflow-hidden opacity-60 transition-opacity group-hover:opacity-100"></div>
-                        
-                        <!-- Info Overlay -->
                         <div class="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none z-[500]">
-                            <!-- Header -->
                             <div class="flex justify-between items-start">
                                 <div class="flex flex-col gap-2">
                                     <div class="flex items-center gap-2">
                                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></div>
                                         <span class="text-[10px] font-bold opacity-90 tracking-widest bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-white/10">LATEST QUAKE</span>
                                     </div>
-                                    <!-- あなたの場所の予想震度 (条件付き表示) -->
                                     <div id="q-widget-est-container" class="hidden transition-all duration-500">
                                         <span class="text-[10px] font-bold text-yellow-300 bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-yellow-500/30 flex items-center gap-1 w-fit">
                                             <i class="fas fa-map-marker-alt text-[8px] opacity-70"></i>
@@ -401,11 +413,8 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Time (Top Right) -->
                                 <div id="q-widget-time" class="text-sm font-mono opacity-80 font-bold drop-shadow-md">--:--</div>
                             </div>
-
-                            <!-- Main Info (Bottom) -->
                             <div class="flex flex-col gap-1">
                                 <div class="flex items-baseline gap-3 drop-shadow-lg">
                                     <span class="text-sm font-bold opacity-70">震度</span>
@@ -415,43 +424,51 @@
                                 <div class="text-xs font-mono opacity-60 mt-1" id="q-widget-mag">M-.--</div>
                             </div>
                         </div>
-                        
-                        <!-- Gradient Overlay for readability -->
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
                     </div>
 
-                    <!-- 3. Calendar -->
-                    <div class="snap-item p-8">
-                        <div id="cal-month" class="text-3xl font-bold text-red-300 uppercase tracking-widest mb-2 drop-shadow-md">JAN</div>
-                        <div id="cal-day" class="text-[120px] font-black leading-none mb-4 drop-shadow-xl">1</div>
-                        <div class="text-xl tracking-[0.5em] opacity-60">TODAY</div>
+                    <!-- 3. Calendar (Moved Here) -->
+                    <div class="snap-item p-6 w-full flex flex-col justify-between">
+                         <!-- Calendar -->
+                        <div class="w-full">
+                            <div class="flex justify-between items-end mb-4 px-1">
+                                <div id="cal-title" class="text-xl font-bold tracking-widest uppercase">JANUARY</div>
+                                <div id="cal-year" class="text-sm opacity-50 font-mono">2026</div>
+                            </div>
+                            <div class="calendar-grid mb-1">
+                                <div class="cal-header">S</div><div class="cal-header">M</div><div class="cal-header">T</div><div class="cal-header">W</div><div class="cal-header">T</div><div class="cal-header">F</div><div class="cal-header">S</div>
+                            </div>
+                            <div id="calendar-body" class="calendar-grid">
+                                <!-- JS generated -->
+                            </div>
+                        </div>
+                        
+                        <!-- Google Cal Event (Next) -->
+                        <div class="border-t border-white/10 pt-4 mt-2">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                <span class="text-[10px] font-bold opacity-50 tracking-wider">NEXT EVENT</span>
+                            </div>
+                            <div id="gcal-event" class="text-lg font-medium truncate opacity-90">No events found</div>
+                            <div id="gcal-time" class="text-sm opacity-50 font-mono mt-1">--:--</div>
+                        </div>
                     </div>
                     
-                    <!-- 4. Focus Timer (Circular Design with Label Below) -->
+                    <!-- 4. Focus Timer -->
                     <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
                         <div class="relative w-[280px] h-[280px] flex items-center justify-center">
-                            <!-- SVG Ring -->
                             <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
-                                <!-- Track -->
                                 <circle class="timer-circle-bg" cx="150" cy="150" r="140"></circle>
-                                <!-- Progress -->
                                 <circle id="timer-progress-ring" class="timer-circle-progress" cx="150" cy="150" r="140"></circle>
                             </svg>
-                            
-                            <!-- Inside Content -->
                             <div class="flex flex-col items-center justify-center z-10">
                                 <div id="timer-display" class="text-6xl font-mono font-thin mb-4 tabular-nums">25:00</div>
                                 <div class="flex gap-4">
-                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md">
-                                        <i id="timer-icon" class="fas fa-play text-lg ml-1"></i>
-                                    </button>
-                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md">
-                                        <i class="fas fa-redo text-lg"></i>
-                                    </button>
+                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md"><i id="timer-icon" class="fas fa-play text-lg ml-1"></i></button>
+                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md"><i class="fas fa-redo text-lg"></i></button>
                                 </div>
                             </div>
                         </div>
-                        <!-- Label moved below -->
                         <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
                     </div>
                     
@@ -497,11 +514,7 @@
                 </div>
             </div>
             <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
-                
-                <!-- 2カラムレイアウト: items-end を items-start に変更して高さを合わせる -->
                 <div class="flex justify-center items-start gap-16 mb-4 w-full">
-                    
-                    <!-- 全国最大震度 -->
                     <div class="flex flex-col items-center">
                         <span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span>
                         <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
@@ -509,8 +522,6 @@
                             <span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span>
                         </div>
                     </div>
-
-                    <!-- あなたの地域の震度 -->
                     <div class="flex flex-col items-center">
                         <span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span>
                         <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
@@ -519,16 +530,13 @@
                         </div>
                         <div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div>
                     </div>
-
                 </div>
-                
                 <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
                 <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md">
                     <span id="q-time">12:34</span>
                     <span class="w-px bg-white/30 h-6"></span>
                     <span id="q-mag">M4.5</span>
                 </div>
-                
                 <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
             </div>
         </div>
@@ -544,39 +552,24 @@
             <button class="tab-btn active" onclick="switchTab('bg')"><i class="fas fa-image tab-icon"></i>背景</button>
             <button class="tab-btn" onclick="switchTab('notion')"><i class="fas fa-list tab-icon"></i>Notion</button>
             <button class="tab-btn" onclick="switchTab('weather')"><i class="fas fa-cloud tab-icon"></i>天気&地震</button>
+            <button class="tab-btn" onclick="switchTab('calendar')"><i class="fas fa-calendar-alt tab-icon"></i>カレンダー</button>
             <button class="tab-btn" onclick="switchTab('timer')"><i class="fas fa-stopwatch tab-icon"></i>タイマー</button>
             <div class="flex-1"></div>
             <button onclick="saveConfig()" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest mt-4">保存</button>
         </div>
 
         <div class="settings-content">
-            
             <!-- 背景設定 -->
             <div id="tab-bg" class="tab-panel active">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">背景テーマ</h3>
                 <div class="space-y-4">
                     <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">テーマプレビュー</label>
                     <div class="grid grid-cols-1 gap-2">
-                        <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition">
-                            <span class="text-xs font-bold text-pink-200">夜明け</span>
-                            <span class="text-[10px] opacity-50">05:00 - 08:00</span>
-                        </button>
-                        <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition">
-                            <span class="text-xs font-bold text-blue-200">昼</span>
-                            <span class="text-[10px] opacity-50">08:00 - 16:00</span>
-                        </button>
-                        <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition">
-                            <span class="text-xs font-bold text-orange-200">夕方</span>
-                            <span class="text-[10px] opacity-50">16:00 - 19:00</span>
-                        </button>
-                        <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition">
-                            <span class="text-xs font-bold text-indigo-200">夜</span>
-                            <span class="text-[10px] opacity-50">19:00 - 05:00</span>
-                        </button>
-                        <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4">
-                            <span class="text-xs font-bold text-red-300">アラートテスト</span>
-                            <i class="fas fa-exclamation-triangle text-red-400"></i>
-                        </button>
+                        <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition"><span class="text-xs font-bold text-pink-200">夜明け</span><span class="text-[10px] opacity-50">05:00 - 08:00</span></button>
+                        <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition"><span class="text-xs font-bold text-blue-200">昼</span><span class="text-[10px] opacity-50">08:00 - 16:00</span></button>
+                        <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition"><span class="text-xs font-bold text-orange-200">夕方</span><span class="text-[10px] opacity-50">16:00 - 19:00</span></button>
+                        <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition"><span class="text-xs font-bold text-indigo-200">夜</span><span class="text-[10px] opacity-50">19:00 - 05:00</span></button>
+                        <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4"><span class="text-xs font-bold text-red-300">アラートテスト</span><i class="fas fa-exclamation-triangle text-red-400"></i></button>
                     </div>
                 </div>
             </div>
@@ -585,23 +578,11 @@
             <div id="tab-notion" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">Notion連携設定</h3>
                 <div class="space-y-5">
-                    <div class="relative">
-                        <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー (secret_...)</label>
-                    </div>
-                    <div class="relative">
-                        <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">データベースID</label>
-                    </div>
+                    <div class="relative"><input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー (secret_...)</label></div>
+                    <div class="relative"><input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">データベースID</label></div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="relative">
-                            <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">日付プロパティ名</label>
-                        </div>
-                        <div class="relative">
-                            <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ステータスプロパティ名</label>
-                        </div>
+                        <div class="relative"><input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">日付プロパティ名</label></div>
+                        <div class="relative"><input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ステータスプロパティ名</label></div>
                     </div>
                     <div class="pt-4 border-t border-white/10">
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ステータス判定ロジック</label>
@@ -613,28 +594,16 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <input type="text" id="n-done-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">完了の値</label>
-                            </div>
-                            <div class="relative">
-                                <input type="text" id="n-not-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">未着手の値</label>
-                            </div>
+                            <div class="relative"><input type="text" id="n-done-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">完了の値</label></div>
+                            <div class="relative"><input type="text" id="n-not-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">未着手の値</label></div>
                         </div>
                     </div>
                     <!-- User Filter -->
                     <div class="pt-4 border-t border-white/10">
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ユーザーフィルタ (任意)</label>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <input type="text" id="n-user-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">担当者プロパティ名</label>
-                            </div>
-                            <div class="relative">
-                                <input type="text" id="n-user-id" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ユーザー名 / ID</label>
-                            </div>
+                            <div class="relative"><input type="text" id="n-user-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">担当者プロパティ名</label></div>
+                            <div class="relative"><input type="text" id="n-user-id" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ユーザー名 / ID</label></div>
                         </div>
                         <p class="text-[9px] opacity-30 mt-1 ml-1">指定した文字を含む担当者のタスクのみ表示します</p>
                     </div>
@@ -648,18 +617,10 @@
                     <!-- 天気 -->
                     <div>
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">天気情報</label>
-                        <p class="text-xs opacity-50 leading-relaxed mb-4">
-                            基本はGPSを使用します。固定したい場合は座標を入力してください。
-                        </p>
+                        <p class="text-xs opacity-50 leading-relaxed mb-4">基本はGPSを使用します。固定したい場合は座標を入力してください。</p>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">緯度</label>
-                            </div>
-                            <div class="relative">
-                                <input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">経度</label>
-                            </div>
+                            <div class="relative"><input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">緯度</label></div>
+                            <div class="relative"><input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">経度</label></div>
                         </div>
                     </div>
                     
@@ -704,6 +665,21 @@
                 </div>
             </div>
 
+            <!-- Calendar設定 -->
+            <div id="tab-calendar" class="tab-panel">
+                <h3 class="text-lg font-bold mb-6 tracking-widest">GOOGLE CALENDAR</h3>
+                <div class="space-y-5">
+                    <p class="text-xs opacity-50 leading-relaxed mb-4">
+                        Googleカレンダーの「設定 > 統合」から「iCal形式の非公開URL」を取得して入力してください。<br>
+                        ※直近の単発予定のみ表示されます（繰り返し予定は非対応です）。
+                    </p>
+                    <div class="relative">
+                        <input type="text" id="g-cal" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">iCal URL</label>
+                    </div>
+                </div>
+            </div>
+
             <!-- Timer設定 -->
             <div id="tab-timer" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">集中タイマー設定</h3>
@@ -743,7 +719,8 @@
             sub2_lon: localStorage.getItem('sub2_lon') || '-0.1278',
             sub3_name: localStorage.getItem('sub3_name') || 'PAR',
             sub3_lat: localStorage.getItem('sub3_lat') || '48.8566',
-            sub3_lon: localStorage.getItem('sub3_lon') || '2.3522'
+            sub3_lon: localStorage.getItem('sub3_lon') || '2.3522',
+            icalUrl: localStorage.getItem('ical_url') || ''
         };
 
         let currentMode = 'day';
@@ -752,7 +729,7 @@
         let mapInstance = null; // Widget map
         let alertMapInstance = null; // Alert map
 
-        // --- Helper: SVG Icons ---
+        // --- Helper: SVG Icons (Keep Existing) ---
         function getWeatherIcon(code, isNight) {
             const size = 80; const color = 'rgba(255,255,255,0.95)';
             if (code === 0) {
@@ -809,7 +786,8 @@
             if(tabId === 'bg') btns[0].classList.add('active');
             if(tabId === 'notion') btns[1].classList.add('active');
             if(tabId === 'weather') btns[2].classList.add('active');
-            if(tabId === 'timer') btns[3].classList.add('active');
+            if(tabId === 'calendar') btns[3].classList.add('active');
+            if(tabId === 'timer') btns[4].classList.add('active');
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
@@ -827,13 +805,14 @@
         function updateClock() {
             const now = new Date();
             document.getElementById('time-disp').textContent = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
-            document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            document.getElementById('cal-month').textContent = now.toLocaleDateString('en-US', { month: 'short' });
-            document.getElementById('cal-day').textContent = now.getDate();
+            // date-disp は削除されたので更新不要
+            // document.getElementById('date-disp').textContent = ... 
 
+            // カレンダーと予定の更新は毎日0時とかで良いが、簡易的にここで日付更新チェックしても良い
+            // 今回は renderCalendar を初期化時と日付変更時に呼ぶべきだが、簡易的にinitのみ
+            
             const drawer = document.getElementById('settings-drawer');
             const quakeOverlay = document.getElementById('quake-overlay');
-            // ドロワーもアラートも開いていない時だけ更新
             if (drawer && quakeOverlay) {
                 if(!drawer.classList.contains('open') && !quakeOverlay.classList.contains('visible')) {
                     const h = now.getHours();
@@ -846,6 +825,100 @@
                 }
             }
         }
+
+        // --- Calendar Logic ---
+        function renderCalendar() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth(); // 0-indexed
+            
+            // Update Header
+            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+            document.getElementById('cal-title').textContent = monthNames[month];
+            document.getElementById('cal-year').textContent = year;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const container = document.getElementById('calendar-body');
+            container.innerHTML = '';
+            
+            // Empty slots
+            for(let i=0; i<firstDay; i++) {
+                const empty = document.createElement('div');
+                container.appendChild(empty);
+            }
+            
+            // Days
+            for(let d=1; d<=daysInMonth; d++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'cal-day';
+                dayEl.textContent = d;
+                if(d === now.getDate()) dayEl.classList.add('today');
+                container.appendChild(dayEl);
+            }
+        }
+
+        async function fetchGoogleCalendar() {
+            const url = store.icalUrl;
+            if(!url) return;
+            
+            // Use corsproxy to fetch iCal
+            // Note: Google iCal URL often ends with .ics
+            const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+            
+            try {
+                const res = await fetch(proxyUrl);
+                if(!res.ok) throw new Error('Fetch failed');
+                const text = await res.text();
+                
+                // Parse iCal using ical.js
+                const jcal = ICAL.parse(text);
+                const comp = new ICAL.Component(jcal);
+                const vevents = comp.getAllSubcomponents('vevent');
+                
+                // Filter for future events & sort
+                const now = new Date();
+                const events = [];
+
+                vevents.forEach(vevent => {
+                    const event = new ICAL.Event(vevent);
+                    const startDate = event.startDate.toJSDate();
+                    
+                    // Simple filter: start date is today or future
+                    // For recurrent events, ical.js needs expansion iterator which is complex.
+                    // Here we only take simple events or the master of recurring events if it's in future.
+                    // This is a limitation of client-side only parsing without full expansion logic.
+                    
+                    if (startDate >= now) {
+                        events.push({
+                            summary: event.summary,
+                            start: startDate
+                        });
+                    }
+                });
+
+                // Sort by date
+                events.sort((a, b) => a.start - b.start);
+                
+                // Get next event
+                if(events.length > 0) {
+                    const next = events[0];
+                    document.getElementById('gcal-event').textContent = next.summary;
+                    const timeStr = next.start.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+                    const dateStr = next.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    document.getElementById('gcal-time').textContent = `${dateStr} ${timeStr}`;
+                } else {
+                    document.getElementById('gcal-event').textContent = "No upcoming events";
+                    document.getElementById('gcal-time').textContent = "";
+                }
+
+            } catch(e) {
+                console.error("iCal Parse Error", e);
+                document.getElementById('gcal-event').textContent = "Failed to load calendar";
+            }
+        }
+
 
         // --- Podcast Logic ---
         async function fetchPodcasts() {
@@ -1289,6 +1362,7 @@
             fetchNotion();
             initLocation();
             resetTimer(); 
+            fetchGoogleCalendar();
         }
 
         // --- Notion API ---
@@ -1641,6 +1715,8 @@
 
             // Initial calls
             updateClock();
+            renderCalendar();
+            fetchGoogleCalendar();
             fetchNotion();
             initLocation();
             resetTimer();
@@ -1651,6 +1727,7 @@
             setInterval(fetchNotion, 60000);
             setInterval(fetchWeather, 60000 * 30);
             setInterval(checkQuake, 60000);
+            setInterval(fetchGoogleCalendar, 60000 * 15);
         };
     </script>
 </body>
