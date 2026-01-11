@@ -569,6 +569,9 @@
             m2_link: localStorage.getItem('m2_link') || ''
         };
 
+        // ★修正点1: グローバルスコープで定義
+        let lastQuakeId = null;
+
         let currentMode = 'day';
         let weatherLat = 35.6895;
         let weatherLon = 139.6917;
@@ -702,12 +705,24 @@
                 });
             }
             if(!filtered || filtered.length === 0) { list.innerHTML = `<div class="mt-10 text-center opacity-40 text-sm tracking-widest">NO TASKS TODAY</div>`; return; }
-            list.innerHTML = filtered.map(t => {
+            
+            // ★修正点2: DOM操作で安全に要素を生成
+            list.innerHTML = '';
+            filtered.forEach(t => {
                 const title = Object.values(t.properties).find(p => p.type === 'title')?.title[0]?.plain_text || "Untitled";
                 const s = t.properties[store.statProp]; let sName = s?.status?.name || s?.select?.name || "";
                 const isDone = sName === store.doneVal;
-                return `<div class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors ${isDone?'opacity-30':''}"><input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" ${isDone?'checked':''} onchange="toggleTask('${t.id}', this.checked)"><span class="text-lg leading-snug ${isDone?'line-through':''}">${title}</span></div>`;
-            }).join('');
+                
+                const div = document.createElement('div');
+                div.className = `flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors ${isDone?'opacity-30':''}`;
+                
+                div.innerHTML = `<input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" ${isDone?'checked':''} onchange="toggleTask('${t.id}', this.checked)"><span class="text-lg leading-snug ${isDone?'line-through':''} task-title"></span>`;
+                
+                // タイトルをtextContentで設定（XSS対策）
+                div.querySelector('.task-title').textContent = title;
+                
+                list.appendChild(div);
+            });
         }
 
         async function toggleTask(id, checked) {
@@ -922,7 +937,14 @@
         window.onload = function() {
             setTimeout(initWidgetMap, 1000);
             updateClock(); renderCalendar(); fetchGoogleCalendar(); fetchNotion(); initLocation(); resetTimer(); fetchPodcasts(); fetchMusic();
-            setInterval(updateClock, 1000); setInterval(fetchNotion, 60000); setInterval(fetchWeather, 60000*30); setInterval(checkQuake, 60000); setInterval(fetchGoogleCalendar, 60000*15); setInterval(updateBackgroundBySun, 60000*30);
+            
+            // ★修正点3: 地震チェックを15秒間隔に変更
+            setInterval(updateClock, 1000); 
+            setInterval(fetchNotion, 60000); 
+            setInterval(fetchWeather, 60000*30); 
+            setInterval(checkQuake, 15000); 
+            setInterval(fetchGoogleCalendar, 60000*15); 
+            setInterval(updateBackgroundBySun, 60000*30);
         };
         
         function initLocation() {
@@ -954,7 +976,6 @@
                     widget.classList.remove('hidden');
                     updateQuakeMap(q);
                     // Alert Overlay logic (< 10 mins & new ID)
-                    // ... (Alert logic same as before)
                     if(diff < 10 && q.id !== lastQuakeId) {
                          document.getElementById('q-scale').textContent = {10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[q.earthquake.maxScale]||'?';
                          document.getElementById('q-loc').textContent = q.earthquake.hypocenter.name;
@@ -1027,9 +1048,6 @@
         const memoEl = document.getElementById('quick-memo');
         memoEl.value = store.memo;
         memoEl.addEventListener('input', () => { localStorage.setItem('quick_memo', memoEl.value); });
-        
-        // Define lastQuakeId globally
-        let lastQuakeId = null;
     </script>
 </body>
 </html>
