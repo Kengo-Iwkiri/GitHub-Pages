@@ -80,16 +80,47 @@
         main * { pointer-events: auto; }
 
 
-        /* --- Settings Modal (Z-Index 9999) --- */
-        #settings-modal {
-            position: fixed; inset: 0; z-index: 9999;
+        /* --- Settings Drawer System (Layer 9999) --- */
+        /* 背景の暗転レイヤー */
+        #settings-overlay {
+            position: fixed; inset: 0; z-index: 9998;
             background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(20px);
-            display: none;
-            justify-content: center; align-items: center;
-            opacity: 0; transition: opacity 0.3s;
+            backdrop-filter: blur(10px);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
         }
-        #settings-modal.visible { opacity: 1; }
+        #settings-overlay.visible { opacity: 1; pointer-events: auto; }
+
+        /* 左から出てくるドロワー */
+        #settings-drawer {
+            position: fixed; top: 0; left: 0; bottom: 0; z-index: 9999;
+            width: 360px; max-width: 85vw;
+            background: rgba(20, 20, 20, 0.85); /* 濃いめの背景 */
+            border-right: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            
+            transform: translateX(-100%); /* 初期状態は左に隠す */
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* iOS風の慣性スクロール */
+            
+            display: flex; flex-direction: column;
+            padding: 2rem;
+        }
+        #settings-drawer.open { transform: translateX(0); }
+
+        /* Settings Button (Legacy fallback) */
+        #settings-trigger {
+            position: fixed; bottom: 20px; right: 20px; z-index: 5000;
+            width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(4px);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #settings-trigger:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
 
 
         /* --- UI Components --- */
@@ -116,6 +147,7 @@
         .snap-container { scroll-snap-type: y mandatory; overflow-y: auto; height: 100%; }
         .snap-item { scroll-snap-align: start; height: 100%; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         ::-webkit-scrollbar { display: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -181,48 +213,55 @@
         </div>
     </main>
 
-    <!-- 設定モーダル -->
-    <div id="settings-modal">
-        <div class="glass w-full max-w-md p-8 bg-black/60 border border-white/10">
-            <h3 class="text-lg font-bold mb-6 tracking-widest">SETTINGS</h3>
-            
-            <!-- 背景テスト -->
-            <div class="mb-8">
-                <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">Preview Background</label>
-                <div class="grid grid-cols-5 gap-2">
-                    <button onclick="testBg('dawn')" class="bg-pink-300/20 py-3 rounded-lg hover:bg-pink-300/40 transition text-[10px] font-bold border border-white/5">DAWN</button>
-                    <button onclick="testBg('day')" class="bg-blue-500/20 py-3 rounded-lg hover:bg-blue-500/40 transition text-[10px] font-bold border border-white/5">DAY</button>
-                    <button onclick="testBg('sunset')" class="bg-orange-500/20 py-3 rounded-lg hover:bg-orange-500/40 transition text-[10px] font-bold border border-white/5">SUN</button>
-                    <button onclick="testBg('night')" class="bg-indigo-900/40 py-3 rounded-lg hover:bg-indigo-900/60 transition text-[10px] font-bold border border-white/5">NIGHT</button>
-                    <button onclick="testBg('alert')" class="bg-red-900/40 py-3 rounded-lg hover:bg-red-900/60 transition text-[10px] font-bold border border-white/5 text-red-200">ALERT</button>
-                </div>
-            </div>
+    <!-- 設定ボタン -->
+    <div id="settings-trigger" onclick="openSettings()">
+        <i class="fas fa-sliders-h text-lg"></i>
+    </div>
 
-            <div class="space-y-4 mb-8">
-                <div class="relative">
-                    <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                    <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Notion API Key</label>
-                </div>
-                <div class="relative">
-                    <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                    <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Database ID</label>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="relative">
-                        <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Date Prop</label>
-                    </div>
-                    <div class="relative">
-                        <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Status Prop</label>
-                    </div>
-                </div>
-            </div>
+    <!-- 設定オーバーレイ（背景クリックで閉じる用） -->
+    <div id="settings-overlay" onclick="closeSettings()"></div>
 
-            <div class="flex gap-3">
-                <button onclick="saveConfig()" class="flex-1 bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm">SAVE</button>
-                <button onclick="closeSettings()" class="flex-1 bg-white/5 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm">CANCEL</button>
+    <!-- 設定ドロワー（左からスライドイン） -->
+    <div id="settings-drawer">
+        <h3 class="text-xl font-bold mb-8 tracking-widest flex items-center gap-3">
+            <i class="fas fa-cog opacity-50"></i> SETTINGS
+        </h3>
+        
+        <!-- 背景テスト -->
+        <div class="mb-8">
+            <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">Background</label>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <button onclick="testBg('dawn')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-pink-300">DAWN</button>
+                <button onclick="testBg('day')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-blue-300">DAY</button>
+                <button onclick="testBg('sunset')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-orange-300">SUNSET</button>
+                <button onclick="testBg('night')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-indigo-300">NIGHT</button>
             </div>
+            <button onclick="testBg('alert')" class="w-full bg-red-900/20 py-2 rounded-lg hover:bg-red-900/40 transition text-[10px] font-bold border border-red-500/20 text-red-400">TEST ALERT</button>
+        </div>
+
+        <div class="space-y-5 flex-1 overflow-y-auto no-scrollbar">
+            <div class="relative">
+                <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Notion API Key</label>
+            </div>
+            <div class="relative">
+                <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Database ID</label>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="relative">
+                    <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                    <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Date Prop</label>
+                </div>
+                <div class="relative">
+                    <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                    <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Status Prop</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button onclick="saveConfig()" class="flex-1 bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest">SAVE CHANGE</button>
         </div>
     </div>
 
@@ -286,8 +325,9 @@
             document.getElementById('cal-month').textContent = now.toLocaleDateString('en-US', { month: 'short' });
             document.getElementById('cal-day').textContent = now.getDate();
 
-            const settingsDisp = document.getElementById('settings-modal').style.display;
-            if(settingsDisp !== 'flex') {
+            // ドロワーが開いていない時だけ自動背景更新
+            const drawer = document.getElementById('settings-drawer');
+            if(!drawer.classList.contains('open')) {
                 const h = now.getHours();
                 let autoMode = 'day';
                 if(h >= 5 && h < 8) autoMode = 'dawn';
@@ -305,16 +345,17 @@
             document.getElementById('n-prop').value = store.prop;
             document.getElementById('n-stat').value = store.statProp;
             
-            const modal = document.getElementById('settings-modal');
-            modal.style.display = 'flex';
-            // 少し遅らせてopacityを1にするアニメーション
-            setTimeout(() => modal.classList.add('visible'), 10);
+            // オーバーレイを表示
+            document.getElementById('settings-overlay').classList.add('visible');
+            // ドロワーをスライドイン
+            document.getElementById('settings-drawer').classList.add('open');
         }
 
         function closeSettings() {
-            const modal = document.getElementById('settings-modal');
-            modal.classList.remove('visible');
-            setTimeout(() => modal.style.display = 'none', 300);
+            // ドロワーを戻す
+            document.getElementById('settings-drawer').classList.remove('open');
+            // オーバーレイを消す
+            document.getElementById('settings-overlay').classList.remove('visible');
             
             currentMode = '';
             updateClock();
