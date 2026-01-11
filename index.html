@@ -80,21 +80,6 @@
         main * { pointer-events: auto; }
 
 
-        /* --- Settings Button (Z-Index 5000) --- */
-        #settings-trigger {
-            position: fixed; bottom: 20px; right: 20px; z-index: 5000;
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(4px);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.2s;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        #settings-trigger:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
-
-
         /* --- Settings Modal (Z-Index 9999) --- */
         #settings-modal {
             position: fixed; inset: 0; z-index: 9999;
@@ -102,7 +87,9 @@
             backdrop-filter: blur(20px);
             display: none;
             justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s;
         }
+        #settings-modal.visible { opacity: 1; }
 
 
         /* --- UI Components --- */
@@ -194,11 +181,6 @@
         </div>
     </main>
 
-    <!-- 設定ボタン -->
-    <div id="settings-trigger" onclick="openSettings()">
-        <i class="fas fa-sliders-h text-lg"></i>
-    </div>
-
     <!-- 設定モーダル -->
     <div id="settings-modal">
         <div class="glass w-full max-w-md p-8 bg-black/60 border border-white/10">
@@ -258,6 +240,29 @@
         let weatherLat = 35.6895;
         let weatherLon = 139.6917;
 
+        // --- Swipe Logic for Settings ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+
+        document.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const touchEndY = e.changedTouches[0].screenY;
+            
+            // 画面左端(50px以内)から開始されたスワイプか？
+            if (touchStartX < 50) {
+                // 右方向へ100px以上移動し、かつ縦移動が少ない場合
+                if (touchEndX - touchStartX > 100 && Math.abs(touchEndY - touchStartY) < 100) {
+                    openSettings();
+                }
+            }
+        }, {passive: true});
+
+
         // --- Background Logic ---
         function applyBg(mode) {
             if (mode === currentMode) return;
@@ -299,11 +304,18 @@
             document.getElementById('n-db').value = store.db;
             document.getElementById('n-prop').value = store.prop;
             document.getElementById('n-stat').value = store.statProp;
-            document.getElementById('settings-modal').style.display = 'flex';
+            
+            const modal = document.getElementById('settings-modal');
+            modal.style.display = 'flex';
+            // 少し遅らせてopacityを1にするアニメーション
+            setTimeout(() => modal.classList.add('visible'), 10);
         }
 
         function closeSettings() {
-            document.getElementById('settings-modal').style.display = 'none';
+            const modal = document.getElementById('settings-modal');
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+            
             currentMode = '';
             updateClock();
         }
