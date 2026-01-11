@@ -532,7 +532,6 @@
     </div>
 
     <script>
-        // --- 1. Global Store ---
         const store = {
             key: localStorage.getItem('n_key') || '',
             db: localStorage.getItem('n_db') || '',
@@ -576,7 +575,6 @@
         let mapInstance = null;
         let alertMapInstance = null;
 
-        // --- 2. Helper Functions ---
         function getWeatherIcon(code, isNight) {
             const size = 80; const color = 'rgba(255,255,255,0.95)';
             if (code === 0) return isNight ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>` : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
@@ -589,7 +587,6 @@
         }
         function getWeatherDesc(code) { return code === 0 ? "快晴" : code <= 3 ? "曇り" : "雨/雪"; }
 
-        // --- 3. UI Logic ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
@@ -633,7 +630,6 @@
             document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
         }
 
-        // --- Calendar Logic ---
         function renderCalendar() {
             const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const todayDate = now.getDate();
             const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
@@ -679,8 +675,6 @@
             } catch(e) { listEl.innerHTML = '<div class="text-xs opacity-50 text-red-300 mt-4">Calendar Error</div>'; }
         }
 
-        // --- 4. Main Features ---
-        // Notion
         async function fetchNotion() {
             if(!store.key || !store.db) return;
             try {
@@ -722,7 +716,6 @@
             });
         }
 
-        // Weather
         async function fetchWeather() {
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto`;
@@ -757,7 +750,6 @@
             } catch(e) {}
         }
 
-        // Podcasts
         async function fetchPodcasts() {
             try {
                 const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://itunes.apple.com/jp/rss/toppodcasts/limit=3/json'));
@@ -773,7 +765,6 @@
             } catch(e) { document.getElementById('podcast-list').innerHTML = `<div class="text-center opacity-30 text-xs">Failed to load podcasts</div>`; }
         }
 
-        // Music
         async function fetchMusic() {
             const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
             const c = document.getElementById('music-container'); c.innerHTML = '';
@@ -790,7 +781,6 @@
             }
         }
         
-        // Timer
         let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
         function toggleTimer() {
             if(timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-icon').className='fas fa-play text-lg ml-1'; }
@@ -813,6 +803,34 @@
             mapInstance = L.map('quake-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, boxZoom:false, tap:false, keyboard:false }).setView([36, 138], 3.8);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(mapInstance);
         }
+        
+        function initAlertMap() {
+            if(alertMapInstance) return;
+            alertMapInstance = L.map('alert-map-container', { zoomControl:false, attributionControl:false, zoomAnimation:false, fadeAnimation:false, zoomSnap:0.1 }).setView([36, 138], 5.5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(alertMapInstance);
+        }
+
+        function updateAlertMap(q) {
+            initAlertMap();
+            const lat = q.earthquake.hypocenter.latitude;
+            const lng = q.earthquake.hypocenter.longitude;
+            alertMapInstance.setView([lat, lng], 6);
+            
+            alertMapInstance.eachLayer((layer) => {
+                if(layer instanceof L.Circle || layer instanceof L.CircleMarker) { alertMapInstance.removeLayer(layer); }
+            });
+
+            const qTime = new Date(q.time).getTime();
+            const now = new Date().getTime();
+            const elapsedSec = Math.max(0, (now - qTime) / 1000);
+            const pRadius = 6000 * elapsedSec;
+            const sRadius = 3500 * elapsedSec;
+
+            L.circle([lat, lng], { color: '#4facfe', fillColor: 'transparent', weight: 2, radius: pRadius }).addTo(alertMapInstance);
+            L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.3, weight: 4, radius: sRadius }).addTo(alertMapInstance);
+            L.circleMarker([lat, lng], { radius: 10, color: 'white', fillColor: '#f00', fillOpacity: 1 }).addTo(alertMapInstance);
+        }
+
         function openSettings() {
             document.getElementById('n-key').value = store.key; document.getElementById('n-db').value = store.db; document.getElementById('n-prop').value = store.prop;
             document.getElementById('n-stat').value = store.statProp; document.getElementById('n-done-val').value = store.doneVal; document.getElementById('n-not-val').value = store.notVal;
@@ -852,6 +870,7 @@
             store.quakeArea = document.getElementById('q-area').value.trim();
             store.timerDuration = document.getElementById('t-duration').value.trim();
             store.icalUrl = document.getElementById('g-cal').value.trim();
+            
             store.sub1_name = document.getElementById('sub1-label').value.trim();
             store.sub1_lat = document.getElementById('sub1-lat').value.trim();
             store.sub1_lon = document.getElementById('sub1-lon').value.trim();
@@ -948,7 +967,19 @@
                 if(!d || d.length===0) return;
                 const q=d[0], diff=(new Date()-new Date(q.time))/1000/60;
                 updateQuakeMap(q);
-                if(diff<10) { document.getElementById('quake-overlay').classList.add('visible'); }
+                if(diff<10) { 
+                    document.getElementById('q-scale').textContent = {10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[q.earthquake.maxScale]||'?';
+                    document.getElementById('q-loc').textContent = q.earthquake.hypocenter.name;
+                    document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
+                    document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
+                    if(store.quakeArea && q.points) {
+                         const p = q.points.find(p=>p.addr===store.quakeArea) || q.points.find(p=>p.addr.includes(store.quakeArea));
+                         document.getElementById('q-area-name').textContent = p ? p.addr : "情報なし";
+                         document.getElementById('q-est-scale').textContent = p ? ({10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[p.scale]||p.scale) : "--";
+                    }
+                    document.getElementById('quake-overlay').classList.add('visible'); 
+                    updateAlertMap(q);
+                }
             } catch(e){}
         }
 
@@ -982,7 +1013,20 @@
 
         function closeQuakeAlert() { document.getElementById('quake-overlay').classList.remove('visible'); }
         function testBg(mode) { currentMode=''; applyBg(mode); }
-        function testQuake() { closeSettings(); document.getElementById('quake-overlay').classList.add('visible'); }
+        function testQuake() { 
+            closeSettings(); 
+            // Dummy Data
+            const q = { earthquake: { maxScale: 50, hypocenter: { name: 'Test Quake (Tokyo)', magnitude: 7.0, latitude: 35.6895, longitude: 139.6917 } }, time: new Date().toString(), points: [] };
+            document.getElementById('q-scale').textContent = '5+';
+            document.getElementById('q-loc').textContent = 'TEST TOKYO BAY';
+            document.getElementById('q-time').textContent = '12:34';
+            document.getElementById('q-mag').textContent = 'M7.0';
+            document.getElementById('q-est-scale').textContent = '5-';
+            document.getElementById('q-area-name').textContent = 'Test Area';
+            
+            document.getElementById('quake-overlay').classList.add('visible'); 
+            updateAlertMap(q);
+        }
 
         const memoEl = document.getElementById('quick-memo');
         memoEl.value = store.memo;
