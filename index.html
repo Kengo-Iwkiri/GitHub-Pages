@@ -98,7 +98,9 @@
             background: rgba(20, 20, 20, 0.85); /* 濃いめの背景 */
             border-right: 1px solid rgba(255,255,255,0.15);
             backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            
+            /* 影を削除しました */
+            /* box-shadow: 10px 0 30px rgba(0,0,0,0.5); */
             
             transform: translateX(-100%); /* 初期状態は左に隠す */
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* iOS風の慣性スクロール */
@@ -107,20 +109,6 @@
             padding: 2rem;
         }
         #settings-drawer.open { transform: translateX(0); }
-
-        /* Settings Button (Legacy fallback) */
-        #settings-trigger {
-            position: fixed; bottom: 20px; right: 20px; z-index: 5000;
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(4px);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.2s;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        #settings-trigger:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
 
 
         /* --- UI Components --- */
@@ -213,11 +201,6 @@
         </div>
     </main>
 
-    <!-- 設定ボタン -->
-    <div id="settings-trigger" onclick="openSettings()">
-        <i class="fas fa-sliders-h text-lg"></i>
-    </div>
-
     <!-- 設定オーバーレイ（背景クリックで閉じる用） -->
     <div id="settings-overlay" onclick="closeSettings()"></div>
 
@@ -279,27 +262,48 @@
         let weatherLat = 35.6895;
         let weatherLon = 139.6917;
 
-        // --- Swipe Logic for Settings ---
-        let touchStartX = 0;
-        let touchStartY = 0;
+        // --- Swipe & Mouse Drag Logic for Settings ---
+        let startX = 0;
+        let startY = 0;
+        let isDragging = false;
 
+        // Touch Events (iPad)
         document.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
-            touchStartY = e.changedTouches[0].screenY;
+            startX = e.changedTouches[0].screenX;
+            startY = e.changedTouches[0].screenY;
         }, {passive: true});
 
         document.addEventListener('touchend', e => {
-            const touchEndX = e.changedTouches[0].screenX;
-            const touchEndY = e.changedTouches[0].screenY;
-            
-            // 画面左端(50px以内)から開始されたスワイプか？
-            if (touchStartX < 50) {
-                // 右方向へ100px以上移動し、かつ縦移動が少ない場合
-                if (touchEndX - touchStartX > 100 && Math.abs(touchEndY - touchStartY) < 100) {
+            const endX = e.changedTouches[0].screenX;
+            const endY = e.changedTouches[0].screenY;
+            handleSwipe(startX, startY, endX, endY);
+        }, {passive: true});
+
+        // Mouse Events (PC)
+        document.addEventListener('mousedown', e => {
+            startX = e.clientX;
+            startY = e.clientY;
+            // 左端付近(50px)でのクリックのみドラッグ開始とみなす
+            if (startX < 50) isDragging = true;
+        });
+
+        document.addEventListener('mouseup', e => {
+            if (!isDragging) return;
+            isDragging = false;
+            const endX = e.clientX;
+            const endY = e.clientY;
+            handleSwipe(startX, startY, endX, endY);
+        });
+
+        function handleSwipe(sX, sY, eX, eY) {
+            // 左端(50px以内)から開始
+            if (sX < 50) {
+                // 右へ100px以上移動、縦揺れ100px以内
+                if (eX - sX > 100 && Math.abs(eY - sY) < 100) {
                     openSettings();
                 }
             }
-        }, {passive: true});
+        }
 
 
         // --- Background Logic ---
