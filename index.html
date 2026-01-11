@@ -1,177 +1,426 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Markdown → CSV 変換ツール（横幅固定＋横スクロール最適化）</title>
-  <style>
-    :root{--bg:#f8fafc;--card:#ffffff;--muted:#64748b;--fg:#0f172a;--accent:#3b82f6}
-    *{box-sizing:border-box}
-    html{overflow-x:hidden;}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Standby Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- Base Setup --- */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            color: white;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
 
-    header{padding:24px 16px;border-bottom:1px solid #ff0000;background:linear-gradient(90deg,#61b5ee,#41c6ee);position:sticky;top:0;z-index:10}
-    h1{margin:0;font-size:20px;display:flex;align-items:center;gap:10px}
-    h1 .logo{color:#fff}
+        /* --- Background System (Photo Blur) --- */
+        #bg-container {
+            position: fixed; inset: 0; z-index: 0;
+            pointer-events: none;
+            background: #000; /* ベース黒 */
+        }
 
-    main{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:12px}
-    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
-    .grid > * {min-width:0;}
-    @media (max-width:960px){.grid{grid-template-columns:1fr}}
+        .bg-layer {
+            position: absolute; inset: -20px; /* ブラーの端隠しのため少し大きく */
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 3s ease-in-out; 
+            
+            /* 【修正】彩度を上げて(saturate)、明度も確保(brightness)し、濁りを取る */
+            filter: blur(60px) saturate(1.2) brightness(0.85);
+            transform: scale(1.1);
+        }
 
-    .card{background:var(--card);border:1px solid #e2e8f0;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);min-width:0;contain:paint;}
-    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
-  .tablewrap{margin-top:8px}
+        /* アクティブなクラスがついた時だけ表示 */
+        .bg-layer.active { opacity: 1; }
 
-    .drop{border:2px dashed #cbd5e1;border-radius:12px;padding:14px;text-align:center;background:#f1f5f9;transition:.2s}
-    .drop.dragover{border-color:var(--accent);background:#e0f2fe}
-    .muted{color:var(--muted);font-size:12px}
-    input[type="file"]{display:none}
-    .btn{appearance:none;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600;font-size:12px}
-    .btn-ghost{background:#f1f5f9;border:1px solid #cbd5e1;color:#1e293b}
-    .btn-primary{background:linear-gradient(135deg,#60a5fa,#3b82f6);color:#fff}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    textarea{width:100%;background:#ffffff;border:1px solid #cbd5e1;color:#0f172a;border-radius:10px;padding:8px;resize:vertical;font-size:12px}
+        /* Unsplash Images - より「空っぽい」画像を厳選 */
+        /* Dawn (5:00-8:00): 朝の澄んだ空気感 */
+        .theme-dawn {
+            background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2560&auto=format&fit=crop');
+        }
+        /* Day (8:00-16:00): 突き抜けるような青空 */
+        .theme-day { 
+            background-image: url('https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?q=80&w=2560&auto=format&fit=crop');
+        }
+        /* Sunset (16:00-19:00): 温かみのあるオレンジと空色の混ざり */
+        .theme-sunset { 
+            background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2560&auto=format&fit=crop');
+        }
+        /* Night (19:00-5:00): 濃紺の美しい夜空 */
+        .theme-night { 
+            background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2560&auto=format&fit=crop');
+        }
+        
+        /* Alert Theme: 暗い赤のオーバーレイ */
+        .theme-alert { 
+            background: #450a0a; /* 画像ではなく単色 */
+            filter: none; /* ブラーなしで警戒感 */
+        }
+        .theme-alert.active {
+            animation: pulseAlert 2s infinite ease-in-out;
+            z-index: 5;
+        }
+        @keyframes pulseAlert { 0% { opacity: 0.6; } 50% { opacity: 0.9; } 100% { opacity: 0.6; } }
 
-    .tablewrap{display:block;border:1px solid #e2e8f0;border-radius:10px;max-height:420px;overflow-x:auto;max-width:100%;position:relative;contain:inline-size paint;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
-    .tablewrap::before,.tablewrap::after{content:"";position:absolute;top:0;bottom:0;width:24px;pointer-events:none;z-index:5}
-    .tablewrap::before{left:0;background:linear-gradient(to right, rgba(248,250,252,1), rgba(248,250,252,0))}
-    .tablewrap::after{right:0;background:linear-gradient(to left, rgba(248,250,252,1), rgba(248,250,252,0))}
 
-    table{border-collapse:separate;width:max-content;font-size:13px}
-    th,td{border-bottom:1px solid #e2e8f0;padding:8px 10px;text-align:left;vertical-align:top;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;overflow-wrap:anywhere;word-break:break-word;scroll-snap-align:start}
-    th{background:#eaf3ff;position:sticky;top:0;z-index:3}
-    th:first-child, td:first-child{position:sticky;left:0;background:#fff;z-index:2;box-shadow:4px 0 6px -4px rgba(15,23,42,.15)}
-    th:first-child{background:#eaf3ff;z-index:4}
-    tr:nth-child(even) td{background:#f8fafc}
+        /* --- Main Content (Z-Index 10) --- */
+        main {
+            position: relative; z-index: 10;
+            height: 100%;
+            display: flex; flex-direction: column;
+            pointer-events: none;
+        }
+        main * { pointer-events: auto; }
 
-    .tablewrap::-webkit-scrollbar{height:8px}
-    .tablewrap::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
-    .tablewrap::-webkit-scrollbar-track{background:transparent}
-    .switch{margin-right: 30px;
-           margin-bottom: 10px;}
-  </style>
+
+        /* --- Settings Button (Z-Index 5000) --- */
+        #settings-trigger {
+            position: fixed; bottom: 20px; right: 20px; z-index: 5000;
+            width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(4px);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #settings-trigger:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
+
+
+        /* --- Settings Modal (Z-Index 9999) --- */
+        #settings-modal {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(20px);
+            display: none;
+            justify-content: center; align-items: center;
+        }
+
+
+        /* --- UI Components --- */
+        .glass {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 32px;
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .task-checkbox {
+            appearance: none; width: 24px; height: 24px;
+            border: 2px solid rgba(255,255,255,0.6); border-radius: 50%;
+            display: grid; place-content: center; cursor: pointer;
+        }
+        .task-checkbox::before {
+            content: ""; width: 14px; height: 14px; border-radius: 50%;
+            transform: scale(0); transition: 0.2s; background: white;
+        }
+        .task-checkbox:checked { background: white; border-color: white; }
+        .task-checkbox:checked::before { transform: scale(1); background: black; }
+
+        .snap-container { scroll-snap-type: y mandatory; overflow-y: auto; height: 100%; }
+        .snap-item { scroll-snap-align: start; height: 100%; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        ::-webkit-scrollbar { display: none; }
+    </style>
 </head>
-<body>
-  <header>
-    <h1><span class="logo"><img src="6e31b70d-67f4-4652-891c-f30575da89a4.png" alt="説明文" style="width: 30px; height:auto;"></span> KMT2回目資料作成自動化ツール　Markdown → CSV 変換</h1>
-  </header>
-  <main>
-    <div class="grid">
-      <section class="card">
-        <h2>1) ファイル投入</h2>
-        <div id="drop" class="drop">
-          <p>ここにKMT2回目までに提出していただくもの <b>.md</b> <br>ドラッグ＆ドロップ</p>
-          <p class="muted">複数ファイルOK・端末内で完結（サーバー送信なし）</p>
-          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-            <label class="btn btn-ghost" for="file">ファイル選択…</label>
-            <input id="file" type="file" accept=".md" multiple />
-            <button id="convertBtn" class="btn btn-primary" disabled>変換＆プレビュー</button>
-          </div>
-          <div class="muted" style="text-align:center;margin-top:6px">※ ファイル名は「#」列に入ります</div>
-        </div>
-      </section>
-      <section class="card">
-        <h2>2) 固定キー（カラム順）</h2>
-        <textarea id="keys" rows="14"></textarea>
-      </section>
+<body class="p-6 box-border text-white">
+
+    <!-- 背景レイヤー -->
+    <div id="bg-container">
+        <!-- 初期表示用: Dayにactiveをつけておく -->
+        <div id="bg-day" class="bg-layer theme-day active"></div>
+        <div id="bg-dawn" class="bg-layer theme-dawn"></div>
+        <div id="bg-sunset" class="bg-layer theme-sunset"></div>
+        <div id="bg-night" class="bg-layer theme-night"></div>
+        <div id="bg-alert" class="bg-layer theme-alert"></div>
     </div>
 
-    <section class="card">
-      <div class="toolbar">
-        <div class="right">
-          <label class="switch"><input id="useMap" type="checkbox" checked> 座標をGoogleマップURLに変換</label>
-          <button id="downloadBtn" class="btn btn-primary" disabled>CSVダウンロード</button>
+    <!-- コンテンツ -->
+    <main class="max-w-7xl mx-auto w-full gap-6">
+        
+        <!-- 時計エリア -->
+        <div class="h-[40%] flex items-center justify-center md:justify-start px-4">
+            <div>
+                <div id="time-disp" class="text-[140px] md:text-[200px] font-thin leading-none tracking-tighter drop-shadow-lg">--:--</div>
+                <div id="date-disp" class="text-2xl font-medium tracking-[0.3em] uppercase opacity-70 ml-2 drop-shadow-md">LOADING...</div>
+            </div>
         </div>
-      </div>
-      <div id="viewTable" class="tablewrap"></div>
-    </section>
-  </main>
 
-  <script>
-    const DEFAULT_KEYS=["ガイドライン","今後の企画に盛り込みたいテーマやイベント","企業ロゴ","動画出演が可能な社員やスタッフの名前と役職","回答者","投稿内容の承認フロー","提出日時","撮影可能な日程の候補","撮影可能な日程の候補","撮影可能な日程の候補 (1)","撮影可能な日程の候補 (2)","撮影可能な日程の候補 (3)","撮影可能な日程の候補 (4)","撮影可能な日程の候補 (5)","撮影可能な社内スペース・現場場所の候補","社内での肖像権や情報発信ルールの有無","競合アカウント","説明","過去の採用広報資料や記事"];
-    document.getElementById('keys').value=DEFAULT_KEYS.join('\n');
+        <!-- ウィジェットエリア -->
+        <div class="h-[60%] grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
+            
+            <!-- Notion Tasks -->
+            <div class="glass flex flex-col p-8 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xs font-bold tracking-widest uppercase opacity-50">TASKS</h2>
+                    <div id="api-status" class="w-2 h-2 rounded-full bg-white/20"></div>
+                </div>
+                <div id="task-list" class="flex-1 overflow-y-auto space-y-3">
+                    <p class="text-center opacity-40 mt-10 text-sm tracking-widest">SETUP REQUIRED</p>
+                </div>
+            </div>
 
-    const drop=document.getElementById('drop');
-    const fileInput=document.getElementById('file');
-    const convertBtn=document.getElementById('convertBtn');
-    const useMapCk=document.getElementById('useMap');
-    const viewTable=document.getElementById('viewTable');
-    const downloadBtn=document.getElementById('downloadBtn');
+            <!-- Multi Widget -->
+            <div class="glass relative overflow-hidden">
+                <div class="snap-container">
+                    <!-- Weather -->
+                    <div class="snap-item p-8">
+                        <i id="w-icon" class="fas fa-sun text-8xl mb-4 opacity-90 drop-shadow-lg"></i>
+                        <div id="w-temp" class="text-6xl font-thin mb-2 mt-4 drop-shadow-md">--°</div>
+                        <div class="text-xl tracking-widest opacity-60 uppercase">TOKYO</div>
+                    </div>
+                    <!-- Calendar -->
+                    <div class="snap-item p-8">
+                        <div id="cal-month" class="text-3xl font-bold text-red-300 uppercase tracking-widest mb-2 drop-shadow-md">JAN</div>
+                        <div id="cal-day" class="text-[120px] font-black leading-none mb-4 drop-shadow-xl">1</div>
+                        <div class="text-xl tracking-[0.5em] opacity-60">TODAY</div>
+                    </div>
+                </div>
+                <!-- Indicator -->
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
+                    <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-    let files=[]; let lastCsvBlob=null;
+    <!-- 設定ボタン -->
+    <div id="settings-trigger" onclick="openSettings()">
+        <i class="fas fa-sliders-h text-lg"></i>
+    </div>
 
-    drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('dragover')});
-    drop.addEventListener('dragleave',()=>drop.classList.remove('dragover'));
-    drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');const mdFiles=Array.from(e.dataTransfer.files||[]).filter(f=>f.name.toLowerCase().endsWith('.md'));if(mdFiles.length===0){alert('*.md ファイルを選択してください');return;}files=mdFiles;convertBtn.disabled=false;drop.querySelector('p').innerText=`${files.length} 件の .md を読み込みました`;});
-    fileInput.addEventListener('change',e=>{const mdFiles=Array.from(e.target.files||[]).filter(f=>f.name.toLowerCase().endsWith('.md'));if(mdFiles.length===0){alert('*.md ファイルを選択してください');return;}files=mdFiles;convertBtn.disabled=false;drop.querySelector('p').innerText=`${files.length} 件の .md を読み込みました`;});
+    <!-- 設定モーダル -->
+    <div id="settings-modal">
+        <div class="glass w-full max-w-md p-8 bg-black/60 border border-white/10">
+            <h3 class="text-lg font-bold mb-6 tracking-widest">SETTINGS</h3>
+            
+            <!-- 背景テスト -->
+            <div class="mb-8">
+                <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">Preview Background</label>
+                <div class="grid grid-cols-5 gap-2">
+                    <button onclick="testBg('dawn')" class="bg-pink-300/20 py-3 rounded-lg hover:bg-pink-300/40 transition text-[10px] font-bold border border-white/5">DAWN</button>
+                    <button onclick="testBg('day')" class="bg-blue-500/20 py-3 rounded-lg hover:bg-blue-500/40 transition text-[10px] font-bold border border-white/5">DAY</button>
+                    <button onclick="testBg('sunset')" class="bg-orange-500/20 py-3 rounded-lg hover:bg-orange-500/40 transition text-[10px] font-bold border border-white/5">SUN</button>
+                    <button onclick="testBg('night')" class="bg-indigo-900/40 py-3 rounded-lg hover:bg-indigo-900/60 transition text-[10px] font-bold border border-white/5">NIGHT</button>
+                    <button onclick="testBg('alert')" class="bg-red-900/40 py-3 rounded-lg hover:bg-red-900/60 transition text-[10px] font-bold border border-white/5 text-red-200">ALERT</button>
+                </div>
+            </div>
 
-    const kvPattern=/^(?<key>[^:：]+?)\s*[:：]\s*(?<val>.*)$/;
-    function parseMd(text){const data={};for(const raw of text.split(/\r?\n/)){const line=raw.trim();if(!line||line.startsWith('#'))continue;const m=line.match(kvPattern);if(!m)continue;data[m.groups.key.trim()]=m.groups.val.trim()}return data}
+            <div class="space-y-4 mb-8">
+                <div class="relative">
+                    <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                    <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Notion API Key</label>
+                </div>
+                <div class="relative">
+                    <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                    <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Database ID</label>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="relative">
+                        <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Date Prop</label>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-3 pt-5 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-3 top-1 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Status Prop</label>
+                    </div>
+                </div>
+            </div>
 
-    function csvEscape(s){const str=(s??'').toString();if(/[",\n]/.test(str))return '"'+str.replace(/"/g,'""')+'"';return str}
+            <div class="flex gap-3">
+                <button onclick="saveConfig()" class="flex-1 bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm">SAVE</button>
+                <button onclick="closeSettings()" class="flex-1 bg-white/5 py-3 rounded-xl hover:bg-white/10 transition-colors text-sm">CANCEL</button>
+            </div>
+        </div>
+    </div>
 
-    const coordRe=/^\s*([+-]?\d+(?:\.\d+)?)\s*,\s*([+-]?\d+(?:\.\d+)?)\s*$/;
-    function coordToMaps(val){const m=(val||'').match(coordRe);if(!m)return null;const lat=Number(m[1]).toFixed(5);const lon=Number(m[2]).toFixed(5);return `https://www.google.com/maps/place/${lat},${lon}`}
+    <script>
+        const store = {
+            key: localStorage.getItem('n_key') || '',
+            db: localStorage.getItem('n_db') || '',
+            prop: localStorage.getItem('n_prop') || 'Date',
+            statProp: localStorage.getItem('n_stat') || 'Status'
+        };
 
-    function buildTable(parsedList,expectedKeys,useMapLinks){
-      const table=document.createElement('table');
-      const thead=document.createElement('thead');
-      const tbody=document.createElement('tbody');
-      const trh=document.createElement('tr');
-      ['#',...expectedKeys].forEach(h=>{const th=document.createElement('th');th.textContent=h;trh.appendChild(th)});
-      thead.appendChild(trh);
-      parsedList.forEach(({name,parsed})=>{
-        const tr=document.createElement('tr');
-        const td0=document.createElement('td'); td0.textContent=name; tr.appendChild(td0);
-        expectedKeys.forEach(k=>{let v=parsed[k]??''; if(useMapLinks){const url=coordToMaps(v); if(url) v=url;} const td=document.createElement('td'); td.textContent=v; td.title=v; tr.appendChild(td)});
-        tbody.appendChild(tr);
-      });
-      table.appendChild(thead); table.appendChild(tbody);
-      return table;
-    }
+        // 現在のモード保持用（無駄なDOM更新を防ぐ）
+        let currentMode = 'day';
 
-    function toCsvBlob(parsedList,expectedKeys,useMapLinks){
-      const headers=['#',...expectedKeys];
-      const lines=[headers.join(',')];
-      for(const {name,parsed} of parsedList){
-        const row=[csvEscape(name)];
-        for(const k of expectedKeys){let v=parsed[k]??''; if(useMapLinks){const u=coordToMaps(v); if(u) v=u;} row.push(csvEscape(v));}
-        lines.push(row.join(','));
-      }
-      const bom=new Uint8Array([0xEF,0xBB,0xBF]);
-      return new Blob([bom,lines.join('\n')],{type:'text/csv;charset=utf-8;'});
-    }
+        // --- Background Logic ---
+        function applyBg(mode) {
+            if (mode === currentMode) return; // 同じなら何もしない
+            currentMode = mode;
 
-    async function render(){
-      if(files.length===0) return;
-      viewTable.innerHTML=''; downloadBtn.disabled=true; lastCsvBlob=null;
-      const expected=document.getElementById('keys').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-      const useMapLinks=useMapCk.checked;
-      const parsedList=[];
-      for(const f of files){const text=await f.text(); parsedList.push({name:f.name.replace(/\.md$/i,''), parsed:parseMd(text)});}  
-      const table=buildTable(parsedList,expected,useMapLinks);
-      viewTable.appendChild(table);
-      lastCsvBlob=toCsvBlob(parsedList,expected,useMapLinks);
-      downloadBtn.disabled=false;
-      enableWheelHorizontal(document.querySelectorAll('.tablewrap'));
-    }
+            // 全て非アクティブ化
+            document.querySelectorAll('.bg-layer').forEach(el => el.classList.remove('active'));
+            
+            // 指定IDだけアクティブ化
+            const target = document.getElementById(`bg-${mode}`);
+            if(target) target.classList.add('active');
+        }
 
-    convertBtn.addEventListener('click',render);
+        // テスト用（強制変更）
+        function testBg(mode) {
+            currentMode = ''; // 強制更新させるためリセット
+            applyBg(mode);
+        }
 
-    downloadBtn.addEventListener('click',()=>{
-      if(!lastCsvBlob) return; const url=URL.createObjectURL(lastCsvBlob); const a=document.createElement('a'); a.href=url; a.download='merged_output.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),800);
-    });
+        // --- Clock Logic ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('time-disp').textContent = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
+            document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            
+            document.getElementById('cal-month').textContent = now.toLocaleDateString('en-US', { month: 'short' });
+            document.getElementById('cal-day').textContent = now.getDate();
 
-    function enableWheelHorizontal(nodeList){
-      nodeList.forEach(el=>{
-        el.addEventListener('wheel', e=>{
-          if(Math.abs(e.deltaX) < Math.abs(e.deltaY)){
-            el.scrollLeft += e.deltaY; e.preventDefault();
-          }
-        }, {passive:false});
-      });
-    }
-  </script>
+            // 設定画面が開いていない時だけ自動背景更新
+            const settingsDisp = document.getElementById('settings-modal').style.display;
+            if(settingsDisp !== 'flex') {
+                const h = now.getHours();
+                let autoMode = 'day';
+                // 時間割: 5-8:Dawn, 8-16:Day, 16-19:Sunset, 19-5:Night
+                if(h >= 5 && h < 8) autoMode = 'dawn';
+                else if(h >= 8 && h < 16) autoMode = 'day';
+                else if(h >= 16 && h < 19) autoMode = 'sunset';
+                else autoMode = 'night';
+                
+                applyBg(autoMode);
+            }
+        }
+
+        // --- Settings Logic ---
+        function openSettings() {
+            document.getElementById('n-key').value = store.key;
+            document.getElementById('n-db').value = store.db;
+            document.getElementById('n-prop').value = store.prop;
+            document.getElementById('n-stat').value = store.statProp;
+            document.getElementById('settings-modal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+            // 自動モードに戻すために現在値をリセット
+            currentMode = '';
+            updateClock();
+        }
+
+        function saveConfig() {
+            store.key = document.getElementById('n-key').value.trim();
+            store.db = document.getElementById('n-db').value.trim();
+            store.prop = document.getElementById('n-prop').value.trim();
+            store.statProp = document.getElementById('n-stat').value.trim();
+            
+            localStorage.setItem('n_key', store.key);
+            localStorage.setItem('n_db', store.db);
+            localStorage.setItem('n_prop', store.prop);
+            localStorage.setItem('n_stat', store.statProp);
+            
+            closeSettings();
+            fetchNotion();
+        }
+
+        // --- Notion API ---
+        async function fetchNotion() {
+            if(!store.key || !store.db) return;
+            const statusIcon = document.getElementById('api-status');
+            statusIcon.className = 'w-2 h-2 rounded-full bg-yellow-500 animate-pulse';
+
+            const today = new Date().toISOString().split('T')[0];
+            const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.notion.com/v1/databases/${store.db}/query`)}`;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${store.key}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filter: { property: store.prop, date: { equals: today } },
+                        sorts: [{ property: store.prop, direction: "ascending" }]
+                    })
+                });
+                
+                if(!res.ok) throw new Error();
+                const data = await res.json();
+                renderTasks(data.results);
+                statusIcon.className = 'w-2 h-2 rounded-full bg-green-500';
+            } catch(e) {
+                console.error(e);
+                statusIcon.className = 'w-2 h-2 rounded-full bg-red-500';
+            }
+        }
+
+        function renderTasks(tasks) {
+            const list = document.getElementById('task-list');
+            if(!tasks || tasks.length === 0) {
+                list.innerHTML = `<div class="mt-10 text-center opacity-40 text-sm tracking-widest">NO TASKS TODAY</div>`;
+                return;
+            }
+
+            list.innerHTML = tasks.map(t => {
+                const title = Object.values(t.properties).find(p => p.type === 'title')?.title[0]?.plain_text || "Untitled";
+                
+                const sObj = t.properties[store.statProp];
+                const sName = sObj?.status?.name || sObj?.select?.name || "";
+                const isDone = ['Done', '完了', 'Complete', '済み'].includes(sName);
+
+                return `
+                    <div class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors ${isDone ? 'opacity-30' : ''}">
+                        <input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" 
+                            ${isDone ? 'checked' : ''} 
+                            onchange="toggleTask('${t.id}', this.checked)">
+                        <span class="text-lg leading-snug ${isDone ? 'line-through' : ''}">${title}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function toggleTask(id, checked) {
+            const newVal = checked ? "Done" : "Not started";
+            const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.notion.com/v1/pages/${id}`)}`;
+            try {
+                await fetch(url, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${store.key}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ properties: { [store.statProp]: { status: { name: newVal } } } })
+                });
+            } catch(e) {}
+        }
+
+        // --- Weather ---
+        async function fetchWeather() {
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&current_weather=true`);
+                const data = await res.json();
+                document.getElementById('w-temp').textContent = `${Math.round(data.current_weather.temperature)}°`;
+                
+                // Icon selection
+                const c = data.current_weather.weathercode;
+                let i = 'fa-sun';
+                if(c > 3) i = 'fa-cloud';
+                if(c > 50) i = 'fa-cloud-rain';
+                document.getElementById('w-icon').className = `fas ${i} text-8xl mb-4 opacity-90 drop-shadow-lg`;
+
+            } catch(e) {}
+        }
+
+        // --- Loop ---
+        setInterval(updateClock, 1000);
+        setInterval(fetchNotion, 60000);
+        setInterval(fetchWeather, 60000 * 30);
+        
+        // Init
+        updateClock();
+        fetchNotion();
+        fetchWeather();
+
+    </script>
 </body>
 </html>
