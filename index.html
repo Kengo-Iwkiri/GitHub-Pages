@@ -153,7 +153,8 @@
         <!-- 時計エリア -->
         <div class="h-[40%] flex items-center justify-center px-4">
             <div class="text-center">
-                <div id="time-disp" class="text-[140px] md:text-[200px] font-bold leading-none tracking-tighter drop-shadow-lg">--:--</div>
+                <!-- フォントを中太(font-medium)にし、文字間隔を最大(tracking-widest)に変更 -->
+                <div id="time-disp" class="text-[140px] md:text-[200px] font-medium leading-none tracking-widest drop-shadow-lg">--:--</div>
                 <div id="date-disp" class="text-2xl font-medium tracking-[0.3em] uppercase opacity-70 drop-shadow-md">LOADING...</div>
             </div>
         </div>
@@ -179,7 +180,7 @@
                     <div class="snap-item p-8">
                         <i id="w-icon" class="fas fa-sun text-8xl mb-4 opacity-90 drop-shadow-lg"></i>
                         <div id="w-temp" class="text-6xl font-thin mb-2 mt-4 drop-shadow-md">--°</div>
-                        <!-- 場所名 (GPS or Custom or Tokyo) -->
+                        <!-- IDを追加: 場所名 -->
                         <div id="w-location" class="text-xl tracking-widest opacity-60 uppercase">TOKYO</div>
                     </div>
                     <!-- Calendar -->
