@@ -299,7 +299,7 @@
             <div class="glass relative overflow-hidden">
                 <div class="snap-container">
                     
-                    <!-- 1. Weather (High Density Layout) -->
+                    <!-- 1. Weather (Re-balanced Layout V2) -->
                     <div class="snap-item p-5 w-full flex flex-col justify-between h-full">
                         <!-- Upper Section: 上端を揃える -->
                         <div class="flex justify-between items-start w-full pt-1 px-1">
@@ -352,26 +352,26 @@
                             <div class="flex justify-between items-center px-1">
                                 <!-- Sub 1 -->
                                 <div class="flex flex-col items-center justify-center w-1/3">
-                                    <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub1-name">NYC</span>
+                                    <span class="text-sm opacity-60 font-bold tracking-wider uppercase mb-1" id="sub1-name">NYC</span>
                                     <div class="flex items-center gap-2">
-                                        <div id="sub1-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-xl font-bold" id="sub1-temp">--°</span>
+                                        <div id="sub1-icon" class="w-8 h-8 flex items-center justify-center opacity-90"></div>
+                                        <span class="text-2xl font-bold" id="sub1-temp">--°</span>
                                     </div>
                                 </div>
                                 <!-- Sub 2 -->
                                 <div class="flex flex-col items-center justify-center w-1/3 border-l border-r border-white/5">
-                                    <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub2-name">LON</span>
+                                    <span class="text-sm opacity-60 font-bold tracking-wider uppercase mb-1" id="sub2-name">LON</span>
                                     <div class="flex items-center gap-2">
-                                        <div id="sub2-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-xl font-bold" id="sub2-temp">--°</span>
+                                        <div id="sub2-icon" class="w-8 h-8 flex items-center justify-center opacity-90"></div>
+                                        <span class="text-2xl font-bold" id="sub2-temp">--°</span>
                                     </div>
                                 </div>
                                 <!-- Sub 3 -->
                                 <div class="flex flex-col items-center justify-center w-1/3">
-                                    <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub3-name">PAR</span>
+                                    <span class="text-sm opacity-60 font-bold tracking-wider uppercase mb-1" id="sub3-name">PAR</span>
                                     <div class="flex items-center gap-2">
-                                        <div id="sub3-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-xl font-bold" id="sub3-temp">--°</span>
+                                        <div id="sub3-icon" class="w-8 h-8 flex items-center justify-center opacity-90"></div>
+                                        <span class="text-2xl font-bold" id="sub3-temp">--°</span>
                                     </div>
                                 </div>
                             </div>
@@ -380,14 +380,19 @@
                     
                     <!-- 2. Earthquake Map -->
                     <div class="snap-item p-0 w-full relative overflow-hidden group">
+                        <!-- Map Background -->
                         <div id="quake-map" class="w-full h-full rounded-[32px] overflow-hidden opacity-60 transition-opacity group-hover:opacity-100"></div>
+                        
+                        <!-- Info Overlay -->
                         <div class="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none z-[500]">
+                            <!-- Header -->
                             <div class="flex justify-between items-start">
                                 <div class="flex flex-col gap-2">
                                     <div class="flex items-center gap-2">
                                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></div>
                                         <span class="text-[10px] font-bold opacity-90 tracking-widest bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-white/10">LATEST QUAKE</span>
                                     </div>
+                                    <!-- あなたの場所の予想震度 (条件付き表示) -->
                                     <div id="q-widget-est-container" class="hidden transition-all duration-500">
                                         <span class="text-[10px] font-bold text-yellow-300 bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-yellow-500/30 flex items-center gap-1 w-fit">
                                             <i class="fas fa-map-marker-alt text-[8px] opacity-70"></i>
@@ -395,8 +400,11 @@
                                         </span>
                                     </div>
                                 </div>
+                                <!-- Time (Top Right) -->
                                 <div id="q-widget-time" class="text-sm font-mono opacity-80 font-bold drop-shadow-md">--:--</div>
                             </div>
+
+                            <!-- Main Info (Bottom) -->
                             <div class="flex flex-col gap-1">
                                 <div class="flex items-baseline gap-3 drop-shadow-lg">
                                     <span class="text-sm font-bold opacity-70">震度</span>
@@ -406,6 +414,8 @@
                                 <div class="text-xs font-mono opacity-60 mt-1" id="q-widget-mag">M-.--</div>
                             </div>
                         </div>
+                        
+                        <!-- Gradient Overlay for readability -->
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
                     </div>
 
@@ -416,21 +426,31 @@
                         <div class="text-xl tracking-[0.5em] opacity-60">TODAY</div>
                     </div>
                     
-                    <!-- 4. Focus Timer -->
+                    <!-- 4. Focus Timer (Circular Design with Label Below) -->
                     <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
                         <div class="relative w-[280px] h-[280px] flex items-center justify-center">
+                            <!-- SVG Ring -->
                             <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
+                                <!-- Track -->
                                 <circle class="timer-circle-bg" cx="150" cy="150" r="140"></circle>
+                                <!-- Progress -->
                                 <circle id="timer-progress-ring" class="timer-circle-progress" cx="150" cy="150" r="140"></circle>
                             </svg>
+                            
+                            <!-- Inside Content -->
                             <div class="flex flex-col items-center justify-center z-10">
                                 <div id="timer-display" class="text-6xl font-mono font-thin mb-4 tabular-nums">25:00</div>
                                 <div class="flex gap-4">
-                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md"><i id="timer-icon" class="fas fa-play text-lg ml-1"></i></button>
-                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md"><i class="fas fa-redo text-lg"></i></button>
+                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md">
+                                        <i id="timer-icon" class="fas fa-play text-lg ml-1"></i>
+                                    </button>
+                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md">
+                                        <i class="fas fa-redo text-lg"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                        <!-- Label moved below -->
                         <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
                     </div>
                     
@@ -683,7 +703,7 @@
         }
         
         function getSmallIcon(code) {
-             const size = 20; const color = 'rgba(255,255,255,0.7)';
+             const size = 32; const color = 'rgba(255,255,255,0.8)';
              if (code === 0) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
              if (code <= 3) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
              if (code <= 67) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 13v8"/><path d="M12 13v8"/><path d="M16 13v8"/></svg>`;
@@ -1217,7 +1237,7 @@
         async function fetchWeather() {
             try {
                 // 1. Fetch Main Weather
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto`;
                 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -1240,6 +1260,27 @@
                     const min = Math.round(daily.temperature_2m_min[0]);
                     document.getElementById('w-max').textContent = max;
                     document.getElementById('w-min').textContent = min;
+                }
+
+                // Hourly Forecast (Current index + 3, +6, +9)
+                const nowIso = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
+                // Use current.time for finding index as per previous fix
+                const currentHourStr = current.time.slice(0, 13);
+                const hourIndex = data.hourly.time.findIndex(t => t.startsWith(currentHourStr));
+                
+                if (hourIndex !== -1) {
+                    [3, 6, 9].forEach((offset, i) => {
+                        const idx = hourIndex + offset;
+                        if (data.hourly.time[idx]) {
+                            const tStr = data.hourly.time[idx].split('T')[1];
+                            const temp = Math.round(data.hourly.temperature_2m[idx]);
+                            const code = data.hourly.weather_code[idx];
+                            
+                            document.getElementById(`fc-time-${i+1}`).textContent = tStr;
+                            document.getElementById(`fc-temp-${i+1}`).textContent = `${temp}°`;
+                            document.getElementById(`fc-icon-${i+1}`).innerHTML = getSmallIcon(code);
+                        }
+                    });
                 }
 
                 // 2. Fetch Sub Locations
