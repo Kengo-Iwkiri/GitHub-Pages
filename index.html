@@ -300,7 +300,7 @@
 
     <!-- コンテンツ -->
     <main class="max-w-7xl mx-auto w-full gap-6">
-        <!-- 時計エリア (Updated: Only Clock) -->
+        <!-- 時計エリア -->
         <div class="h-[40%] flex items-center justify-center px-4">
             <div class="text-center">
                 <div id="time-disp" class="text-[140px] md:text-[200px] font-medium leading-none tracking-widest drop-shadow-lg">--:--</div>
@@ -805,11 +805,7 @@
         function updateClock() {
             const now = new Date();
             document.getElementById('time-disp').textContent = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
-            // date-disp は削除されたので更新不要
-            // document.getElementById('date-disp').textContent = ... 
-
-            // カレンダーと予定の更新は毎日0時とかで良いが、簡易的にここで日付更新チェックしても良い
-            // 今回は renderCalendar を初期化時と日付変更時に呼ぶべきだが、簡易的にinitのみ
+            document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
             
             const drawer = document.getElementById('settings-drawer');
             const quakeOverlay = document.getElementById('quake-overlay');
@@ -1048,7 +1044,7 @@
             document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
             document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
             
-            // あなたの地域の震度
+            // あなたの地域の震度（APIのpointsから検索）
             let myScaleText = "--";
             if (store.quakeArea && q.points) {
                 let point = q.points.find(p => p.addr === store.quakeArea);
@@ -1293,6 +1289,7 @@
             document.getElementById('sub3-label').value = store.sub3_name;
             document.getElementById('sub3-lat').value = store.sub3_lat;
             document.getElementById('sub3-lon').value = store.sub3_lon;
+            document.getElementById('g-cal').value = store.icalUrl;
 
             setPropType(store.pType);
             document.getElementById('n-stat').dataset.ptype = store.pType;
@@ -1322,6 +1319,7 @@
             store.lon = document.getElementById('w-lon').value.trim();
             store.quakeArea = document.getElementById('q-area').value.trim();
             store.timerDuration = document.getElementById('t-duration').value.trim();
+            store.icalUrl = document.getElementById('g-cal').value.trim();
             
             // Save sub locations
             store.sub1_name = document.getElementById('sub1-label').value.trim();
@@ -1347,6 +1345,7 @@
             localStorage.setItem('w_lon', store.lon);
             localStorage.setItem('q_area', store.quakeArea);
             localStorage.setItem('timer_duration', store.timerDuration);
+            localStorage.setItem('ical_url', store.icalUrl);
             
             localStorage.setItem('sub1_name', store.sub1_name);
             localStorage.setItem('sub1_lat', store.sub1_lat);
