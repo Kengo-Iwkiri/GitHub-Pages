@@ -305,8 +305,8 @@
                         </div>
                     </div>
                     
-                    <!-- 2. Earthquake Map -->
-                    <div class="snap-item p-0 w-full relative overflow-hidden group">
+                    <!-- 2. Earthquake Map (Added ID and hidden class) -->
+                    <div id="quake-widget-card" class="snap-item p-0 w-full relative overflow-hidden group hidden">
                         <div id="quake-map" class="w-full h-full rounded-[32px] overflow-hidden opacity-60 transition-opacity group-hover:opacity-100"></div>
                         <div class="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none z-[500]">
                             <div class="flex justify-between items-start">
@@ -398,58 +398,12 @@
                         </div>
                     </div>
                 </div>
-                <!-- Indicator (7 dots) -->
-                <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                </div>
             </div>
         </div>
     </main>
 
-    <!-- 地震アラートオーバーレイ -->
-    <div id="quake-overlay">
-        <div id="alert-map-container" class="w-full h-full absolute inset-0"></div>
-        <div id="quake-vignette" onclick="closeQuakeAlert()"></div>
-        <div id="quake-scanlines"></div>
-        <div id="quake-content">
-            <div class="w-full flex justify-center pt-16 pointer-events-none">
-                <div class="quake-scale-box">
-                    <h1 class="text-2xl font-black uppercase tracking-widest">緊急地震速報</h1>
-                </div>
-            </div>
-            <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
-                <div class="flex justify-center items-start gap-16 mb-4 w-full">
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span>
-                        <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
-                            <span class="text-2xl opacity-70 font-bold">震度</span>
-                            <span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span>
-                        <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
-                            <span class="text-2xl opacity-70 font-bold text-yellow-400">震度</span>
-                            <span class="text-[120px] font-bold leading-none text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]" id="q-est-scale">--</span>
-                        </div>
-                        <div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div>
-                    </div>
-                </div>
-                <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
-                <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md">
-                    <span id="q-time">12:34</span>
-                    <span class="w-px bg-white/30 h-6"></span>
-                    <span id="q-mag">M4.5</span>
-                </div>
-                <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 設定オーバーレイ -->
+    <!-- Settings Drawer -->
     <div id="settings-overlay" onclick="closeSettings()"></div>
-
-    <!-- 設定ドロワー -->
     <div id="settings-drawer">
         <div class="settings-sidebar">
             <div class="text-[10px] font-bold opacity-30 px-4 mb-2 tracking-widest">設定メニュー</div>
@@ -464,7 +418,7 @@
         </div>
 
         <div class="settings-content">
-            <!-- 背景設定 -->
+            <!-- BG Tab -->
             <div id="tab-bg" class="tab-panel active">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">背景テーマ</h3>
                 <div class="space-y-4">
@@ -485,8 +439,7 @@
                      </div>
                 </div>
             </div>
-            
-            <!-- Notion設定 -->
+            <!-- Notion Tab -->
             <div id="tab-notion" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">Notion連携設定</h3>
                 <div class="space-y-4">
@@ -498,7 +451,6 @@
                     <div class="grid grid-cols-2 gap-2"><input type="text" id="n-user-prop" placeholder="User Prop" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="n-user-id" placeholder="User ID" class="bg-white/10 rounded p-2 text-xs"></div>
                 </div>
             </div>
-
             <!-- Weather Tab -->
             <div id="tab-weather" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">LOCATION</h3>
@@ -532,7 +484,6 @@
     </div>
 
     <script>
-        // --- 1. Global Store ---
         const store = {
             key: localStorage.getItem('n_key') || '',
             db: localStorage.getItem('n_db') || '',
@@ -576,7 +527,7 @@
         let mapInstance = null;
         let alertMapInstance = null;
 
-        // --- 2. Helper Functions ---
+        // --- Helper Functions ---
         function getWeatherIcon(code, isNight) {
             const size = 80; const color = 'rgba(255,255,255,0.95)';
             if (code === 0) return isNight ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>` : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
@@ -589,7 +540,6 @@
         }
         function getWeatherDesc(code) { return code === 0 ? "快晴" : code <= 3 ? "曇り" : "雨/雪"; }
 
-        // --- 3. UI Logic ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
@@ -633,7 +583,6 @@
             document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
         }
 
-        // --- Calendar Logic ---
         function renderCalendar() {
             const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const todayDate = now.getDate();
             const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
@@ -679,8 +628,6 @@
             } catch(e) { listEl.innerHTML = '<div class="text-xs opacity-50 text-red-300 mt-4">Calendar Error</div>'; }
         }
 
-        // --- 4. Main Features ---
-        // Notion
         async function fetchNotion() {
             if(!store.key || !store.db) return;
             try {
@@ -722,7 +669,6 @@
             });
         }
 
-        // Weather
         async function fetchWeather() {
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto`;
@@ -757,7 +703,6 @@
             } catch(e) {}
         }
 
-        // Podcasts
         async function fetchPodcasts() {
             try {
                 const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://itunes.apple.com/jp/rss/toppodcasts/limit=3/json'));
@@ -773,41 +718,28 @@
             } catch(e) { document.getElementById('podcast-list').innerHTML = `<div class="text-center opacity-30 text-xs">Failed to load podcasts</div>`; }
         }
 
-        // Music
         async function fetchMusic() {
             const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
             const c = document.getElementById('music-container'); c.innerHTML = '';
             for(const i of items) {
                 if(!i.k && !i.l) continue;
-                
-                let imgUrl = null;
-                let title = i.k || "No Title";
-                let artist = "";
-                let linkUrl = i.l || "#";
-
+                let imgUrl = null, title = i.k || "No Title", artist = "", linkUrl = i.l || "#";
                 if (i.k) {
                     try {
                         const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&limit=1`));
                         const data = await res.json();
                         if(data.resultCount > 0) {
-                            const t = data.results[0];
-                            imgUrl = t.artworkUrl100.replace('100x100bb', '600x600bb');
-                            title = t.trackName || t.collectionName;
-                            artist = t.artistName;
+                            const t = data.results[0]; imgUrl = t.artworkUrl100.replace('100x100bb', '600x600bb');
+                            title = t.trackName || t.collectionName; artist = t.artistName;
                             if (!linkUrl || linkUrl === "#") linkUrl = t.trackViewUrl || t.collectionViewUrl;
                         }
                     } catch(e) {}
                 }
-
-                if (imgUrl) {
-                    c.innerHTML += `<a href="${linkUrl}" target="_blank" class="music-item group"><img src="${imgUrl}" class="music-img group-hover:scale-105 transition-transform duration-500"><div class="music-overlay"><div class="text-xs font-bold truncate">${title}</div><div class="text-[10px] opacity-70 truncate">${artist}</div></div></a>`;
-                } else {
-                     c.innerHTML += `<a href="${linkUrl}" target="_blank" class="bg-white/10 rounded-2xl aspect-square flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition"><i class="fas fa-music opacity-30 text-4xl"></i><div class="text-xs font-bold truncate px-2 w-full text-center">${title}</div></a>`;
-                }
+                if (imgUrl) c.innerHTML += `<a href="${linkUrl}" target="_blank" class="music-item group"><img src="${imgUrl}" class="music-img group-hover:scale-105 transition-transform duration-500"><div class="music-overlay"><div class="text-xs font-bold truncate">${title}</div><div class="text-[10px] opacity-70 truncate">${artist}</div></div></a>`;
+                else c.innerHTML += `<a href="${linkUrl}" target="_blank" class="bg-white/10 rounded-2xl aspect-square flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition"><i class="fas fa-music opacity-30 text-4xl"></i><div class="text-xs font-bold truncate px-2 w-full text-center">${title}</div></a>`;
             }
         }
         
-        // Timer
         let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
         function toggleTimer() {
             if(timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-icon').className='fas fa-play text-lg ml-1'; }
@@ -830,31 +762,18 @@
             mapInstance = L.map('quake-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, boxZoom:false, tap:false, keyboard:false }).setView([36, 138], 3.8);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(mapInstance);
         }
-        
         function initAlertMap() {
             if(alertMapInstance) return;
             alertMapInstance = L.map('alert-map-container', { zoomControl:false, attributionControl:false, zoomAnimation:false, fadeAnimation:false, zoomSnap:0.1 }).setView([36, 138], 5.5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(alertMapInstance);
         }
-
         function updateAlertMap(q) {
-            initAlertMap();
-            const lat = q.earthquake.hypocenter.latitude;
-            const lng = q.earthquake.hypocenter.longitude;
+            initAlertMap(); const lat = q.earthquake.hypocenter.latitude; const lng = q.earthquake.hypocenter.longitude;
             alertMapInstance.setView([lat, lng], 6);
-            
-            alertMapInstance.eachLayer((layer) => {
-                if(layer instanceof L.Circle || layer instanceof L.CircleMarker) { alertMapInstance.removeLayer(layer); }
-            });
-
-            const qTime = new Date(q.time).getTime();
-            const now = new Date().getTime();
-            const elapsedSec = Math.max(0, (now - qTime) / 1000);
-            const pRadius = 6000 * elapsedSec;
-            const sRadius = 3500 * elapsedSec;
-
-            L.circle([lat, lng], { color: '#4facfe', fillColor: 'transparent', weight: 2, radius: pRadius }).addTo(alertMapInstance);
-            L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.3, weight: 4, radius: sRadius }).addTo(alertMapInstance);
+            alertMapInstance.eachLayer((layer) => { if(layer instanceof L.Circle || layer instanceof L.CircleMarker) { alertMapInstance.removeLayer(layer); } });
+            const elapsedSec = Math.max(0, (new Date().getTime() - new Date(q.time).getTime()) / 1000);
+            L.circle([lat, lng], { color: '#4facfe', fillColor: 'transparent', weight: 2, radius: 6000 * elapsedSec }).addTo(alertMapInstance);
+            L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.3, weight: 4, radius: 3500 * elapsedSec }).addTo(alertMapInstance);
             L.circleMarker([lat, lng], { radius: 10, color: 'white', fillColor: '#f00', fillOpacity: 1 }).addTo(alertMapInstance);
         }
 
@@ -898,67 +817,29 @@
             store.timerDuration = document.getElementById('t-duration').value.trim();
             store.icalUrl = document.getElementById('g-cal').value.trim();
             
-            store.sub1_name = document.getElementById('sub1-label').value.trim();
-            store.sub1_lat = document.getElementById('sub1-lat').value.trim();
-            store.sub1_lon = document.getElementById('sub1-lon').value.trim();
-            store.sub2_name = document.getElementById('sub2-label').value.trim();
-            store.sub2_lat = document.getElementById('sub2-lat').value.trim();
-            store.sub2_lon = document.getElementById('sub2-lon').value.trim();
-            store.sub3_name = document.getElementById('sub3-label').value.trim();
-            store.sub3_lat = document.getElementById('sub3-lat').value.trim();
-            store.sub3_lon = document.getElementById('sub3-lon').value.trim();
-            store.bg_dawn = document.getElementById('bg-url-dawn').value.trim();
-            store.bg_morning = document.getElementById('bg-url-morning').value.trim();
-            store.bg_day = document.getElementById('bg-url-day').value.trim();
-            store.bg_sunset = document.getElementById('bg-url-sunset').value.trim();
-            store.bg_evening = document.getElementById('bg-url-evening').value.trim();
-            store.bg_night = document.getElementById('bg-url-night').value.trim();
-            store.m1_key = document.getElementById('m1-keyword').value.trim();
-            store.m1_link = document.getElementById('m1-link').value.trim();
-            store.m2_key = document.getElementById('m2-keyword').value.trim();
-            store.m2_link = document.getElementById('m2-link').value.trim();
+            store.sub1_name = document.getElementById('sub1-label').value.trim(); store.sub1_lat = document.getElementById('sub1-lat').value.trim(); store.sub1_lon = document.getElementById('sub1-lon').value.trim();
+            store.sub2_name = document.getElementById('sub2-label').value.trim(); store.sub2_lat = document.getElementById('sub2-lat').value.trim(); store.sub2_lon = document.getElementById('sub2-lon').value.trim();
+            store.sub3_name = document.getElementById('sub3-label').value.trim(); store.sub3_lat = document.getElementById('sub3-lat').value.trim(); store.sub3_lon = document.getElementById('sub3-lon').value.trim();
             
-            localStorage.setItem('n_key', store.key);
-            localStorage.setItem('n_db', store.db);
-            localStorage.setItem('n_prop', store.prop);
-            localStorage.setItem('n_stat', store.statProp);
-            localStorage.setItem('n_done_val', store.doneVal);
-            localStorage.setItem('n_not_val', store.notVal);
-            localStorage.setItem('n_p_type', store.pType);
-            localStorage.setItem('n_user_prop', store.userProp);
-            localStorage.setItem('n_user_id', store.userId);
-            localStorage.setItem('w_lat', store.lat);
-            localStorage.setItem('w_lon', store.lon);
-            localStorage.setItem('q_area', store.quakeArea);
-            localStorage.setItem('timer_duration', store.timerDuration);
-            localStorage.setItem('ical_url', store.icalUrl);
-            localStorage.setItem('sub1_name', store.sub1_name);
-            localStorage.setItem('sub1_lat', store.sub1_lat);
-            localStorage.setItem('sub1_lon', store.sub1_lon);
-            localStorage.setItem('sub2_name', store.sub2_name);
-            localStorage.setItem('sub2_lat', store.sub2_lat);
-            localStorage.setItem('sub2_lon', store.sub2_lon);
-            localStorage.setItem('sub3_name', store.sub3_name);
-            localStorage.setItem('sub3_lat', store.sub3_lat);
-            localStorage.setItem('sub3_lon', store.sub3_lon);
-            localStorage.setItem('bg_url_dawn', store.bg_dawn);
-            localStorage.setItem('bg_url_morning', store.bg_morning);
-            localStorage.setItem('bg_url_day', store.bg_day);
-            localStorage.setItem('bg_url_sunset', store.bg_sunset);
-            localStorage.setItem('bg_url_evening', store.bg_evening);
-            localStorage.setItem('bg_url_night', store.bg_night);
-            localStorage.setItem('m1_key', store.m1_key);
-            localStorage.setItem('m1_link', store.m1_link);
-            localStorage.setItem('m2_key', store.m2_key);
-            localStorage.setItem('m2_link', store.m2_link);
+            store.bg_dawn = document.getElementById('bg-url-dawn').value.trim(); store.bg_morning = document.getElementById('bg-url-morning').value.trim(); store.bg_day = document.getElementById('bg-url-day').value.trim();
+            store.bg_sunset = document.getElementById('bg-url-sunset').value.trim(); store.bg_evening = document.getElementById('bg-url-evening').value.trim(); store.bg_night = document.getElementById('bg-url-night').value.trim();
+            store.m1_key = document.getElementById('m1-keyword').value.trim(); store.m1_link = document.getElementById('m1-link').value.trim();
+            store.m2_key = document.getElementById('m2-keyword').value.trim(); store.m2_link = document.getElementById('m2-link').value.trim();
+            
+            localStorage.setItem('n_key', store.key); localStorage.setItem('n_db', store.db); localStorage.setItem('n_prop', store.prop); localStorage.setItem('n_stat', store.statProp);
+            localStorage.setItem('n_done_val', store.doneVal); localStorage.setItem('n_not_val', store.notVal); localStorage.setItem('n_p_type', store.pType);
+            localStorage.setItem('n_user_prop', store.userProp); localStorage.setItem('n_user_id', store.userId);
+            localStorage.setItem('w_lat', store.lat); localStorage.setItem('w_lon', store.lon); localStorage.setItem('q_area', store.quakeArea);
+            localStorage.setItem('timer_duration', store.timerDuration); localStorage.setItem('ical_url', store.icalUrl);
+            localStorage.setItem('sub1_name', store.sub1_name); localStorage.setItem('sub1_lat', store.sub1_lat); localStorage.setItem('sub1_lon', store.sub1_lon);
+            localStorage.setItem('sub2_name', store.sub2_name); localStorage.setItem('sub2_lat', store.sub2_lat); localStorage.setItem('sub2_lon', store.sub2_lon);
+            localStorage.setItem('sub3_name', store.sub3_name); localStorage.setItem('sub3_lat', store.sub3_lat); localStorage.setItem('sub3_lon', store.sub3_lon);
+            localStorage.setItem('bg_url_dawn', store.bg_dawn); localStorage.setItem('bg_url_morning', store.bg_morning); localStorage.setItem('bg_url_day', store.bg_day);
+            localStorage.setItem('bg_url_sunset', store.bg_sunset); localStorage.setItem('bg_url_evening', store.bg_evening); localStorage.setItem('bg_url_night', store.bg_night);
+            localStorage.setItem('m1_key', store.m1_key); localStorage.setItem('m1_link', store.m1_link); localStorage.setItem('m2_key', store.m2_key); localStorage.setItem('m2_link', store.m2_link);
             
             closeSettings();
-            fetchNotion();
-            initLocation();
-            resetTimer(); 
-            fetchGoogleCalendar();
-            fetchMusic();
-            updateBackgroundBySun();
+            fetchNotion(); initLocation(); resetTimer(); fetchGoogleCalendar(); fetchMusic(); updateBackgroundBySun();
         }
 
         // Init
@@ -993,19 +874,30 @@
                 const r = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=1'); const d = await r.json();
                 if(!d || d.length===0) return;
                 const q=d[0], diff=(new Date()-new Date(q.time))/1000/60;
-                updateQuakeMap(q);
-                if(diff<10) { 
-                    document.getElementById('q-scale').textContent = {10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[q.earthquake.maxScale]||'?';
-                    document.getElementById('q-loc').textContent = q.earthquake.hypocenter.name;
-                    document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
-                    document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
-                    if(store.quakeArea && q.points) {
-                         const p = q.points.find(p=>p.addr===store.quakeArea) || q.points.find(p=>p.addr.includes(store.quakeArea));
-                         document.getElementById('q-area-name').textContent = p ? p.addr : "情報なし";
-                         document.getElementById('q-est-scale').textContent = p ? ({10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[p.scale]||p.scale) : "--";
+                
+                // Show if recent (< 60 mins), Hide if old (> 60 mins)
+                const widget = document.getElementById('quake-widget-card');
+                if (diff < 60) {
+                    widget.classList.remove('hidden');
+                    updateQuakeMap(q);
+                    
+                    // Alert Overlay logic (< 10 mins & new ID)
+                    if(diff < 10 && q.id !== lastQuakeId) { 
+                         document.getElementById('q-scale').textContent = {10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[q.earthquake.maxScale]||'?';
+                         document.getElementById('q-loc').textContent = q.earthquake.hypocenter.name;
+                         document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
+                         document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
+                         if(store.quakeArea && q.points) {
+                             const p = q.points.find(p=>p.addr===store.quakeArea) || q.points.find(p=>p.addr.includes(store.quakeArea));
+                             document.getElementById('q-area-name').textContent = p ? p.addr : "情報なし";
+                             document.getElementById('q-est-scale').textContent = p ? ({10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[p.scale]||p.scale) : "--";
+                         }
+                         document.getElementById('quake-overlay').classList.add('visible'); 
+                         updateAlertMap(q);
+                         lastQuakeId = q.id;
                     }
-                    document.getElementById('quake-overlay').classList.add('visible'); 
-                    updateAlertMap(q);
+                } else {
+                    widget.classList.add('hidden');
                 }
             } catch(e){}
         }
@@ -1044,13 +936,19 @@
             closeSettings(); 
             // Dummy Data
             const q = { earthquake: { maxScale: 50, hypocenter: { name: 'Test Quake (Tokyo)', magnitude: 7.0, latitude: 35.6895, longitude: 139.6917 } }, time: new Date().toString(), points: [] };
+            
+            // Show Widget forcefully for test
+            const widget = document.getElementById('quake-widget-card');
+            widget.classList.remove('hidden');
+            updateQuakeMap(q);
+
+            // Show Alert
             document.getElementById('q-scale').textContent = '5+';
             document.getElementById('q-loc').textContent = 'TEST TOKYO BAY';
             document.getElementById('q-time').textContent = '12:34';
             document.getElementById('q-mag').textContent = 'M7.0';
             document.getElementById('q-est-scale').textContent = '5-';
             document.getElementById('q-area-name').textContent = 'Test Area';
-            
             document.getElementById('quake-overlay').classList.add('visible'); 
             updateAlertMap(q);
         }
