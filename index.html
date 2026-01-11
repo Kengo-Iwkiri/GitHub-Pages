@@ -43,33 +43,15 @@
         /* アクティブなクラスがついた時だけ表示 */
         .bg-layer.active { opacity: 1; }
 
-        /* Unsplash Images - より「空っぽい」画像を厳選 */
-        /* Dawn (5:00-8:00): 朝の澄んだ空気感 */
-        .theme-dawn {
-            background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2560&auto=format&fit=crop');
-        }
-        /* Day (8:00-16:00): 突き抜けるような青空 */
-        .theme-day { 
-            background-image: url('https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?q=80&w=2560&auto=format&fit=crop');
-        }
-        /* Sunset (16:00-19:00): 温かみのあるオレンジと空色の混ざり */
-        .theme-sunset { 
-            background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2560&auto=format&fit=crop');
-        }
-        /* Night (19:00-5:00): 濃紺の美しい夜空 */
-        .theme-night { 
-            background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2560&auto=format&fit=crop');
-        }
+        /* Unsplash Images */
+        .theme-dawn { background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2560&auto=format&fit=crop'); }
+        .theme-day { background-image: url('https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?q=80&w=2560&auto=format&fit=crop'); }
+        .theme-sunset { background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2560&auto=format&fit=crop'); }
+        .theme-night { background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2560&auto=format&fit=crop'); }
         
-        /* Alert Theme: 暗い赤のオーバーレイ */
-        .theme-alert { 
-            background: #450a0a; /* 画像ではなく単色 */
-            filter: none; /* ブラーなしで警戒感 */
-        }
-        .theme-alert.active {
-            animation: pulseAlert 2s infinite ease-in-out;
-            z-index: 5;
-        }
+        /* Alert Theme */
+        .theme-alert { background: #450a0a; filter: none; }
+        .theme-alert.active { animation: pulseAlert 2s infinite ease-in-out; z-index: 5; }
         @keyframes pulseAlert { 0% { opacity: 0.6; } 50% { opacity: 0.9; } 100% { opacity: 0.6; } }
 
 
@@ -83,11 +65,11 @@
         main * { pointer-events: auto; }
 
 
-        /* --- Earthquake Overlay (Z-Index 10000 - 最前面) --- */
+        /* --- Earthquake Overlay (Z-Index 10000) --- */
         #quake-overlay {
             position: fixed; inset: 0; z-index: 10000;
-            background: #1a0505; /* Deep Red-Black */
-            display: none; /* JSで制御 */
+            background: #1a0505;
+            display: none;
             flex-direction: column;
             animation: fadeInAlert 0.3s ease-out;
             overflow: hidden;
@@ -95,112 +77,71 @@
         #quake-overlay.visible { display: flex; }
         @keyframes fadeInAlert { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
 
-        /* Alert Map Container */
         #alert-map-container {
-            position: absolute; inset: 0;
-            opacity: 1.0; /* 地図をはっきり表示 */
-            /* 赤黒くするフィルター (明るさを上げて視認性向上) */
+            position: absolute; inset: 0; opacity: 1.0;
             filter: grayscale(100%) contrast(1.1) brightness(1.2) sepia(1) hue-rotate(-50deg) saturate(3);
-            pointer-events: none; /* 地図操作はさせない */
+            pointer-events: none;
         }
-        
-        /* Vignette & Scanlines Effect */
         #quake-vignette {
             position: absolute; inset: 0;
-            /* ビネットを少し弱めて地図を見やすく */
             background: radial-gradient(circle, transparent 40%, rgba(50,0,0,0.4) 90%, #000 100%);
             z-index: 1;
-            pointer-events: auto; /* クリックで閉じるため */
+            pointer-events: auto;
         }
         #quake-scanlines {
             position: absolute; inset: 0;
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
             background-size: 100% 4px;
-            z-index: 2;
-            pointer-events: none;
-            opacity: 0.3;
+            z-index: 2; pointer-events: none; opacity: 0.3;
         }
-
-        /* Content Wrapper */
         #quake-content {
             position: relative; z-index: 10;
             width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: space-between; /* 上下に分散 */
+            display: flex; flex-direction: column; justify-content: space-between;
             text-shadow: 0 4px 20px rgba(0,0,0,0.8);
             pointer-events: none;
         }
-
         .quake-scale-box {
-            border: 2px solid #ef4444;
-            color: #ef4444;
-            background: rgba(0,0,0,0.6);
-            padding: 8px 30px;
-            border-radius: 99px;
+            border: 2px solid #ef4444; color: #ef4444; background: rgba(0,0,0,0.6);
+            padding: 8px 30px; border-radius: 99px;
             box-shadow: 0 0 30px rgba(239, 68, 68, 0.4), inset 0 0 20px rgba(239, 68, 68, 0.1);
-            backdrop-filter: blur(10px);
-            font-weight: 900;
-            letter-spacing: 0.2em;
-            display: inline-block;
+            backdrop-filter: blur(10px); font-weight: 900; letter-spacing: 0.2em; display: inline-block;
         }
 
 
-        /* --- Settings Drawer System (Layer 9999) --- */
-        /* 背景の暗転レイヤー */
+        /* --- Settings Drawer --- */
         #settings-overlay {
             position: fixed; inset: 0; z-index: 9998;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
         #settings-overlay.visible { opacity: 1; pointer-events: auto; }
 
-        /* 左から出てくるドロワー */
         #settings-drawer {
             position: fixed; top: 0; left: 0; bottom: 0; z-index: 9999;
-            width: 500px; /* 幅を広げて2カラム化 */
-            max-width: 90vw;
+            width: 500px; max-width: 90vw;
             background: rgba(20, 20, 20, 0.9);
             border-right: 1px solid rgba(255,255,255,0.15);
             backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px);
-            
-            transform: translateX(-100%); /* 初期状態は左に隠す */
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* iOS風の慣性スクロール */
-            
+            transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             display: flex;
         }
         #settings-drawer.open { transform: translateX(0); }
 
-        /* Sidebar Styling */
         .settings-sidebar {
-            width: 140px;
-            background: rgba(0,0,0,0.2);
+            width: 140px; background: rgba(0,0,0,0.2);
             border-right: 1px solid rgba(255,255,255,0.1);
-            padding: 20px 10px;
-            display: flex; flex-direction: column; gap: 8px;
+            padding: 20px 10px; display: flex; flex-direction: column; gap: 8px;
         }
-        .settings-content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
+        .settings-content { flex: 1; padding: 30px; overflow-y: auto; }
 
-        /* Tab Buttons */
         .tab-btn {
-            text-align: left;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            color: rgba(255,255,255,0.5);
-            transition: all 0.2s;
+            text-align: left; padding: 12px 16px; border-radius: 12px;
+            font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); transition: all 0.2s;
         }
         .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
         .tab-btn.active { background: rgba(255,255,255,0.1); color: white; }
-        
         .tab-icon { margin-right: 8px; width: 16px; text-align: center; }
-
-        /* Tab Panels */
         .tab-panel { display: none; animation: fadeIn 0.3s ease; }
         .tab-panel.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -234,30 +175,15 @@
 
         /* Map Customization */
         .leaflet-container { background: #111; font-family: sans-serif; }
-        .leaflet-control-attribution { display: none; } /* シンプル化のため非表示 */
-        
-        /* Widget Map Specific - Interaction Disabled */
-        #quake-map {
-            pointer-events: none; /* タッチイベントを透過してスクロールを優先 */
-        }
+        .leaflet-control-attribution { display: none; }
+        #quake-map { pointer-events: none; }
 
-        /* --- Timer Circle --- */
-        .timer-svg {
-            transform: rotate(-90deg);
-        }
-        .timer-circle-bg {
-            fill: none;
-            stroke: rgba(255,255,255,0.1);
-            stroke-width: 6;
-        }
+        /* Timer Circle */
+        .timer-svg { transform: rotate(-90deg); }
+        .timer-circle-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 6; }
         .timer-circle-progress {
-            fill: none;
-            stroke: #fff;
-            stroke-width: 6;
-            stroke-linecap: round;
-            stroke-dasharray: 880; /* 2 * PI * 140 (approx) */
-            stroke-dashoffset: 0;
-            transition: stroke-dashoffset 1s linear;
+            fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round;
+            stroke-dasharray: 880; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear;
         }
     </style>
 </head>
@@ -299,25 +225,21 @@
             <div class="glass relative overflow-hidden">
                 <div class="snap-container">
                     
-                    <!-- 1. Weather (Re-balanced Layout V2) -->
+                    <!-- 1. Weather (High Density Layout) -->
                     <div class="snap-item p-5 w-full flex flex-col justify-between h-full">
-                        <!-- Upper Section: 上端を揃える -->
+                        <!-- Upper: Current -->
                         <div class="flex justify-between items-start w-full pt-1 px-1">
-                            <!-- Left: Location & Big Temp -->
-                            <div class="flex flex-col justify-start">
+                            <div class="flex flex-col justify-start gap-1">
                                 <div id="w-location" class="text-xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
-                                <!-- 気温の上部マージンを調整して、アイコンの上端と視覚的に合わせる -->
-                                <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px] mt-[-5px]">--°</div>
+                                <div id="w-temp" class="text-[90px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px] mt-[-5px]">--°</div>
                             </div>
-                            <!-- Right: Icon, Desc, H/L -->
-                            <div class="flex flex-col items-end">
-                                <!-- アイコンコンテナの高さを調整 -->
-                                <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg mt-[-5px]">
-                                    <i class="fas fa-sun text-6xl opacity-90"></i>
+                            <div class="flex flex-col items-end justify-start gap-1">
+                                <div id="w-icon-container" class="w-20 h-20 flex items-center justify-center drop-shadow-lg mt-[-5px]">
+                                    <i class="fas fa-sun text-5xl opacity-90"></i>
                                 </div>
-                                <div class="text-right mt-1">
-                                    <div id="w-desc" class="text-2xl font-bold opacity-90 drop-shadow-md">快晴</div>
-                                    <div class="flex gap-3 text-sm font-medium opacity-70 mt-1 justify-end">
+                                <div class="text-right">
+                                    <div id="w-desc" class="text-xl font-bold opacity-90 drop-shadow-md">快晴</div>
+                                    <div class="flex gap-2 text-xs font-medium opacity-70 mt-1 justify-end">
                                         <span>H:<span id="w-max">--</span>°</span>
                                         <span>L:<span id="w-min">--</span>°</span>
                                     </div>
@@ -325,46 +247,71 @@
                             </div>
                         </div>
                         
-                        <!-- Lower Section: 3h Forecast (Gap reduced, area increased) -->
-                        <div class="w-full pt-4 border-t border-white/10 mt-auto">
-                            <div class="flex justify-between items-center h-full">
-                                <!-- 3h later -->
-                                <div class="flex flex-col items-center justify-center gap-1 w-1/3">
-                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-1">--:--</span>
-                                    <div id="fc-icon-1" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                    <span class="text-xl font-bold" id="fc-temp-1">--°</span>
+                        <!-- Middle: 3h Forecast -->
+                        <div class="w-full py-2 border-t border-white/10 border-b mb-1">
+                             <div class="flex justify-between items-center px-2">
+                                <!-- 3h -->
+                                <div class="flex flex-col items-center gap-1 w-1/3">
+                                    <span class="text-[10px] opacity-40 font-bold" id="fc-time-1">--:--</span>
+                                    <div id="fc-icon-1" class="w-6 h-6 flex items-center justify-center opacity-80 scale-90"></div>
+                                    <span class="text-sm font-bold" id="fc-temp-1">--°</span>
                                 </div>
-                                <!-- 6h later -->
-                                <div class="flex flex-col items-center justify-center gap-1 w-1/3 border-l border-r border-white/5">
-                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-2">--:--</span>
-                                    <div id="fc-icon-2" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                    <span class="text-xl font-bold" id="fc-temp-2">--°</span>
+                                <!-- 6h -->
+                                <div class="flex flex-col items-center gap-1 w-1/3 border-l border-r border-white/5">
+                                    <span class="text-[10px] opacity-40 font-bold" id="fc-time-2">--:--</span>
+                                    <div id="fc-icon-2" class="w-6 h-6 flex items-center justify-center opacity-80 scale-90"></div>
+                                    <span class="text-sm font-bold" id="fc-temp-2">--°</span>
                                 </div>
-                                <!-- 9h later -->
-                                <div class="flex flex-col items-center justify-center gap-1 w-1/3">
-                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-3">--:--</span>
-                                    <div id="fc-icon-3" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                    <span class="text-xl font-bold" id="fc-temp-3">--°</span>
+                                <!-- 9h -->
+                                <div class="flex flex-col items-center gap-1 w-1/3">
+                                    <span class="text-[10px] opacity-40 font-bold" id="fc-time-3">--:--</span>
+                                    <div id="fc-icon-3" class="w-6 h-6 flex items-center justify-center opacity-80 scale-90"></div>
+                                    <span class="text-sm font-bold" id="fc-temp-3">--°</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: World Weather (3 Cities) -->
+                        <div class="w-full pt-1">
+                            <div class="flex justify-between items-center px-1">
+                                <!-- Sub 1 -->
+                                <div class="flex flex-col items-center justify-center w-1/3">
+                                    <span class="text-[9px] opacity-40 font-bold tracking-wider uppercase mb-1" id="sub1-name">NYC</span>
+                                    <div class="flex items-center gap-2">
+                                        <div id="sub1-icon" class="w-4 h-4 flex items-center justify-center opacity-80"></div>
+                                        <span class="text-sm font-bold" id="sub1-temp">--°</span>
+                                    </div>
+                                </div>
+                                <!-- Sub 2 -->
+                                <div class="flex flex-col items-center justify-center w-1/3 border-l border-r border-white/5">
+                                    <span class="text-[9px] opacity-40 font-bold tracking-wider uppercase mb-1" id="sub2-name">LON</span>
+                                    <div class="flex items-center gap-2">
+                                        <div id="sub2-icon" class="w-4 h-4 flex items-center justify-center opacity-80"></div>
+                                        <span class="text-sm font-bold" id="sub2-temp">--°</span>
+                                    </div>
+                                </div>
+                                <!-- Sub 3 -->
+                                <div class="flex flex-col items-center justify-center w-1/3">
+                                    <span class="text-[9px] opacity-40 font-bold tracking-wider uppercase mb-1" id="sub3-name">PAR</span>
+                                    <div class="flex items-center gap-2">
+                                        <div id="sub3-icon" class="w-4 h-4 flex items-center justify-center opacity-80"></div>
+                                        <span class="text-sm font-bold" id="sub3-temp">--°</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- 2. Earthquake Map (New!) -->
+                    <!-- 2. Earthquake Map -->
                     <div class="snap-item p-0 w-full relative overflow-hidden group">
-                        <!-- Map Background -->
                         <div id="quake-map" class="w-full h-full rounded-[32px] overflow-hidden opacity-60 transition-opacity group-hover:opacity-100"></div>
-                        
-                        <!-- Info Overlay -->
                         <div class="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none z-[500]">
-                            <!-- Header -->
                             <div class="flex justify-between items-start">
                                 <div class="flex flex-col gap-2">
                                     <div class="flex items-center gap-2">
                                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></div>
                                         <span class="text-[10px] font-bold opacity-90 tracking-widest bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-white/10">LATEST QUAKE</span>
                                     </div>
-                                    <!-- あなたの場所の予想震度 (条件付き表示) -->
                                     <div id="q-widget-est-container" class="hidden transition-all duration-500">
                                         <span class="text-[10px] font-bold text-yellow-300 bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-yellow-500/30 flex items-center gap-1 w-fit">
                                             <i class="fas fa-map-marker-alt text-[8px] opacity-70"></i>
@@ -372,11 +319,8 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Time (Top Right) -->
                                 <div id="q-widget-time" class="text-sm font-mono opacity-80 font-bold drop-shadow-md">--:--</div>
                             </div>
-
-                            <!-- Main Info (Bottom) -->
                             <div class="flex flex-col gap-1">
                                 <div class="flex items-baseline gap-3 drop-shadow-lg">
                                     <span class="text-sm font-bold opacity-70">震度</span>
@@ -386,8 +330,6 @@
                                 <div class="text-xs font-mono opacity-60 mt-1" id="q-widget-mag">M-.--</div>
                             </div>
                         </div>
-                        
-                        <!-- Gradient Overlay for readability -->
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
                     </div>
 
@@ -398,31 +340,21 @@
                         <div class="text-xl tracking-[0.5em] opacity-60">TODAY</div>
                     </div>
                     
-                    <!-- 4. Focus Timer (Circular Design with Label Below) -->
+                    <!-- 4. Focus Timer -->
                     <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
                         <div class="relative w-[280px] h-[280px] flex items-center justify-center">
-                            <!-- SVG Ring -->
                             <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
-                                <!-- Track -->
                                 <circle class="timer-circle-bg" cx="150" cy="150" r="140"></circle>
-                                <!-- Progress -->
                                 <circle id="timer-progress-ring" class="timer-circle-progress" cx="150" cy="150" r="140"></circle>
                             </svg>
-                            
-                            <!-- Inside Content -->
                             <div class="flex flex-col items-center justify-center z-10">
                                 <div id="timer-display" class="text-6xl font-mono font-thin mb-4 tabular-nums">25:00</div>
                                 <div class="flex gap-4">
-                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md">
-                                        <i id="timer-icon" class="fas fa-play text-lg ml-1"></i>
-                                    </button>
-                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md">
-                                        <i class="fas fa-redo text-lg"></i>
-                                    </button>
+                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md"><i id="timer-icon" class="fas fa-play text-lg ml-1"></i></button>
+                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md"><i class="fas fa-redo text-lg"></i></button>
                                 </div>
                             </div>
                         </div>
-                        <!-- Label moved below -->
                         <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
                     </div>
                     
@@ -434,7 +366,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Indicator (5 dots) -->
+                <!-- Indicator -->
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
                     <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                     <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
@@ -458,11 +390,7 @@
                 </div>
             </div>
             <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
-                
-                <!-- 2カラムレイアウト: items-end を items-start に変更して高さを合わせる -->
                 <div class="flex justify-center items-start gap-16 mb-4 w-full">
-                    
-                    <!-- 全国最大震度 -->
                     <div class="flex flex-col items-center">
                         <span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span>
                         <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
@@ -470,8 +398,6 @@
                             <span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span>
                         </div>
                     </div>
-
-                    <!-- あなたの地域の震度 -->
                     <div class="flex flex-col items-center">
                         <span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span>
                         <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
@@ -480,16 +406,13 @@
                         </div>
                         <div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div>
                     </div>
-
                 </div>
-                
                 <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
                 <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md">
                     <span id="q-time">12:34</span>
                     <span class="w-px bg-white/30 h-6"></span>
                     <span id="q-mag">M4.5</span>
                 </div>
-                
                 <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
             </div>
         </div>
@@ -511,33 +434,17 @@
         </div>
 
         <div class="settings-content">
-            
             <!-- 背景設定 -->
             <div id="tab-bg" class="tab-panel active">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">背景テーマ</h3>
                 <div class="space-y-4">
                     <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">テーマプレビュー</label>
                     <div class="grid grid-cols-1 gap-2">
-                        <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition">
-                            <span class="text-xs font-bold text-pink-200">夜明け</span>
-                            <span class="text-[10px] opacity-50">05:00 - 08:00</span>
-                        </button>
-                        <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition">
-                            <span class="text-xs font-bold text-blue-200">昼</span>
-                            <span class="text-[10px] opacity-50">08:00 - 16:00</span>
-                        </button>
-                        <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition">
-                            <span class="text-xs font-bold text-orange-200">夕方</span>
-                            <span class="text-[10px] opacity-50">16:00 - 19:00</span>
-                        </button>
-                        <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition">
-                            <span class="text-xs font-bold text-indigo-200">夜</span>
-                            <span class="text-[10px] opacity-50">19:00 - 05:00</span>
-                        </button>
-                        <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4">
-                            <span class="text-xs font-bold text-red-300">アラートテスト</span>
-                            <i class="fas fa-exclamation-triangle text-red-400"></i>
-                        </button>
+                        <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition"><span class="text-xs font-bold text-pink-200">夜明け</span><span class="text-[10px] opacity-50">05:00 - 08:00</span></button>
+                        <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition"><span class="text-xs font-bold text-blue-200">昼</span><span class="text-[10px] opacity-50">08:00 - 16:00</span></button>
+                        <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition"><span class="text-xs font-bold text-orange-200">夕方</span><span class="text-[10px] opacity-50">16:00 - 19:00</span></button>
+                        <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition"><span class="text-xs font-bold text-indigo-200">夜</span><span class="text-[10px] opacity-50">19:00 - 05:00</span></button>
+                        <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4"><span class="text-xs font-bold text-red-300">アラートテスト</span><i class="fas fa-exclamation-triangle text-red-400"></i></button>
                     </div>
                 </div>
             </div>
@@ -546,23 +453,11 @@
             <div id="tab-notion" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">Notion連携設定</h3>
                 <div class="space-y-5">
-                    <div class="relative">
-                        <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー (secret_...)</label>
-                    </div>
-                    <div class="relative">
-                        <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">データベースID</label>
-                    </div>
+                    <div class="relative"><input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー (secret_...)</label></div>
+                    <div class="relative"><input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">データベースID</label></div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="relative">
-                            <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">日付プロパティ名</label>
-                        </div>
-                        <div class="relative">
-                            <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ステータスプロパティ名</label>
-                        </div>
+                        <div class="relative"><input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">日付プロパティ名</label></div>
+                        <div class="relative"><input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ステータスプロパティ名</label></div>
                     </div>
                     <div class="pt-4 border-t border-white/10">
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ステータス判定ロジック</label>
@@ -574,28 +469,16 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <input type="text" id="n-done-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">完了の値</label>
-                            </div>
-                            <div class="relative">
-                                <input type="text" id="n-not-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">未着手の値</label>
-                            </div>
+                            <div class="relative"><input type="text" id="n-done-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">完了の値</label></div>
+                            <div class="relative"><input type="text" id="n-not-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">未着手の値</label></div>
                         </div>
                     </div>
                     <!-- User Filter -->
                     <div class="pt-4 border-t border-white/10">
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ユーザーフィルタ (任意)</label>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <input type="text" id="n-user-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">担当者プロパティ名</label>
-                            </div>
-                            <div class="relative">
-                                <input type="text" id="n-user-id" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ユーザー名 / ID</label>
-                            </div>
+                            <div class="relative"><input type="text" id="n-user-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">担当者プロパティ名</label></div>
+                            <div class="relative"><input type="text" id="n-user-id" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ユーザー名 / ID</label></div>
                         </div>
                         <p class="text-[9px] opacity-30 mt-1 ml-1">指定した文字を含む担当者のタスクのみ表示します</p>
                     </div>
@@ -609,35 +492,50 @@
                     <!-- 天気 -->
                     <div>
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">天気情報</label>
-                        <p class="text-xs opacity-50 leading-relaxed mb-4">
-                            基本はGPSを使用します。固定したい場合は座標を入力してください。
-                        </p>
+                        <p class="text-xs opacity-50 leading-relaxed mb-4">基本はGPSを使用します。固定したい場合は座標を入力してください。</p>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative">
-                                <input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">緯度</label>
-                            </div>
-                            <div class="relative">
-                                <input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">経度</label>
-                            </div>
+                            <div class="relative"><input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">緯度</label></div>
+                            <div class="relative"><input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">経度</label></div>
                         </div>
                     </div>
                     
+                    <!-- サブ地域設定 -->
+                    <div class="pt-4 border-t border-white/10">
+                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">サブ地域設定 (3都市)</label>
+                        <div class="mb-4 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <label class="text-[9px] font-bold opacity-40 mb-2 block">LOCATION 1</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="sub1-label" placeholder="NAME" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                                <input type="text" id="sub1-lat" placeholder="LAT" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                                <input type="text" id="sub1-lon" placeholder="LON" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                            </div>
+                        </div>
+                        <div class="mb-4 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <label class="text-[9px] font-bold opacity-40 mb-2 block">LOCATION 2</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="sub2-label" placeholder="NAME" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                                <input type="text" id="sub2-lat" placeholder="LAT" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                                <input type="text" id="sub2-lon" placeholder="LON" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                            </div>
+                        </div>
+                        <div class="mb-2 bg-white/5 p-3 rounded-lg border border-white/5">
+                            <label class="text-[9px] font-bold opacity-40 mb-2 block">LOCATION 3</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="sub3-label" placeholder="NAME" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                                <input type="text" id="sub3-lat" placeholder="LAT" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                                <input type="text" id="sub3-lon" placeholder="LON" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 地震エリア設定 -->
                     <div class="pt-4 border-t border-white/10">
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">地震情報の地域設定</label>
                         <div class="relative mb-3">
-                            <input type="text" id="q-area" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">地域名 (例: 東京千代田区)</label>
+                            <input type="text" id="q-area" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">地域名 (例: 東京千代田区)</label>
                         </div>
-                        <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="text-[10px] text-blue-300 opacity-80 hover:opacity-100 underline block mb-1">
-                            <i class="fas fa-external-link-alt mr-1"></i>地域名の確認はこちら (GitHub)
-                        </a>
-                        <p class="text-[9px] opacity-40">
-                            ※上記リンクの「name」列の名称を正確に入力してください。<br>
-                            地震発生時に、この地域の震度をアラート画面に表示します。
-                        </p>
+                        <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="text-[10px] text-blue-300 opacity-80 hover:opacity-100 underline block mb-1"><i class="fas fa-external-link-alt mr-1"></i>地域名の確認はこちら (GitHub)</a>
+                        <p class="text-[9px] opacity-40">※上記リンクの「name」列の名称を正確に入力してください。</p>
                     </div>
                 </div>
             </div>
@@ -672,7 +570,16 @@
             lon: localStorage.getItem('w_lon') || '',
             quakeArea: localStorage.getItem('q_area') || '',
             memo: localStorage.getItem('quick_memo') || '',
-            timerDuration: localStorage.getItem('timer_duration') || '25'
+            timerDuration: localStorage.getItem('timer_duration') || '25',
+            sub1_name: localStorage.getItem('sub1_name') || 'NYC',
+            sub1_lat: localStorage.getItem('sub1_lat') || '40.7128',
+            sub1_lon: localStorage.getItem('sub1_lon') || '-74.0060',
+            sub2_name: localStorage.getItem('sub2_name') || 'LON',
+            sub2_lat: localStorage.getItem('sub2_lat') || '51.5074',
+            sub2_lon: localStorage.getItem('sub2_lon') || '-0.1278',
+            sub3_name: localStorage.getItem('sub3_name') || 'PAR',
+            sub3_lat: localStorage.getItem('sub3_lat') || '48.8566',
+            sub3_lon: localStorage.getItem('sub3_lon') || '2.3522'
         };
 
         let currentMode = 'day';
@@ -683,8 +590,7 @@
 
         // --- Helper: SVG Icons ---
         function getWeatherIcon(code, isNight) {
-            const size = 80; // Bigger Icon
-            const color = 'rgba(255,255,255,0.95)';
+            const size = 80; const color = 'rgba(255,255,255,0.95)';
             if (code === 0) {
                 return isNight 
                     ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`
@@ -701,7 +607,7 @@
         }
         
         function getSmallIcon(code) {
-             const size = 40; const color = 'rgba(255,255,255,0.7)';
+             const size = 20; const color = 'rgba(255,255,255,0.7)';
              if (code === 0) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
              if (code <= 3) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
              if (code <= 67) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 13v8"/><path d="M12 13v8"/><path d="M16 13v8"/></svg>`;
@@ -719,7 +625,6 @@
             if (code <= 86) return "雪";
             return "雷雨";
         }
-
 
         // --- Swipe & Drag Logic ---
         let startX = 0; let startY = 0; let isDragging = false;
@@ -799,6 +704,34 @@
             } catch(e) { console.error("Quake API Error", e); }
         }
 
+        // 距離計算 (km) - Haversine
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // 予想震度計算 (簡易)
+        function calcEstimatedIntensity(mag, depth, dist) {
+            const d = Math.max(dist, depth, 1); 
+            let intensity = (mag * 1.5) - (2.5 * Math.log10(d + 10)) + 1.0;
+            if (intensity < 0.5) return "0";
+            if (intensity < 1.5) return "1";
+            if (intensity < 2.5) return "2";
+            if (intensity < 3.5) return "3";
+            if (intensity < 4.0) return "4";
+            if (intensity < 4.5) return "5-"; 
+            if (intensity < 5.0) return "5+"; 
+            if (intensity < 5.5) return "6-"; 
+            if (intensity < 6.0) return "6+"; 
+            return "7";
+        }
+
         function showQuakeAlert(q) {
             applyBg('alert');
             const scaleMap = { 10:'1', 20:'2', 30:'3', 40:'4', 45:'5-', 50:'5+', 55:'6-', 60:'6+', 70:'7' };
@@ -808,7 +741,7 @@
             document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
             document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
             
-            // あなたの地域の震度
+            // あなたの地域の震度（APIのpointsから検索）
             let myScaleText = "--";
             if (store.quakeArea && q.points) {
                 let point = q.points.find(p => p.addr === store.quakeArea);
@@ -854,7 +787,8 @@
                         name: 'テスト震源地 (東京湾)', 
                         magnitude: 7.0,
                         latitude: 35.6895, // Tokyo
-                        longitude: 139.6917
+                        longitude: 139.6917,
+                        depth: 50
                     } 
                 },
                 points: [
@@ -869,9 +803,8 @@
         }
 
         // --- Quake Map (Widget) ---
-        function initMap() {
+        function initWidgetMap() {
             if(mapInstance) return;
-            // 日本全土が収まるようにズームレベルと中心座標を調整
             mapInstance = L.map('quake-map', { 
                 zoomControl: false, 
                 attributionControl: false,
@@ -891,7 +824,6 @@
         // --- Alert Map (Overlay) ---
         function initAlertMap() {
             if(alertMapInstance) return;
-            // アラート画面用（全画面）なので少しズームを上げて日本全土表示
             alertMapInstance = L.map('alert-map-container', { 
                 zoomControl: false, 
                 attributionControl: false, 
@@ -926,7 +858,7 @@
 
         let pWaveCircle = null; let sWaveCircle = null;
         function updateQuakeMap(q) {
-            if(!mapInstance) initMap();
+            if(!mapInstance) initWidgetMap();
             const lat = q.earthquake.hypocenter.latitude;
             const lng = q.earthquake.hypocenter.longitude;
             const name = q.earthquake.hypocenter.name;
@@ -983,9 +915,7 @@
                 if (!myScale && qLat && qLon && weatherLat && weatherLon) {
                      const dist = getDistance(weatherLat, weatherLon, qLat, qLon);
                      // 距離計算による推測は「簡易演算」として扱う
-                     // myScale = calcEstimatedIntensity(qMag, qDepth, dist); 
-                     // 今回はユーザー要望により「計算は信用できない」とのことなので
-                     // pointsになければ表示しないか、"--"にするのが安全
+                     myScale = calcEstimatedIntensity(qMag, qDepth, dist); 
                 }
 
                 if (myScale && myScale !== "0") {
@@ -1042,6 +972,18 @@
             document.getElementById('w-lon').value = store.lon;
             document.getElementById('q-area').value = store.quakeArea;
             document.getElementById('t-duration').value = store.timerDuration;
+            
+            // Sub locations inputs
+            document.getElementById('sub1-label').value = store.sub1_name;
+            document.getElementById('sub1-lat').value = store.sub1_lat;
+            document.getElementById('sub1-lon').value = store.sub1_lon;
+            document.getElementById('sub2-label').value = store.sub2_name;
+            document.getElementById('sub2-lat').value = store.sub2_lat;
+            document.getElementById('sub2-lon').value = store.sub2_lon;
+            document.getElementById('sub3-label').value = store.sub3_name;
+            document.getElementById('sub3-lat').value = store.sub3_lat;
+            document.getElementById('sub3-lon').value = store.sub3_lon;
+
             setPropType(store.pType);
             document.getElementById('n-stat').dataset.ptype = store.pType;
 
@@ -1071,6 +1013,16 @@
             store.quakeArea = document.getElementById('q-area').value.trim();
             store.timerDuration = document.getElementById('t-duration').value.trim();
             
+            store.sub1_name = document.getElementById('sub1-label').value.trim();
+            store.sub1_lat = document.getElementById('sub1-lat').value.trim();
+            store.sub1_lon = document.getElementById('sub1-lon').value.trim();
+            store.sub2_name = document.getElementById('sub2-label').value.trim();
+            store.sub2_lat = document.getElementById('sub2-lat').value.trim();
+            store.sub2_lon = document.getElementById('sub2-lon').value.trim();
+            store.sub3_name = document.getElementById('sub3-label').value.trim();
+            store.sub3_lat = document.getElementById('sub3-lat').value.trim();
+            store.sub3_lon = document.getElementById('sub3-lon').value.trim();
+            
             localStorage.setItem('n_key', store.key);
             localStorage.setItem('n_db', store.db);
             localStorage.setItem('n_prop', store.prop);
@@ -1084,6 +1036,17 @@
             localStorage.setItem('w_lon', store.lon);
             localStorage.setItem('q_area', store.quakeArea);
             localStorage.setItem('timer_duration', store.timerDuration);
+            
+            // Save sub locations
+            localStorage.setItem('sub1_name', store.sub1_name);
+            localStorage.setItem('sub1_lat', store.sub1_lat);
+            localStorage.setItem('sub1_lon', store.sub1_lon);
+            localStorage.setItem('sub2_name', store.sub2_name);
+            localStorage.setItem('sub2_lat', store.sub2_lat);
+            localStorage.setItem('sub2_lon', store.sub2_lon);
+            localStorage.setItem('sub3_name', store.sub3_name);
+            localStorage.setItem('sub3_lat', store.sub3_lat);
+            localStorage.setItem('sub3_lon', store.sub3_lon);
             
             closeSettings();
             fetchNotion();
@@ -1174,8 +1137,8 @@
         // --- Weather & Location ---
         async function fetchWeather() {
             try {
-                // Request detailed current + hourly + daily
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+                // 1. Fetch Main Weather
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
                 
                 const res = await fetch(url);
                 const data = await res.json();
@@ -1200,24 +1163,31 @@
                     document.getElementById('w-min').textContent = min;
                 }
 
-                // Hourly Forecast (Current index + 3, +6, +9)
-                const nowIso = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
-                const hourIndex = data.hourly.time.findIndex(t => t.startsWith(nowIso));
+                // 2. Fetch Sub Locations
+                const subs = [
+                    { lat: store.sub1_lat, lon: store.sub1_lon, id: '1', name: store.sub1_name },
+                    { lat: store.sub2_lat, lon: store.sub2_lon, id: '2', name: store.sub2_name },
+                    { lat: store.sub3_lat, lon: store.sub3_lon, id: '3', name: store.sub3_name }
+                ];
+
+                // Fetch in parallel
+                const promises = subs.map(sub => {
+                     if(!sub.lat || !sub.lon) return null;
+                     return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${sub.lat}&longitude=${sub.lon}&current=temperature_2m,weather_code`)
+                        .then(r => r.json())
+                        .then(d => ({ ...sub, data: d }));
+                });
                 
-                if (hourIndex !== -1) {
-                    [3, 6, 9].forEach((offset, i) => {
-                        const idx = hourIndex + offset;
-                        if (data.hourly.time[idx]) {
-                            const tStr = data.hourly.time[idx].split('T')[1];
-                            const temp = Math.round(data.hourly.temperature_2m[idx]);
-                            const code = data.hourly.weather_code[idx];
-                            
-                            document.getElementById(`fc-time-${i+1}`).textContent = tStr;
-                            document.getElementById(`fc-temp-${i+1}`).textContent = `${temp}°`;
-                            document.getElementById(`fc-icon-${i+1}`).innerHTML = getSmallIcon(code);
-                        }
-                    });
-                }
+                const results = await Promise.all(promises);
+                
+                results.forEach(res => {
+                    if(!res) return;
+                    const id = res.id;
+                    const d = res.data.current;
+                    document.getElementById(`sub${id}-name`).textContent = res.name.toUpperCase();
+                    document.getElementById(`sub${id}-temp`).textContent = `${Math.round(d.temperature_2m)}°`;
+                    document.getElementById(`sub${id}-icon`).innerHTML = getSmallIcon(d.weather_code);
+                });
 
             } catch(e) { console.error("Weather Error", e); }
         }
@@ -1342,7 +1312,7 @@
         // Use window.onload to ensure all elements are present
         window.onload = function() {
             // Map init
-            setTimeout(initMap, 1000); 
+            setTimeout(initWidgetMap, 1000); 
 
             // Initial calls
             updateClock();
