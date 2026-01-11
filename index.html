@@ -108,6 +108,7 @@
             opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
         #settings-overlay.visible { opacity: 1; pointer-events: auto; }
+
         #settings-drawer {
             position: fixed; top: 0; left: 0; bottom: 0; z-index: 9999;
             width: 500px; max-width: 90vw;
@@ -118,6 +119,7 @@
             display: flex;
         }
         #settings-drawer.open { transform: translateX(0); }
+
         .settings-sidebar {
             width: 140px; background: rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.1);
             padding: 20px 10px; display: flex; flex-direction: column; gap: 8px;
@@ -192,6 +194,17 @@
         .event-item::before { content: ''; position: absolute; left: 0; top: 6px; width: 4px; height: 4px; border-radius: 50%; }
         .event-item-today::before { background: #60a5fa; box-shadow: 0 0 8px rgba(96, 165, 250, 0.8); }
         .event-item-future::before { background: rgba(255, 255, 255, 0.3); }
+
+        /* Settings Toggle Button (Floating) */
+        #settings-toggle {
+            position: fixed; bottom: 20px; left: 20px; z-index: 9990;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s;
+            opacity: 0.3; color: white;
+        }
+        #settings-toggle:hover { opacity: 1; background: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -233,7 +246,6 @@
             <!-- Multi Widget -->
             <div class="glass relative overflow-hidden">
                 <div class="snap-container">
-                    
                     <!-- 1. Weather -->
                     <div class="snap-item p-5 w-full flex flex-col justify-between h-full">
                         <div class="flex justify-between items-start w-full pt-1 px-1">
@@ -254,7 +266,6 @@
                                 </div>
                             </div>
                         </div>
-                        
                         <div class="w-full pt-2 mb-2 mt-auto">
                             <div class="flex justify-between items-center h-full">
                                 <div class="flex flex-col items-center justify-center gap-1 w-1/3">
@@ -274,7 +285,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="w-full pt-3 border-t border-white/10 mt-2">
                             <div class="flex justify-between items-center px-1">
                                 <div class="flex flex-col items-center justify-center w-1/3">
@@ -333,7 +343,7 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
                     </div>
 
-                    <!-- 3. Calendar & Events -->
+                    <!-- 3. Calendar -->
                     <div class="snap-item p-6 w-full flex flex-row items-stretch gap-6">
                         <div class="w-5/12 flex flex-col justify-center">
                             <div class="flex justify-between items-end mb-3 px-1">
@@ -353,7 +363,7 @@
                         </div>
                     </div>
                     
-                    <!-- 4. Focus Timer -->
+                    <!-- 4. Timer -->
                     <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
                         <div class="relative w-[280px] h-[280px] flex items-center justify-center">
                             <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
@@ -371,7 +381,7 @@
                         <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
                     </div>
                     
-                    <!-- 5. Quick Memo -->
+                    <!-- 5. Memo -->
                     <div class="snap-item p-8 w-full">
                         <div class="w-full h-full flex flex-col">
                             <div class="text-xs font-bold opacity-50 tracking-widest mb-3 text-left">QUICK MEMO</div>
@@ -382,12 +392,10 @@
                     <!-- 6. Podcast -->
                     <div class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900">
                         <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE PODCASTS</div>
-                        <div id="podcast-list" class="w-full h-full flex flex-col items-center justify-center p-8 pt-10 gap-6">
-                            <div class="text-center opacity-30 text-sm">Loading...</div>
-                        </div>
+                        <div id="podcast-list" class="w-full h-full flex flex-col items-center justify-center p-8 pt-10 gap-6"></div>
                     </div>
 
-                    <!-- 7. Apple Music -->
+                    <!-- 7. Music -->
                     <div class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-600">
                         <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
                         <div class="w-full h-full flex flex-col items-center justify-center p-6 pt-12">
@@ -395,24 +403,35 @@
                         </div>
                     </div>
                 </div>
-                <!-- Indicator (7 dots) -->
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- 設定オーバーレイ -->
+    <!-- Settings Button -->
+    <div id="settings-toggle" onclick="openSettings()"><i class="fas fa-cog"></i></div>
+
+    <!-- Modals -->
+    <div id="quake-overlay">
+        <div id="alert-map-container" class="w-full h-full absolute inset-0"></div>
+        <div id="quake-vignette" onclick="closeQuakeAlert()"></div>
+        <div id="quake-scanlines"></div>
+        <div id="quake-content">
+            <div class="w-full flex justify-center pt-16 pointer-events-none"><div class="quake-scale-box"><h1 class="text-2xl font-black uppercase tracking-widest">緊急地震速報</h1></div></div>
+            <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
+                <div class="flex justify-center items-start gap-16 mb-4 w-full">
+                    <div class="flex flex-col items-center"><span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span><div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]"><span class="text-2xl opacity-70 font-bold">震度</span><span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span></div></div>
+                    <div class="flex flex-col items-center"><span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span><div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]"><span class="text-2xl opacity-70 font-bold text-yellow-400">震度</span><span class="text-[120px] font-bold leading-none text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]" id="q-est-scale">--</span></div><div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div></div>
+                </div>
+                <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
+                <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md"><span id="q-time">12:34</span><span class="w-px bg-white/30 h-6"></span><span id="q-mag">M4.5</span></div>
+                <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
+            </div>
+        </div>
+    </div>
     <div id="settings-overlay" onclick="closeSettings()"></div>
-    
-    <!-- 設定ドロワー -->
     <div id="settings-drawer">
         <div class="settings-sidebar">
             <div class="text-[10px] font-bold opacity-30 px-4 mb-2 tracking-widest">設定メニュー</div>
@@ -425,9 +444,8 @@
             <div class="flex-1"></div>
             <button onclick="saveConfig()" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest mt-4">保存</button>
         </div>
-
         <div class="settings-content">
-            <!-- 背景設定 -->
+            <!-- BG Tab -->
             <div id="tab-bg" class="tab-panel active">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">背景テーマ</h3>
                 <div class="space-y-4">
@@ -440,83 +458,53 @@
                         <div><span class="text-[9px] font-bold opacity-40 block mb-1">EVENING</span><input type="text" id="bg-url-evening" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
                         <div><span class="text-[9px] font-bold opacity-40 block mb-1">NIGHT</span><input type="text" id="bg-url-night" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
                     </div>
-                     <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest mt-4">テーマプレビュー</label>
-                     <div class="grid grid-cols-1 gap-2">
-                         <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition"><span class="text-xs font-bold text-pink-200">夜明け</span></button>
-                         <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition"><span class="text-xs font-bold text-blue-200">昼</span></button>
-                         <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition"><span class="text-xs font-bold text-indigo-200">夜</span></button>
-                         <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4"><span class="text-xs font-bold text-red-300">アラートテスト</span></button>
+                     <div class="grid grid-cols-1 gap-2 mt-4">
+                         <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-pink-200">夜明け</button>
+                         <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-blue-200">昼</button>
+                         <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-indigo-200">夜</button>
+                         <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-red-300">アラートテスト</button>
                      </div>
                 </div>
             </div>
-            
-            <!-- Notion設定 -->
+            <!-- Notion Tab -->
             <div id="tab-notion" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">Notion連携設定</h3>
-                <div class="space-y-5">
-                    <div class="relative"><input type="password" id="n-key" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー</label></div>
-                    <div class="relative"><input type="text" id="n-db" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">DB ID</label></div>
-                    <div class="grid grid-cols-2 gap-3">
-                         <div class="relative"><input type="text" id="n-prop" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">日付プロパティ</label></div>
-                         <div class="relative"><input type="text" id="n-stat" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">ステータスプロパティ</label></div>
-                    </div>
-                     <div class="pt-4 border-t border-white/10">
-                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ステータス判定</label>
-                        <div class="mb-3">
-                            <div class="flex bg-white/5 rounded-lg p-1 border border-white/10">
-                                <button onclick="setPropType('status')" id="btn-type-status" class="flex-1 py-2 text-xs rounded transition-colors bg-white/10">Status</button>
-                                <button onclick="setPropType('select')" id="btn-type-select" class="flex-1 py-2 text-xs rounded transition-colors opacity-50">Select</button>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="relative"><input type="text" id="n-done-val" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">完了値</label></div>
-                            <div class="relative"><input type="text" id="n-not-val" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">未着手値</label></div>
-                        </div>
-                    </div>
-                     <div class="pt-4 border-t border-white/10">
-                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ユーザーフィルタ</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="relative"><input type="text" id="n-user-prop" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">担当者プロパティ</label></div>
-                            <div class="relative"><input type="text" id="n-user-id" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">ユーザーID</label></div>
-                        </div>
-                    </div>
-                 </div>
-            </div>
-
-            <div id="tab-weather" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">LOCATION</h3>
-                <div class="space-y-6">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="relative"><input type="text" id="w-lat" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">LAT</label></div>
-                        <div class="relative"><input type="text" id="w-lon" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">LON</label></div>
-                    </div>
-                     <div class="pt-4 border-t border-white/10">
-                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">サブ地域 (3都市)</label>
-                        <div class="space-y-3">
-                            <div class="grid grid-cols-3 gap-2"><input type="text" id="sub1-label" placeholder="NM" class="bg-white/10 rounded p-2 text-xs text-white"><input type="text" id="sub1-lat" placeholder="LAT" class="bg-white/10 rounded p-2 text-xs text-white"><input type="text" id="sub1-lon" placeholder="LON" class="bg-white/10 rounded p-2 text-xs text-white"></div>
-                            <div class="grid grid-cols-3 gap-2"><input type="text" id="sub2-label" placeholder="NM" class="bg-white/10 rounded p-2 text-xs text-white"><input type="text" id="sub2-lat" placeholder="LAT" class="bg-white/10 rounded p-2 text-xs text-white"><input type="text" id="sub2-lon" placeholder="LON" class="bg-white/10 rounded p-2 text-xs text-white"></div>
-                            <div class="grid grid-cols-3 gap-2"><input type="text" id="sub3-label" placeholder="NM" class="bg-white/10 rounded p-2 text-xs text-white"><input type="text" id="sub3-lat" placeholder="LAT" class="bg-white/10 rounded p-2 text-xs text-white"><input type="text" id="sub3-lon" placeholder="LON" class="bg-white/10 rounded p-2 text-xs text-white"></div>
-                        </div>
-                    </div>
-                    <div class="pt-4 border-t border-white/10">
-                         <div class="relative"><input type="text" id="q-area" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">地震エリア名</label></div>
-                         <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="text-[10px] text-blue-300 opacity-80 block mt-1">エリア名確認 (GitHub)</a>
-                    </div>
+                <div class="space-y-4">
+                    <input type="password" id="n-key" placeholder="API Key" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+                    <input type="text" id="n-db" placeholder="Database ID" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+                    <div class="grid grid-cols-2 gap-2"><input type="text" id="n-prop" placeholder="Date Prop" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="n-stat" placeholder="Status Prop" class="bg-white/10 rounded p-2 text-xs"></div>
+                    <div class="flex gap-2"><button onclick="setPropType('status')" id="btn-type-status" class="bg-white/10 rounded p-2 text-xs flex-1">Status</button><button onclick="setPropType('select')" id="btn-type-select" class="bg-white/5 rounded p-2 text-xs flex-1 opacity-50">Select</button></div>
+                    <div class="grid grid-cols-2 gap-2"><input type="text" id="n-done-val" placeholder="Done Val" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="n-not-val" placeholder="Not Val" class="bg-white/10 rounded p-2 text-xs"></div>
+                    <div class="grid grid-cols-2 gap-2"><input type="text" id="n-user-prop" placeholder="User Prop" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="n-user-id" placeholder="User ID" class="bg-white/10 rounded p-2 text-xs"></div>
                 </div>
             </div>
-            <div id="tab-calendar" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">GOOGLE CALENDAR</h3>
-                <div class="relative"><input type="text" id="g-cal" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">iCal URL</label></div>
+            <!-- Weather Tab -->
+            <div id="tab-weather" class="tab-panel">
+                <h3 class="text-lg font-bold mb-6 tracking-widest">LOCATION</h3>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2"><input type="text" id="w-lat" placeholder="Lat" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="w-lon" placeholder="Lon" class="bg-white/10 rounded p-2 text-xs"></div>
+                    <div class="space-y-2"><input type="text" id="sub1-label" placeholder="Sub1 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lat" placeholder="Sub1 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lon" placeholder="Sub1 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    <div class="space-y-2"><input type="text" id="sub2-label" placeholder="Sub2 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lat" placeholder="Sub2 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lon" placeholder="Sub2 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    <div class="space-y-2"><input type="text" id="sub3-label" placeholder="Sub3 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lat" placeholder="Sub3 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lon" placeholder="Sub3 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    <input type="text" id="q-area" placeholder="Quake Area" class="bg-white/10 rounded p-2 text-xs w-full">
+                </div>
             </div>
+            <!-- Calendar Tab -->
+            <div id="tab-calendar" class="tab-panel">
+                <h3 class="text-lg font-bold mb-6 tracking-widest">CALENDAR</h3>
+                <input type="text" id="g-cal" placeholder="iCal URL" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+            </div>
+            <!-- Timer Tab -->
             <div id="tab-timer" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">TIMER</h3>
-                <div class="relative"><input type="number" id="t-duration" class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30">分</label></div>
+                <input type="number" id="t-duration" placeholder="Minutes" class="bg-white/10 rounded p-3 w-full text-xs text-white">
             </div>
+            <!-- Music Tab -->
             <div id="tab-music" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">MUSIC</h3>
                 <div class="space-y-4">
-                     <div class="bg-white/5 p-3 rounded-lg"><label class="text-[9px] font-bold opacity-40 block mb-1">MUSIC 1</label><input type="text" id="m1-keyword" placeholder="Keyword" class="bg-white/10 rounded p-2 text-xs text-white w-full mb-2"><input type="text" id="m1-link" placeholder="Link URL" class="bg-white/10 rounded p-2 text-xs text-white w-full"></div>
-                     <div class="bg-white/5 p-3 rounded-lg"><label class="text-[9px] font-bold opacity-40 block mb-1">MUSIC 2</label><input type="text" id="m2-keyword" placeholder="Keyword" class="bg-white/10 rounded p-2 text-xs text-white w-full mb-2"><input type="text" id="m2-link" placeholder="Link URL" class="bg-white/10 rounded p-2 text-xs text-white w-full"></div>
+                    <div><input type="text" id="m1-keyword" placeholder="M1 Keyword" class="bg-white/10 rounded p-2 text-xs w-full mb-1"><input type="text" id="m1-link" placeholder="M1 Link" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    <div><input type="text" id="m2-keyword" placeholder="M2 Keyword" class="bg-white/10 rounded p-2 text-xs w-full mb-1"><input type="text" id="m2-link" placeholder="M2 Link" class="bg-white/10 rounded p-2 text-xs w-full"></div>
                 </div>
             </div>
         </div>
@@ -566,21 +554,18 @@
         let mapInstance = null;
         let alertMapInstance = null;
 
+        // --- Core Functions ---
         function getWeatherIcon(code, isNight) {
             const size = 80; const color = 'rgba(255,255,255,0.95)';
             if (code === 0) return isNight ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>` : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
-            if (code <= 3) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
-            if (code <= 67) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 13v8"/><path d="M12 13v8"/><path d="M16 13v8"/></svg>`;
-            return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="m13 13-2 4h3l-2 4"/></svg>`;
+            return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
         }
         function getSmallIcon(code) {
              const size = 20; const color = 'rgba(255,255,255,0.7)';
              if (code === 0) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
-             if (code <= 3) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
-             if (code <= 67) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 13v8"/><path d="M12 13v8"/><path d="M16 13v8"/></svg>`;
              return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="m13 13-2 4h3l-2 4"/></svg>`;
         }
-        function getWeatherDesc(code) { return code === 0 ? "快晴" : code <= 3 ? "曇り" : code <= 48 ? "霧" : code <= 57 ? "霧雨" : code <= 67 ? "雨" : code <= 77 ? "雪" : code <= 82 ? "にわか雨" : code <= 86 ? "雪" : "雷雨"; }
+        function getWeatherDesc(code) { return code === 0 ? "快晴" : code <= 3 ? "曇り" : "雨/雪"; }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -593,8 +578,7 @@
         }
 
         function applyBg(mode) {
-            if (mode === currentMode) return;
-            currentMode = mode;
+            if (mode === currentMode) return; currentMode = mode;
             document.querySelectorAll('.bg-layer').forEach(el => el.classList.remove('active'));
             const target = document.getElementById(`bg-${mode}`);
             if(target) {
@@ -626,7 +610,6 @@
             document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
         }
 
-        // --- Functions defined globally ---
         function renderCalendar() {
             const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const todayDate = now.getDate();
             const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
@@ -818,7 +801,14 @@
             setPropType(store.pType); document.getElementById('settings-overlay').classList.add('visible'); document.getElementById('settings-drawer').classList.add('open');
         }
         function closeSettings() { document.getElementById('settings-drawer').classList.remove('open'); document.getElementById('settings-overlay').classList.remove('visible'); currentMode=''; updateClock(); }
-        
+        function setPropType(type) {
+            document.getElementById('btn-type-status').classList.toggle('bg-white/10', type === 'status');
+            document.getElementById('btn-type-status').classList.toggle('opacity-50', type !== 'status');
+            document.getElementById('btn-type-select').classList.toggle('bg-white/10', type === 'select');
+            document.getElementById('btn-type-select').classList.toggle('opacity-50', type !== 'select');
+            document.getElementById('n-stat').dataset.ptype = type; 
+        }
+
         // --- Init ---
         let startX=0; document.addEventListener('touchstart',e=>startX=e.changedTouches[0].screenX); document.addEventListener('touchend',e=>{if(startX<50 && e.changedTouches[0].screenX-startX>100) openSettings()});
         document.addEventListener('mousedown',e=>startX=e.clientX); document.addEventListener('mouseup',e=>{if(startX<50 && e.clientX-startX>100) openSettings()});
@@ -898,6 +888,13 @@
             document.getElementById('quake-overlay').classList.add('visible'); 
             // Dummy data display logic would go here
         }
+
+        // --- Memo Logic ---
+        const memoEl = document.getElementById('quick-memo');
+        memoEl.value = store.memo;
+        memoEl.addEventListener('input', () => {
+            localStorage.setItem('quick_memo', memoEl.value);
+        });
     </script>
 </body>
 </html>
