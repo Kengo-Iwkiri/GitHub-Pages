@@ -99,9 +99,6 @@
             border-right: 1px solid rgba(255,255,255,0.15);
             backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
             
-            /* 影を削除しました */
-            /* box-shadow: 10px 0 30px rgba(0,0,0,0.5); */
-            
             transform: translateX(-100%); /* 初期状態は左に隠す */
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* iOS風の慣性スクロール */
             
@@ -154,10 +151,10 @@
     <main class="max-w-7xl mx-auto w-full gap-6">
         
         <!-- 時計エリア -->
-        <div class="h-[40%] flex items-center justify-center md:justify-start px-4">
-            <div>
-                <div id="time-disp" class="text-[140px] md:text-[200px] font-thin leading-none tracking-tighter drop-shadow-lg">--:--</div>
-                <div id="date-disp" class="text-2xl font-medium tracking-[0.3em] uppercase opacity-70 ml-2 drop-shadow-md">LOADING...</div>
+        <div class="h-[40%] flex items-center justify-center px-4">
+            <div class="text-center">
+                <div id="time-disp" class="text-[140px] md:text-[200px] font-bold leading-none tracking-tighter drop-shadow-lg">--:--</div>
+                <div id="date-disp" class="text-2xl font-medium tracking-[0.3em] uppercase opacity-70 drop-shadow-md">LOADING...</div>
             </div>
         </div>
 
@@ -182,7 +179,7 @@
                     <div class="snap-item p-8">
                         <i id="w-icon" class="fas fa-sun text-8xl mb-4 opacity-90 drop-shadow-lg"></i>
                         <div id="w-temp" class="text-6xl font-thin mb-2 mt-4 drop-shadow-md">--°</div>
-                        <!-- IDを追加: 場所名 -->
+                        <!-- 場所名 (GPS or Custom or Tokyo) -->
                         <div id="w-location" class="text-xl tracking-widest opacity-60 uppercase">TOKYO</div>
                     </div>
                     <!-- Calendar -->
@@ -223,6 +220,7 @@
         </div>
 
         <div class="space-y-5 flex-1 overflow-y-auto no-scrollbar">
+            <!-- Notion Settings -->
             <div class="relative">
                 <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
                 <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Notion API Key</label>
@@ -241,6 +239,25 @@
                     <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Status Prop</label>
                 </div>
             </div>
+
+            <!-- Weather Settings -->
+            <div class="pt-4 border-t border-white/10">
+                <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">Weather Location (Fallback)</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="relative">
+                        <input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Latitude</label>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Longitude</label>
+                    </div>
+                </div>
+                <p class="text-[10px] opacity-30 mt-2 ml-1 leading-relaxed">
+                    * Used when GPS is unavailable.<br>
+                    (Default: Tokyo 35.6895, 139.6917)
+                </p>
+            </div>
         </div>
 
         <div class="flex gap-3 mt-6">
@@ -253,7 +270,9 @@
             key: localStorage.getItem('n_key') || '',
             db: localStorage.getItem('n_db') || '',
             prop: localStorage.getItem('n_prop') || 'Date',
-            statProp: localStorage.getItem('n_stat') || 'Status'
+            statProp: localStorage.getItem('n_stat') || 'Status',
+            lat: localStorage.getItem('w_lat') || '',
+            lon: localStorage.getItem('w_lon') || ''
         };
 
         let currentMode = 'day';
@@ -348,6 +367,8 @@
             document.getElementById('n-db').value = store.db;
             document.getElementById('n-prop').value = store.prop;
             document.getElementById('n-stat').value = store.statProp;
+            document.getElementById('w-lat').value = store.lat;
+            document.getElementById('w-lon').value = store.lon;
             
             // オーバーレイを表示
             document.getElementById('settings-overlay').classList.add('visible');
@@ -370,14 +391,19 @@
             store.db = document.getElementById('n-db').value.trim();
             store.prop = document.getElementById('n-prop').value.trim();
             store.statProp = document.getElementById('n-stat').value.trim();
+            store.lat = document.getElementById('w-lat').value.trim();
+            store.lon = document.getElementById('w-lon').value.trim();
             
             localStorage.setItem('n_key', store.key);
             localStorage.setItem('n_db', store.db);
             localStorage.setItem('n_prop', store.prop);
             localStorage.setItem('n_stat', store.statProp);
+            localStorage.setItem('w_lat', store.lat);
+            localStorage.setItem('w_lon', store.lon);
             
             closeSettings();
             fetchNotion();
+            initLocation(); // Re-check location
         }
 
         // --- Notion API ---
@@ -462,19 +488,40 @@
         }
 
         function initLocation() {
+            // Priority: 1. GPS, 2. Manual Setting, 3. Tokyo (Default)
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         weatherLat = position.coords.latitude;
                         weatherLon = position.coords.longitude;
                         document.getElementById('w-location').textContent = "GPS LOCATION";
-                        fetchWeather(); // Update weather with new coords
+                        fetchWeather(); 
                     },
                     (error) => {
-                        console.log("GPS Blocked or Failed, using default Tokyo.");
+                        console.log("GPS Blocked or Failed. Checking manual settings...");
+                        useManualOrFallback();
                     }
                 );
+            } else {
+                useManualOrFallback();
             }
+        }
+
+        function useManualOrFallback() {
+            const manualLat = parseFloat(store.lat);
+            const manualLon = parseFloat(store.lon);
+
+            if (!isNaN(manualLat) && !isNaN(manualLon)) {
+                weatherLat = manualLat;
+                weatherLon = manualLon;
+                document.getElementById('w-location').textContent = "CUSTOM LOCATION";
+            } else {
+                // Fallback to Tokyo
+                weatherLat = 35.6895;
+                weatherLon = 139.6917;
+                document.getElementById('w-location').textContent = "TOKYO";
+            }
+            fetchWeather();
         }
 
         // --- Loop ---
