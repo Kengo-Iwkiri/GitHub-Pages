@@ -262,8 +262,8 @@
         
         /* Podcast Styles */
         .podcast-hero-img {
-            width: 120px; height: 120px; border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: cover;
+            width: 180px; height: 180px; border-radius: 18px; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); object-fit: cover;
         }
         .podcast-small-img {
             width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
@@ -381,14 +381,19 @@
                     
                     <!-- 2. Earthquake Map -->
                     <div class="snap-item p-0 w-full relative overflow-hidden group">
+                        <!-- Map Background -->
                         <div id="quake-map" class="w-full h-full rounded-[32px] overflow-hidden opacity-60 transition-opacity group-hover:opacity-100"></div>
+                        
+                        <!-- Info Overlay -->
                         <div class="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none z-[500]">
+                            <!-- Header -->
                             <div class="flex justify-between items-start">
                                 <div class="flex flex-col gap-2">
                                     <div class="flex items-center gap-2">
                                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></div>
                                         <span class="text-[10px] font-bold opacity-90 tracking-widest bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-white/10">LATEST QUAKE</span>
                                     </div>
+                                    <!-- あなたの場所の予想震度 (条件付き表示) -->
                                     <div id="q-widget-est-container" class="hidden transition-all duration-500">
                                         <span class="text-[10px] font-bold text-yellow-300 bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-yellow-500/30 flex items-center gap-1 w-fit">
                                             <i class="fas fa-map-marker-alt text-[8px] opacity-70"></i>
@@ -396,8 +401,11 @@
                                         </span>
                                     </div>
                                 </div>
+                                <!-- Time (Top Right) -->
                                 <div id="q-widget-time" class="text-sm font-mono opacity-80 font-bold drop-shadow-md">--:--</div>
                             </div>
+
+                            <!-- Main Info (Bottom) -->
                             <div class="flex flex-col gap-1">
                                 <div class="flex items-baseline gap-3 drop-shadow-lg">
                                     <span class="text-sm font-bold opacity-70">震度</span>
@@ -407,6 +415,8 @@
                                 <div class="text-xs font-mono opacity-60 mt-1" id="q-widget-mag">M-.--</div>
                             </div>
                         </div>
+                        
+                        <!-- Gradient Overlay for readability -->
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
                     </div>
 
@@ -417,21 +427,31 @@
                         <div class="text-xl tracking-[0.5em] opacity-60">TODAY</div>
                     </div>
                     
-                    <!-- 4. Focus Timer -->
+                    <!-- 4. Focus Timer (Circular Design with Label Below) -->
                     <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
                         <div class="relative w-[280px] h-[280px] flex items-center justify-center">
+                            <!-- SVG Ring -->
                             <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
+                                <!-- Track -->
                                 <circle class="timer-circle-bg" cx="150" cy="150" r="140"></circle>
+                                <!-- Progress -->
                                 <circle id="timer-progress-ring" class="timer-circle-progress" cx="150" cy="150" r="140"></circle>
                             </svg>
+                            
+                            <!-- Inside Content -->
                             <div class="flex flex-col items-center justify-center z-10">
                                 <div id="timer-display" class="text-6xl font-mono font-thin mb-4 tabular-nums">25:00</div>
                                 <div class="flex gap-4">
-                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md"><i id="timer-icon" class="fas fa-play text-lg ml-1"></i></button>
-                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md"><i class="fas fa-redo text-lg"></i></button>
+                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md">
+                                        <i id="timer-icon" class="fas fa-play text-lg ml-1"></i>
+                                    </button>
+                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md">
+                                        <i class="fas fa-redo text-lg"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                        <!-- Label moved below -->
                         <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
                     </div>
                     
@@ -477,7 +497,11 @@
                 </div>
             </div>
             <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
+                
+                <!-- 2カラムレイアウト: items-end を items-start に変更して高さを合わせる -->
                 <div class="flex justify-center items-start gap-16 mb-4 w-full">
+                    
+                    <!-- 全国最大震度 -->
                     <div class="flex flex-col items-center">
                         <span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span>
                         <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
@@ -485,6 +509,8 @@
                             <span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span>
                         </div>
                     </div>
+
+                    <!-- あなたの地域の震度 -->
                     <div class="flex flex-col items-center">
                         <span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span>
                         <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
@@ -493,13 +519,16 @@
                         </div>
                         <div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div>
                     </div>
+
                 </div>
+                
                 <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
                 <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md">
                     <span id="q-time">12:34</span>
                     <span class="w-px bg-white/30 h-6"></span>
                     <span id="q-mag">M4.5</span>
                 </div>
+                
                 <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
             </div>
         </div>
@@ -521,17 +550,33 @@
         </div>
 
         <div class="settings-content">
+            
             <!-- 背景設定 -->
             <div id="tab-bg" class="tab-panel active">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">背景テーマ</h3>
                 <div class="space-y-4">
                     <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">テーマプレビュー</label>
                     <div class="grid grid-cols-1 gap-2">
-                        <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition"><span class="text-xs font-bold text-pink-200">夜明け</span><span class="text-[10px] opacity-50">05:00 - 08:00</span></button>
-                        <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition"><span class="text-xs font-bold text-blue-200">昼</span><span class="text-[10px] opacity-50">08:00 - 16:00</span></button>
-                        <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition"><span class="text-xs font-bold text-orange-200">夕方</span><span class="text-[10px] opacity-50">16:00 - 19:00</span></button>
-                        <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition"><span class="text-xs font-bold text-indigo-200">夜</span><span class="text-[10px] opacity-50">19:00 - 05:00</span></button>
-                        <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4"><span class="text-xs font-bold text-red-300">アラートテスト</span><i class="fas fa-exclamation-triangle text-red-400"></i></button>
+                        <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition">
+                            <span class="text-xs font-bold text-pink-200">夜明け</span>
+                            <span class="text-[10px] opacity-50">05:00 - 08:00</span>
+                        </button>
+                        <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition">
+                            <span class="text-xs font-bold text-blue-200">昼</span>
+                            <span class="text-[10px] opacity-50">08:00 - 16:00</span>
+                        </button>
+                        <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition">
+                            <span class="text-xs font-bold text-orange-200">夕方</span>
+                            <span class="text-[10px] opacity-50">16:00 - 19:00</span>
+                        </button>
+                        <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition">
+                            <span class="text-xs font-bold text-indigo-200">夜</span>
+                            <span class="text-[10px] opacity-50">19:00 - 05:00</span>
+                        </button>
+                        <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4">
+                            <span class="text-xs font-bold text-red-300">アラートテスト</span>
+                            <i class="fas fa-exclamation-triangle text-red-400"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -540,11 +585,23 @@
             <div id="tab-notion" class="tab-panel">
                 <h3 class="text-lg font-bold mb-6 tracking-widest">Notion連携設定</h3>
                 <div class="space-y-5">
-                    <div class="relative"><input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー (secret_...)</label></div>
-                    <div class="relative"><input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">データベースID</label></div>
+                    <div class="relative">
+                        <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー (secret_...)</label>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">データベースID</label>
+                    </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="relative"><input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">日付プロパティ名</label></div>
-                        <div class="relative"><input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ステータスプロパティ名</label></div>
+                        <div class="relative">
+                            <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">日付プロパティ名</label>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ステータスプロパティ名</label>
+                        </div>
                     </div>
                     <div class="pt-4 border-t border-white/10">
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ステータス判定ロジック</label>
@@ -556,16 +613,28 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative"><input type="text" id="n-done-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">完了の値</label></div>
-                            <div class="relative"><input type="text" id="n-not-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">未着手の値</label></div>
+                            <div class="relative">
+                                <input type="text" id="n-done-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">完了の値</label>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="n-not-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">未着手の値</label>
+                            </div>
                         </div>
                     </div>
                     <!-- User Filter -->
                     <div class="pt-4 border-t border-white/10">
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ユーザーフィルタ (任意)</label>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative"><input type="text" id="n-user-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">担当者プロパティ名</label></div>
-                            <div class="relative"><input type="text" id="n-user-id" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ユーザー名 / ID</label></div>
+                            <div class="relative">
+                                <input type="text" id="n-user-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">担当者プロパティ名</label>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="n-user-id" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ユーザー名 / ID</label>
+                            </div>
                         </div>
                         <p class="text-[9px] opacity-30 mt-1 ml-1">指定した文字を含む担当者のタスクのみ表示します</p>
                     </div>
@@ -579,10 +648,18 @@
                     <!-- 天気 -->
                     <div>
                         <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">天気情報</label>
-                        <p class="text-xs opacity-50 leading-relaxed mb-4">基本はGPSを使用します。固定したい場合は座標を入力してください。</p>
+                        <p class="text-xs opacity-50 leading-relaxed mb-4">
+                            基本はGPSを使用します。固定したい場合は座標を入力してください。
+                        </p>
                         <div class="grid grid-cols-2 gap-3">
-                            <div class="relative"><input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">緯度</label></div>
-                            <div class="relative"><input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors"><label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">経度</label></div>
+                            <div class="relative">
+                                <input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">緯度</label>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">経度</label>
+                            </div>
                         </div>
                     </div>
                     
@@ -695,6 +772,7 @@
         
         function getSmallIcon(code) {
              const size = 20; const color = 'rgba(255,255,255,0.7)';
+             // Simplified Small versions (same paths, smaller box)
              if (code === 0) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
              if (code <= 3) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
              if (code <= 67) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 13v8"/><path d="M12 13v8"/><path d="M16 13v8"/></svg>`;
@@ -712,7 +790,6 @@
             if (code <= 86) return "雪";
             return "雷雨";
         }
-
 
         // --- Swipe & Drag Logic ---
         let startX = 0; let startY = 0; let isDragging = false;
@@ -898,14 +975,13 @@
             document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
             document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
             
-            // あなたの地域の震度（APIのpointsから検索）
+            // あなたの地域の震度
             let myScaleText = "--";
             if (store.quakeArea && q.points) {
                 let point = q.points.find(p => p.addr === store.quakeArea);
                 if (!point) {
                     point = q.points.find(p => p.addr.includes(store.quakeArea));
                 }
-                
                 if (point) {
                     myScaleText = scaleMap[point.scale] || point.scale;
                     document.getElementById('q-area-name').textContent = point.addr;
