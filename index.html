@@ -301,16 +301,16 @@
                 <div class="snap-container">
                     
                     <!-- 1. Weather (Re-balanced Layout) -->
-                    <div class="snap-item p-6 w-full flex flex-col justify-between h-full">
-                        <!-- Upper Section: 中央配置 -->
-                        <div class="flex justify-between items-center w-full flex-grow pb-4 px-4">
+                    <div class="snap-item p-5 w-full flex flex-col justify-between h-full">
+                        <!-- Upper Section: 上に寄せるため mt-[-10px] -->
+                        <div class="flex justify-between items-start w-full flex-grow px-2 mt-[-10px]">
                             <!-- Left: Location & Big Temp -->
-                            <div class="flex flex-col justify-center gap-2">
+                            <div class="flex flex-col justify-start gap-2">
                                 <div id="w-location" class="text-2xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
                                 <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px]">--°</div>
                             </div>
                             <!-- Right: Icon, Desc, H/L -->
-                            <div class="flex flex-col items-end justify-center gap-2">
+                            <div class="flex flex-col items-end justify-start gap-2">
                                 <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg">
                                     <i class="fas fa-sun text-6xl opacity-90"></i>
                                 </div>
