@@ -94,18 +94,52 @@
         /* 左から出てくるドロワー */
         #settings-drawer {
             position: fixed; top: 0; left: 0; bottom: 0; z-index: 9999;
-            width: 360px; max-width: 85vw;
-            background: rgba(20, 20, 20, 0.85); /* 濃いめの背景 */
+            width: 500px; /* 幅を広げて2カラム化 */
+            max-width: 90vw;
+            background: rgba(20, 20, 20, 0.9);
             border-right: 1px solid rgba(255,255,255,0.15);
-            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px);
             
             transform: translateX(-100%); /* 初期状態は左に隠す */
             transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* iOS風の慣性スクロール */
             
-            display: flex; flex-direction: column;
-            padding: 2rem;
+            display: flex;
         }
         #settings-drawer.open { transform: translateX(0); }
+
+        /* Sidebar Styling */
+        .settings-sidebar {
+            width: 140px;
+            background: rgba(0,0,0,0.2);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            padding: 20px 10px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .settings-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Tab Buttons */
+        .tab-btn {
+            text-align: left;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.5);
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .tab-btn.active { background: rgba(255,255,255,0.1); color: white; }
+        
+        .tab-icon { margin-right: 8px; width: 16px; text-align: center; }
+
+        /* Tab Panels */
+        .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+        .tab-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
 
         /* --- UI Components --- */
@@ -139,7 +173,6 @@
 
     <!-- 背景レイヤー -->
     <div id="bg-container">
-        <!-- 初期表示用: Dayにactiveをつけておく -->
         <div id="bg-day" class="bg-layer theme-day active"></div>
         <div id="bg-dawn" class="bg-layer theme-dawn"></div>
         <div id="bg-sunset" class="bg-layer theme-sunset"></div>
@@ -149,11 +182,9 @@
 
     <!-- コンテンツ -->
     <main class="max-w-7xl mx-auto w-full gap-6">
-        
         <!-- 時計エリア -->
         <div class="h-[40%] flex items-center justify-center px-4">
             <div class="text-center">
-                <!-- フォントを中太(font-medium)にし、文字間隔を最大(tracking-widest)に変更 -->
                 <div id="time-disp" class="text-[140px] md:text-[200px] font-medium leading-none tracking-widest drop-shadow-lg">--:--</div>
                 <div id="date-disp" class="text-2xl font-medium tracking-[0.3em] uppercase opacity-70 drop-shadow-md">LOADING...</div>
             </div>
@@ -161,7 +192,6 @@
 
         <!-- ウィジェットエリア -->
         <div class="h-[60%] grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
-            
             <!-- Notion Tasks -->
             <div class="glass flex flex-col p-8 relative overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
@@ -176,75 +206,131 @@
             <!-- Multi Widget -->
             <div class="glass relative overflow-hidden">
                 <div class="snap-container">
-                    <!-- Weather -->
+                    <!-- 1. Weather -->
                     <div class="snap-item p-8">
                         <i id="w-icon" class="fas fa-sun text-8xl mb-4 opacity-90 drop-shadow-lg"></i>
                         <div id="w-temp" class="text-6xl font-thin mb-2 mt-4 drop-shadow-md">--°</div>
-                        <!-- IDを追加: 場所名 -->
                         <div id="w-location" class="text-xl tracking-widest opacity-60 uppercase">TOKYO</div>
                     </div>
-                    <!-- Calendar -->
+                    <!-- 2. Calendar -->
                     <div class="snap-item p-8">
                         <div id="cal-month" class="text-3xl font-bold text-red-300 uppercase tracking-widest mb-2 drop-shadow-md">JAN</div>
                         <div id="cal-day" class="text-[120px] font-black leading-none mb-4 drop-shadow-xl">1</div>
                         <div class="text-xl tracking-[0.5em] opacity-60">TODAY</div>
                     </div>
+                    <!-- 3. Focus Timer (Pomodoro) -->
+                    <div class="snap-item p-8 w-full">
+                        <div class="text-xs font-bold opacity-50 tracking-widest mb-4">FOCUS TIMER</div>
+                        <div id="timer-display" class="text-[80px] font-thin font-mono leading-none mb-8 tabular-nums drop-shadow-lg">25:00</div>
+                        <div class="flex gap-6">
+                            <button onclick="toggleTimer()" id="timer-btn" class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition backdrop-blur-md">
+                                <i id="timer-icon" class="fas fa-play text-xl ml-1"></i>
+                            </button>
+                            <button onclick="resetTimer()" class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md">
+                                <i class="fas fa-redo text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 4. Quick Memo -->
+                    <div class="snap-item p-8 w-full">
+                        <div class="w-full h-full flex flex-col">
+                            <div class="text-xs font-bold opacity-50 tracking-widest mb-3 text-left">QUICK MEMO</div>
+                            <textarea id="quick-memo" class="flex-1 w-full bg-transparent border-none text-2xl resize-none focus:outline-none placeholder-white/20 font-medium leading-relaxed" placeholder="Type anything..."></textarea>
+                        </div>
+                    </div>
                 </div>
-                <!-- Indicator -->
+                <!-- Indicator (4 dots) -->
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
-                    <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                     <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- 設定オーバーレイ（背景クリックで閉じる用） -->
+    <!-- 設定オーバーレイ -->
     <div id="settings-overlay" onclick="closeSettings()"></div>
 
-    <!-- 設定ドロワー（左からスライドイン） -->
+    <!-- 設定ドロワー (2カラムレイアウト) -->
     <div id="settings-drawer">
-        <h3 class="text-xl font-bold mb-8 tracking-widest flex items-center gap-3">
-            <i class="fas fa-cog opacity-50"></i> SETTINGS
-        </h3>
-        
-        <!-- 背景テスト -->
-        <div class="mb-8">
-            <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">Background</label>
-            <div class="grid grid-cols-2 gap-2 mb-2">
-                <button onclick="testBg('dawn')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-pink-300">DAWN</button>
-                <button onclick="testBg('day')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-blue-300">DAY</button>
-                <button onclick="testBg('sunset')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-orange-300">SUNSET</button>
-                <button onclick="testBg('night')" class="bg-white/5 py-3 rounded-lg hover:bg-white/10 transition text-[10px] font-bold border border-white/5 text-indigo-300">NIGHT</button>
-            </div>
-            <button onclick="testBg('alert')" class="w-full bg-red-900/20 py-2 rounded-lg hover:bg-red-900/40 transition text-[10px] font-bold border border-red-500/20 text-red-400">TEST ALERT</button>
+        <!-- 左サイドバー -->
+        <div class="settings-sidebar">
+            <div class="text-[10px] font-bold opacity-30 px-4 mb-2 tracking-widest">MENU</div>
+            <button class="tab-btn active" onclick="switchTab('bg')"><i class="fas fa-image tab-icon"></i>BG</button>
+            <button class="tab-btn" onclick="switchTab('notion')"><i class="fas fa-list tab-icon"></i>Notion</button>
+            <button class="tab-btn" onclick="switchTab('weather')"><i class="fas fa-cloud tab-icon"></i>Weather</button>
+            <button class="tab-btn" onclick="switchTab('timer')"><i class="fas fa-stopwatch tab-icon"></i>Timer</button>
+            <div class="flex-1"></div>
+            <button onclick="saveConfig()" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest mt-4">SAVE</button>
         </div>
 
-        <div class="space-y-5 flex-1 overflow-y-auto no-scrollbar">
-            <!-- Notion Settings -->
-            <div class="relative">
-                <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Notion API Key</label>
-            </div>
-            <div class="relative">
-                <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Database ID</label>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="relative">
-                    <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                    <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Date Prop</label>
-                </div>
-                <div class="relative">
-                    <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                    <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Status Prop</label>
+        <!-- 右メインコンテンツ -->
+        <div class="settings-content">
+            
+            <!-- 背景設定 -->
+            <div id="tab-bg" class="tab-panel active">
+                <h3 class="text-lg font-bold mb-6 tracking-widest">BACKGROUND</h3>
+                <div class="space-y-4">
+                    <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">Preview Mode</label>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition">
+                            <span class="text-xs font-bold text-pink-200">DAWN</span>
+                            <span class="text-[10px] opacity-50">05:00 - 08:00</span>
+                        </button>
+                        <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition">
+                            <span class="text-xs font-bold text-blue-200">DAY</span>
+                            <span class="text-[10px] opacity-50">08:00 - 16:00</span>
+                        </button>
+                        <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition">
+                            <span class="text-xs font-bold text-orange-200">SUNSET</span>
+                            <span class="text-[10px] opacity-50">16:00 - 19:00</span>
+                        </button>
+                        <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition">
+                            <span class="text-xs font-bold text-indigo-200">NIGHT</span>
+                            <span class="text-[10px] opacity-50">19:00 - 05:00</span>
+                        </button>
+                        <button onclick="testBg('alert')" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4">
+                            <span class="text-xs font-bold text-red-300">ALERT TEST</span>
+                            <i class="fas fa-exclamation-triangle text-red-400"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Weather Settings -->
-            <div class="pt-4 border-t border-white/10">
-                <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">Weather Location (Fallback)</label>
-                <div class="grid grid-cols-2 gap-3">
+            <!-- Notion設定 -->
+            <div id="tab-notion" class="tab-panel">
+                <h3 class="text-lg font-bold mb-6 tracking-widest">NOTION API</h3>
+                <div class="space-y-5">
+                    <div class="relative">
+                        <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Notion API Key</label>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Database ID</label>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Date Property Name</label>
+                        <p class="text-[10px] opacity-30 mt-1 ml-2">e.g. "Date" or "日付"</p>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Status Property Name</label>
+                        <p class="text-[10px] opacity-30 mt-1 ml-2">e.g. "Status" or "ステータス"</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 天気設定 -->
+            <div id="tab-weather" class="tab-panel">
+                <h3 class="text-lg font-bold mb-6 tracking-widest">LOCATION</h3>
+                <div class="space-y-5">
+                    <p class="text-xs opacity-50 leading-relaxed mb-4">
+                        Normally uses GPS. Enter coordinates manually if you want to fix the location.
+                    </p>
                     <div class="relative">
                         <input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
                         <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Latitude</label>
@@ -253,16 +339,25 @@
                         <input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
                         <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Longitude</label>
                     </div>
+                    <div class="pt-4 border-t border-white/10 mt-4">
+                        <p class="text-[10px] font-bold opacity-30 uppercase mb-2">Default (Fallback)</p>
+                        <p class="text-xs opacity-50">Tokyo: 35.6895, 139.6917</p>
+                    </div>
                 </div>
-                <p class="text-[10px] opacity-30 mt-2 ml-1 leading-relaxed">
-                    * Used when GPS is unavailable.<br>
-                    (Default: Tokyo 35.6895, 139.6917)
-                </p>
             </div>
-        </div>
 
-        <div class="flex gap-3 mt-6">
-            <button onclick="saveConfig()" class="flex-1 bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest">SAVE CHANGE</button>
+            <!-- Timer設定 (New) -->
+            <div id="tab-timer" class="tab-panel">
+                <h3 class="text-lg font-bold mb-6 tracking-widest">FOCUS TIMER</h3>
+                <div class="space-y-5">
+                    <div class="relative">
+                        <input type="number" id="t-duration" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Duration (minutes)</label>
+                    </div>
+                    <p class="text-[10px] opacity-30 mt-1 ml-2">Default: 25 minutes</p>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -273,58 +368,40 @@
             prop: localStorage.getItem('n_prop') || 'Date',
             statProp: localStorage.getItem('n_stat') || 'Status',
             lat: localStorage.getItem('w_lat') || '',
-            lon: localStorage.getItem('w_lon') || ''
+            lon: localStorage.getItem('w_lon') || '',
+            memo: localStorage.getItem('quick_memo') || '',
+            timerDuration: localStorage.getItem('timer_duration') || '25'
         };
 
         let currentMode = 'day';
-        
-        // --- Weather Coordinates (Default: Tokyo) ---
         let weatherLat = 35.6895;
         let weatherLon = 139.6917;
 
-        // --- Swipe & Mouse Drag Logic for Settings ---
-        let startX = 0;
-        let startY = 0;
-        let isDragging = false;
+        // --- Swipe & Drag Logic ---
+        let startX = 0; let startY = 0; let isDragging = false;
 
-        // Touch Events (iPad)
-        document.addEventListener('touchstart', e => {
-            startX = e.changedTouches[0].screenX;
-            startY = e.changedTouches[0].screenY;
-        }, {passive: true});
-
-        document.addEventListener('touchend', e => {
-            const endX = e.changedTouches[0].screenX;
-            const endY = e.changedTouches[0].screenY;
-            handleSwipe(startX, startY, endX, endY);
-        }, {passive: true});
-
-        // Mouse Events (PC)
-        document.addEventListener('mousedown', e => {
-            startX = e.clientX;
-            startY = e.clientY;
-            // 左端付近(50px)でのクリックのみドラッグ開始とみなす
-            if (startX < 50) isDragging = true;
-        });
-
-        document.addEventListener('mouseup', e => {
-            if (!isDragging) return;
-            isDragging = false;
-            const endX = e.clientX;
-            const endY = e.clientY;
-            handleSwipe(startX, startY, endX, endY);
-        });
+        document.addEventListener('touchstart', e => { startX = e.changedTouches[0].screenX; startY = e.changedTouches[0].screenY; }, {passive: true});
+        document.addEventListener('touchend', e => { handleSwipe(startX, startY, e.changedTouches[0].screenX, e.changedTouches[0].screenY); }, {passive: true});
+        document.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; if(startX < 50) isDragging = true; });
+        document.addEventListener('mouseup', e => { if(!isDragging) return; isDragging = false; handleSwipe(startX, startY, e.clientX, e.clientY); });
 
         function handleSwipe(sX, sY, eX, eY) {
-            // 左端(50px以内)から開始
-            if (sX < 50) {
-                // 右へ100px以上移動、縦揺れ100px以内
-                if (eX - sX > 100 && Math.abs(eY - sY) < 100) {
-                    openSettings();
-                }
-            }
+            if (sX < 50 && eX - sX > 100 && Math.abs(eY - sY) < 100) openSettings();
         }
 
+        // --- Tab Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            
+            const btns = document.querySelectorAll('.tab-btn');
+            if(tabId === 'bg') btns[0].classList.add('active');
+            if(tabId === 'notion') btns[1].classList.add('active');
+            if(tabId === 'weather') btns[2].classList.add('active');
+            if(tabId === 'timer') btns[3].classList.add('active');
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
 
         // --- Background Logic ---
         function applyBg(mode) {
@@ -334,11 +411,7 @@
             const target = document.getElementById(`bg-${mode}`);
             if(target) target.classList.add('active');
         }
-
-        function testBg(mode) {
-            currentMode = '';
-            applyBg(mode);
-        }
+        function testBg(mode) { currentMode = ''; applyBg(mode); }
 
         // --- Clock Logic ---
         function updateClock() {
@@ -349,7 +422,6 @@
             document.getElementById('cal-month').textContent = now.toLocaleDateString('en-US', { month: 'short' });
             document.getElementById('cal-day').textContent = now.getDate();
 
-            // ドロワーが開いていない時だけ自動背景更新
             const drawer = document.getElementById('settings-drawer');
             if(!drawer.classList.contains('open')) {
                 const h = now.getHours();
@@ -370,19 +442,15 @@
             document.getElementById('n-stat').value = store.statProp;
             document.getElementById('w-lat').value = store.lat;
             document.getElementById('w-lon').value = store.lon;
+            document.getElementById('t-duration').value = store.timerDuration;
             
-            // オーバーレイを表示
             document.getElementById('settings-overlay').classList.add('visible');
-            // ドロワーをスライドイン
             document.getElementById('settings-drawer').classList.add('open');
         }
 
         function closeSettings() {
-            // ドロワーを戻す
             document.getElementById('settings-drawer').classList.remove('open');
-            // オーバーレイを消す
             document.getElementById('settings-overlay').classList.remove('visible');
-            
             currentMode = '';
             updateClock();
         }
@@ -394,6 +462,7 @@
             store.statProp = document.getElementById('n-stat').value.trim();
             store.lat = document.getElementById('w-lat').value.trim();
             store.lon = document.getElementById('w-lon').value.trim();
+            store.timerDuration = document.getElementById('t-duration').value.trim();
             
             localStorage.setItem('n_key', store.key);
             localStorage.setItem('n_db', store.db);
@@ -401,10 +470,12 @@
             localStorage.setItem('n_stat', store.statProp);
             localStorage.setItem('w_lat', store.lat);
             localStorage.setItem('w_lon', store.lon);
+            localStorage.setItem('timer_duration', store.timerDuration);
             
             closeSettings();
             fetchNotion();
-            initLocation(); // Re-check location
+            initLocation();
+            resetTimer(); // Apply new timer setting
         }
 
         // --- Notion API ---
@@ -412,7 +483,6 @@
             if(!store.key || !store.db) return;
             const statusIcon = document.getElementById('api-status');
             statusIcon.className = 'w-2 h-2 rounded-full bg-yellow-500 animate-pulse';
-
             const today = new Date().toISOString().split('T')[0];
             const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.notion.com/v1/databases/${store.db}/query`)}`;
 
@@ -420,20 +490,13 @@
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${store.key}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        filter: { property: store.prop, date: { equals: today } },
-                        sorts: [{ property: store.prop, direction: "ascending" }]
-                    })
+                    body: JSON.stringify({ filter: { property: store.prop, date: { equals: today } }, sorts: [{ property: store.prop, direction: "ascending" }] })
                 });
-                
                 if(!res.ok) throw new Error();
                 const data = await res.json();
                 renderTasks(data.results);
                 statusIcon.className = 'w-2 h-2 rounded-full bg-green-500';
-            } catch(e) {
-                console.error(e);
-                statusIcon.className = 'w-2 h-2 rounded-full bg-red-500';
-            }
+            } catch(e) { statusIcon.className = 'w-2 h-2 rounded-full bg-red-500'; }
         }
 
         function renderTasks(tasks) {
@@ -442,21 +505,16 @@
                 list.innerHTML = `<div class="mt-10 text-center opacity-40 text-sm tracking-widest">NO TASKS TODAY</div>`;
                 return;
             }
-
             list.innerHTML = tasks.map(t => {
                 const title = Object.values(t.properties).find(p => p.type === 'title')?.title[0]?.plain_text || "Untitled";
                 const sObj = t.properties[store.statProp];
                 const sName = sObj?.status?.name || sObj?.select?.name || "";
                 const isDone = ['Done', '完了', 'Complete', '済み'].includes(sName);
-
                 return `
                     <div class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors ${isDone ? 'opacity-30' : ''}">
-                        <input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" 
-                            ${isDone ? 'checked' : ''} 
-                            onchange="toggleTask('${t.id}', this.checked)">
+                        <input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" ${isDone ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)">
                         <span class="text-lg leading-snug ${isDone ? 'line-through' : ''}">${title}</span>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
@@ -478,64 +536,74 @@
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current_weather=true`);
                 const data = await res.json();
                 document.getElementById('w-temp').textContent = `${Math.round(data.current_weather.temperature)}°`;
-                
                 const c = data.current_weather.weathercode;
                 let i = 'fa-sun';
-                if(c > 3) i = 'fa-cloud';
-                if(c > 50) i = 'fa-cloud-rain';
+                if(c > 3) i = 'fa-cloud'; if(c > 50) i = 'fa-cloud-rain';
                 document.getElementById('w-icon').className = `fas ${i} text-8xl mb-4 opacity-90 drop-shadow-lg`;
-
             } catch(e) {}
         }
 
         function initLocation() {
-            // Priority: 1. GPS, 2. Manual Setting, 3. Tokyo (Default)
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        weatherLat = position.coords.latitude;
-                        weatherLon = position.coords.longitude;
-                        document.getElementById('w-location').textContent = "GPS LOCATION";
-                        fetchWeather(); 
-                    },
-                    (error) => {
-                        console.log("GPS Blocked or Failed. Checking manual settings...");
-                        useManualOrFallback();
-                    }
+                    (p) => { weatherLat = p.coords.latitude; weatherLon = p.coords.longitude; document.getElementById('w-location').textContent = "GPS LOCATION"; fetchWeather(); },
+                    (e) => { useManualOrFallback(); }
                 );
-            } else {
-                useManualOrFallback();
-            }
+            } else { useManualOrFallback(); }
         }
 
         function useManualOrFallback() {
-            const manualLat = parseFloat(store.lat);
-            const manualLon = parseFloat(store.lon);
-
-            if (!isNaN(manualLat) && !isNaN(manualLon)) {
-                weatherLat = manualLat;
-                weatherLon = manualLon;
-                document.getElementById('w-location').textContent = "CUSTOM LOCATION";
-            } else {
-                // Fallback to Tokyo
-                weatherLat = 35.6895;
-                weatherLon = 139.6917;
-                document.getElementById('w-location').textContent = "TOKYO";
-            }
+            const mLat = parseFloat(store.lat); const mLon = parseFloat(store.lon);
+            if (!isNaN(mLat) && !isNaN(mLon)) { weatherLat = mLat; weatherLon = mLon; document.getElementById('w-location').textContent = "CUSTOM LOCATION"; } 
+            else { weatherLat = 35.6895; weatherLon = 139.6917; document.getElementById('w-location').textContent = "TOKYO"; }
             fetchWeather();
         }
 
-        // --- Loop ---
-        setInterval(updateClock, 1000);
-        setInterval(fetchNotion, 60000);
-        setInterval(fetchWeather, 60000 * 30);
-        
-        // Init
-        updateClock();
-        fetchNotion();
-        initLocation(); // Try GPS
-        fetchWeather(); // Fetch initial (Tokyo)
+        // --- Timer Logic ---
+        let timerInterval;
+        let timerSeconds = parseInt(store.timerDuration) * 60;
+        let timerRunning = false;
 
+        function toggleTimer() {
+            if(timerRunning) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                document.getElementById('timer-icon').className = 'fas fa-play text-xl ml-1';
+            } else {
+                timerInterval = setInterval(() => {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                    if(timerSeconds <= 0) { clearInterval(timerInterval); timerRunning = false; alert("Time's up!"); }
+                }, 1000);
+                timerRunning = true;
+                document.getElementById('timer-icon').className = 'fas fa-pause text-xl';
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            timerSeconds = parseInt(store.timerDuration) * 60;
+            updateTimerDisplay();
+            document.getElementById('timer-icon').className = 'fas fa-play text-xl ml-1';
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+            const s = (timerSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').textContent = `${m}:${s}`;
+        }
+
+        // --- Memo Logic ---
+        const memoEl = document.getElementById('quick-memo');
+        memoEl.value = store.memo;
+        memoEl.addEventListener('input', () => {
+            localStorage.setItem('quick_memo', memoEl.value);
+        });
+
+        // --- Init ---
+        setInterval(updateClock, 1000); setInterval(fetchNotion, 60000); setInterval(fetchWeather, 60000 * 30);
+        updateClock(); fetchNotion(); initLocation(); resetTimer(); // Initialize timer display
     </script>
 </body>
 </html>
