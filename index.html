@@ -175,7 +175,8 @@
                     <div class="snap-item p-8">
                         <i id="w-icon" class="fas fa-sun text-8xl mb-4 opacity-90 drop-shadow-lg"></i>
                         <div id="w-temp" class="text-6xl font-thin mb-2 mt-4 drop-shadow-md">--°</div>
-                        <div class="text-xl tracking-widest opacity-60 uppercase">TOKYO</div>
+                        <!-- IDを追加: 場所名 -->
+                        <div id="w-location" class="text-xl tracking-widest opacity-60 uppercase">TOKYO</div>
                     </div>
                     <!-- Calendar -->
                     <div class="snap-item p-8">
@@ -251,25 +252,23 @@
             statProp: localStorage.getItem('n_stat') || 'Status'
         };
 
-        // 現在のモード保持用（無駄なDOM更新を防ぐ）
         let currentMode = 'day';
+        
+        // --- Weather Coordinates (Default: Tokyo) ---
+        let weatherLat = 35.6895;
+        let weatherLon = 139.6917;
 
         // --- Background Logic ---
         function applyBg(mode) {
-            if (mode === currentMode) return; // 同じなら何もしない
+            if (mode === currentMode) return;
             currentMode = mode;
-
-            // 全て非アクティブ化
             document.querySelectorAll('.bg-layer').forEach(el => el.classList.remove('active'));
-            
-            // 指定IDだけアクティブ化
             const target = document.getElementById(`bg-${mode}`);
             if(target) target.classList.add('active');
         }
 
-        // テスト用（強制変更）
         function testBg(mode) {
-            currentMode = ''; // 強制更新させるためリセット
+            currentMode = '';
             applyBg(mode);
         }
 
@@ -282,17 +281,14 @@
             document.getElementById('cal-month').textContent = now.toLocaleDateString('en-US', { month: 'short' });
             document.getElementById('cal-day').textContent = now.getDate();
 
-            // 設定画面が開いていない時だけ自動背景更新
             const settingsDisp = document.getElementById('settings-modal').style.display;
             if(settingsDisp !== 'flex') {
                 const h = now.getHours();
                 let autoMode = 'day';
-                // 時間割: 5-8:Dawn, 8-16:Day, 16-19:Sunset, 19-5:Night
                 if(h >= 5 && h < 8) autoMode = 'dawn';
                 else if(h >= 8 && h < 16) autoMode = 'day';
                 else if(h >= 16 && h < 19) autoMode = 'sunset';
                 else autoMode = 'night';
-                
                 applyBg(autoMode);
             }
         }
@@ -308,7 +304,6 @@
 
         function closeSettings() {
             document.getElementById('settings-modal').style.display = 'none';
-            // 自動モードに戻すために現在値をリセット
             currentMode = '';
             updateClock();
         }
@@ -366,7 +361,6 @@
 
             list.innerHTML = tasks.map(t => {
                 const title = Object.values(t.properties).find(p => p.type === 'title')?.title[0]?.plain_text || "Untitled";
-                
                 const sObj = t.properties[store.statProp];
                 const sName = sObj?.status?.name || sObj?.select?.name || "";
                 const isDone = ['Done', '完了', 'Complete', '済み'].includes(sName);
@@ -394,14 +388,13 @@
             } catch(e) {}
         }
 
-        // --- Weather ---
+        // --- Weather & Location ---
         async function fetchWeather() {
             try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&current_weather=true`);
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current_weather=true`);
                 const data = await res.json();
                 document.getElementById('w-temp').textContent = `${Math.round(data.current_weather.temperature)}°`;
                 
-                // Icon selection
                 const c = data.current_weather.weathercode;
                 let i = 'fa-sun';
                 if(c > 3) i = 'fa-cloud';
@@ -409,6 +402,22 @@
                 document.getElementById('w-icon').className = `fas ${i} text-8xl mb-4 opacity-90 drop-shadow-lg`;
 
             } catch(e) {}
+        }
+
+        function initLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        weatherLat = position.coords.latitude;
+                        weatherLon = position.coords.longitude;
+                        document.getElementById('w-location').textContent = "GPS LOCATION";
+                        fetchWeather(); // Update weather with new coords
+                    },
+                    (error) => {
+                        console.log("GPS Blocked or Failed, using default Tokyo.");
+                    }
+                );
+            }
         }
 
         // --- Loop ---
@@ -419,7 +428,8 @@
         // Init
         updateClock();
         fetchNotion();
-        fetchWeather();
+        initLocation(); // Try GPS
+        fetchWeather(); // Fetch initial (Tokyo)
 
     </script>
 </body>
