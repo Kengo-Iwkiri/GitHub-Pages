@@ -89,7 +89,6 @@
             background: #1a0505; /* Deep Red-Black */
             display: none; /* JSで制御 */
             flex-direction: column;
-            /* justify-content: center; 中央寄せをやめて上下配置にする */
             animation: fadeInAlert 0.3s ease-out;
             overflow: hidden;
         }
@@ -300,21 +299,23 @@
             <div class="glass relative overflow-hidden">
                 <div class="snap-container">
                     
-                    <!-- 1. Weather (Re-balanced Layout) -->
+                    <!-- 1. Weather (Re-balanced Layout V2) -->
                     <div class="snap-item p-5 w-full flex flex-col justify-between h-full">
-                        <!-- Upper Section: 上に寄せるため mt-[-10px] -->
-                        <div class="flex justify-between items-start w-full flex-grow px-2 mt-[-10px]">
+                        <!-- Upper Section: 上端を揃える -->
+                        <div class="flex justify-between items-start w-full pt-1 px-1">
                             <!-- Left: Location & Big Temp -->
-                            <div class="flex flex-col justify-start gap-2">
-                                <div id="w-location" class="text-2xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
-                                <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px]">--°</div>
+                            <div class="flex flex-col justify-start">
+                                <div id="w-location" class="text-xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
+                                <!-- 気温の上部マージンを調整して、アイコンの上端と視覚的に合わせる -->
+                                <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px] mt-[-5px]">--°</div>
                             </div>
                             <!-- Right: Icon, Desc, H/L -->
-                            <div class="flex flex-col items-end justify-start gap-2">
-                                <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg">
+                            <div class="flex flex-col items-end">
+                                <!-- アイコンコンテナの高さを調整 -->
+                                <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg mt-[-5px]">
                                     <i class="fas fa-sun text-6xl opacity-90"></i>
                                 </div>
-                                <div class="text-right">
+                                <div class="text-right mt-1">
                                     <div id="w-desc" class="text-2xl font-bold opacity-90 drop-shadow-md">快晴</div>
                                     <div class="flex gap-3 text-sm font-medium opacity-70 mt-1 justify-end">
                                         <span>H:<span id="w-max">--</span>°</span>
@@ -324,23 +325,23 @@
                             </div>
                         </div>
                         
-                        <!-- Lower Section: 3h Forecast (Larger) -->
-                        <div class="w-full pt-6 border-t border-white/10">
-                            <div class="flex justify-between items-center">
+                        <!-- Lower Section: 3h Forecast (Gap reduced, area increased) -->
+                        <div class="w-full pt-4 border-t border-white/10 mt-auto">
+                            <div class="flex justify-between items-center h-full">
                                 <!-- 3h later -->
-                                <div class="flex flex-col items-center gap-2 w-1/3">
+                                <div class="flex flex-col items-center justify-center gap-1 w-1/3">
                                     <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-1">--:--</span>
                                     <div id="fc-icon-1" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
                                     <span class="text-xl font-bold" id="fc-temp-1">--°</span>
                                 </div>
                                 <!-- 6h later -->
-                                <div class="flex flex-col items-center gap-2 w-1/3 border-l border-r border-white/5">
+                                <div class="flex flex-col items-center justify-center gap-1 w-1/3 border-l border-r border-white/5">
                                     <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-2">--:--</span>
                                     <div id="fc-icon-2" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
                                     <span class="text-xl font-bold" id="fc-temp-2">--°</span>
                                 </div>
                                 <!-- 9h later -->
-                                <div class="flex flex-col items-center gap-2 w-1/3">
+                                <div class="flex flex-col items-center justify-center gap-1 w-1/3">
                                     <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-3">--:--</span>
                                     <div id="fc-icon-3" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
                                     <span class="text-xl font-bold" id="fc-temp-3">--°</span>
