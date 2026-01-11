@@ -23,15 +23,15 @@
             -webkit-touch-callout: none;
         }
 
-        /* --- Background System (Photo Blur) --- */
+        /* --- Background System --- */
         #bg-container {
             position: fixed; inset: 0; z-index: 0;
             pointer-events: none;
-            background: #000; /* ベース黒 */
+            background: #000;
         }
 
         .bg-layer {
-            position: absolute; inset: -20px; /* ブラーの端隠しのため少し大きく */
+            position: absolute; inset: -20px;
             background-size: cover;
             background-position: center;
             opacity: 0;
@@ -49,6 +49,7 @@
         .theme-sunset { background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2560&auto=format&fit=crop'); }
         .theme-evening { background-image: url('https://images.unsplash.com/photo-1505322022379-7c3353ee6291?q=80&w=2560&auto=format&fit=crop'); }
         .theme-night { background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2560&auto=format&fit=crop'); }
+        
         .theme-alert { background: #450a0a; filter: none; }
         .theme-alert.active { animation: pulseAlert 2s infinite ease-in-out; z-index: 5; }
         @keyframes pulseAlert { 0% { opacity: 0.6; } 50% { opacity: 0.9; } 100% { opacity: 0.6; } }
@@ -194,17 +195,6 @@
         .event-item::before { content: ''; position: absolute; left: 0; top: 6px; width: 4px; height: 4px; border-radius: 50%; }
         .event-item-today::before { background: #60a5fa; box-shadow: 0 0 8px rgba(96, 165, 250, 0.8); }
         .event-item-future::before { background: rgba(255, 255, 255, 0.3); }
-
-        /* Settings Toggle Button (Floating) */
-        #settings-toggle {
-            position: fixed; bottom: 20px; left: 20px; z-index: 9990;
-            width: 40px; height: 40px; border-radius: 50%;
-            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.3s;
-            opacity: 0.3; color: white;
-        }
-        #settings-toggle:hover { opacity: 1; background: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -246,6 +236,7 @@
             <!-- Multi Widget -->
             <div class="glass relative overflow-hidden">
                 <div class="snap-container">
+                    
                     <!-- 1. Weather -->
                     <div class="snap-item p-5 w-full flex flex-col justify-between h-full">
                         <div class="flex justify-between items-start w-full pt-1 px-1">
@@ -343,7 +334,7 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
                     </div>
 
-                    <!-- 3. Calendar -->
+                    <!-- 3. Calendar & Events -->
                     <div class="snap-item p-6 w-full flex flex-row items-stretch gap-6">
                         <div class="w-5/12 flex flex-col justify-center">
                             <div class="flex justify-between items-end mb-3 px-1">
@@ -363,7 +354,7 @@
                         </div>
                     </div>
                     
-                    <!-- 4. Timer -->
+                    <!-- 4. Focus Timer -->
                     <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
                         <div class="relative w-[280px] h-[280px] flex items-center justify-center">
                             <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
@@ -381,7 +372,7 @@
                         <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
                     </div>
                     
-                    <!-- 5. Memo -->
+                    <!-- 5. Quick Memo -->
                     <div class="snap-item p-8 w-full">
                         <div class="w-full h-full flex flex-col">
                             <div class="text-xs font-bold opacity-50 tracking-widest mb-3 text-left">QUICK MEMO</div>
@@ -392,10 +383,12 @@
                     <!-- 6. Podcast -->
                     <div class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900">
                         <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE PODCASTS</div>
-                        <div id="podcast-list" class="w-full h-full flex flex-col items-center justify-center p-8 pt-10 gap-6"></div>
+                        <div id="podcast-list" class="w-full h-full flex flex-col items-center justify-center p-8 pt-10 gap-6">
+                            <div class="text-center opacity-30 text-sm">Loading...</div>
+                        </div>
                     </div>
 
-                    <!-- 7. Music -->
+                    <!-- 7. Apple Music -->
                     <div class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-600">
                         <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
                         <div class="w-full h-full flex flex-col items-center justify-center p-6 pt-12">
@@ -403,6 +396,7 @@
                         </div>
                     </div>
                 </div>
+                <!-- Indicator (7 dots) -->
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
                     <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                 </div>
@@ -410,27 +404,7 @@
         </div>
     </main>
 
-    <!-- Settings Button -->
-    <div id="settings-toggle" onclick="openSettings()"><i class="fas fa-cog"></i></div>
-
-    <!-- Modals -->
-    <div id="quake-overlay">
-        <div id="alert-map-container" class="w-full h-full absolute inset-0"></div>
-        <div id="quake-vignette" onclick="closeQuakeAlert()"></div>
-        <div id="quake-scanlines"></div>
-        <div id="quake-content">
-            <div class="w-full flex justify-center pt-16 pointer-events-none"><div class="quake-scale-box"><h1 class="text-2xl font-black uppercase tracking-widest">緊急地震速報</h1></div></div>
-            <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
-                <div class="flex justify-center items-start gap-16 mb-4 w-full">
-                    <div class="flex flex-col items-center"><span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span><div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]"><span class="text-2xl opacity-70 font-bold">震度</span><span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span></div></div>
-                    <div class="flex flex-col items-center"><span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span><div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]"><span class="text-2xl opacity-70 font-bold text-yellow-400">震度</span><span class="text-[120px] font-bold leading-none text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]" id="q-est-scale">--</span></div><div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div></div>
-                </div>
-                <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
-                <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md"><span id="q-time">12:34</span><span class="w-px bg-white/30 h-6"></span><span id="q-mag">M4.5</span></div>
-                <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
-            </div>
-        </div>
-    </div>
+    <!-- Settings Drawer -->
     <div id="settings-overlay" onclick="closeSettings()"></div>
     <div id="settings-drawer">
         <div class="settings-sidebar">
@@ -511,6 +485,7 @@
     </div>
 
     <script>
+        // --- 1. Global Store ---
         const store = {
             key: localStorage.getItem('n_key') || '',
             db: localStorage.getItem('n_db') || '',
@@ -554,7 +529,7 @@
         let mapInstance = null;
         let alertMapInstance = null;
 
-        // --- Core Functions ---
+        // --- 2. Helper Functions ---
         function getWeatherIcon(code, isNight) {
             const size = 80; const color = 'rgba(255,255,255,0.95)';
             if (code === 0) return isNight ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>` : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
@@ -567,6 +542,7 @@
         }
         function getWeatherDesc(code) { return code === 0 ? "快晴" : code <= 3 ? "曇り" : "雨/雪"; }
 
+        // --- 3. UI Logic ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
@@ -624,37 +600,8 @@
             }
         }
 
-        async function fetchGoogleCalendar() {
-            const url = store.icalUrl; const listEl = document.getElementById('gcal-list');
-            if(!url) { listEl.innerHTML = '<div class="text-xs opacity-30 mt-4">Please set iCal URL</div>'; return; }
-            try {
-                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-                if(!res.ok) throw new Error();
-                const text = await res.text();
-                const jcal = ICAL.parse(text); const comp = new ICAL.Component(jcal);
-                const vevents = comp.getAllSubcomponents('vevent');
-                const now = new Date(); const events = [];
-                vevents.forEach(vevent => {
-                    const event = new ICAL.Event(vevent); const start = event.startDate.toJSDate();
-                    if (start >= now) events.push({ summary: event.summary, start: start });
-                });
-                events.sort((a, b) => a.start - b.start);
-                listEl.innerHTML = '';
-                if(events.length > 0) {
-                    const todayEvents = events.filter(e => e.start.getDate() === now.getDate());
-                    const futureEvents = events.filter(e => e.start.getDate() !== now.getDate());
-                    if (todayEvents.length > 0) {
-                        listEl.innerHTML += '<div class="text-[9px] font-bold opacity-60 tracking-widest mb-1 mt-1 uppercase text-blue-300">TODAY</div>';
-                        todayEvents.forEach(e => listEl.innerHTML += `<div class="event-item event-item-today"><div class="text-sm font-bold truncate text-white">${e.summary}</div><div class="text-[10px] opacity-70 font-mono">${e.start.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</div></div>`);
-                    }
-                    if (futureEvents.length > 0) {
-                        listEl.innerHTML += '<div class="text-[9px] font-bold opacity-40 tracking-widest mb-1 mt-2 uppercase">UPCOMING</div>';
-                        futureEvents.slice(0, 5 - todayEvents.length).forEach(e => listEl.innerHTML += `<div class="event-item event-item-future"><div class="text-sm font-medium truncate opacity-80">${e.summary}</div><div class="text-[10px] opacity-40 font-mono">${e.start.toLocaleDateString('en-US', {month:'short', day:'numeric'})} ${e.start.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</div></div>`);
-                    }
-                } else { listEl.innerHTML = '<div class="text-xs opacity-50 mt-4">No upcoming events</div>'; }
-            } catch(e) { listEl.innerHTML = '<div class="text-xs opacity-50 text-red-300 mt-4">Calendar Error</div>'; }
-        }
-
+        // --- 4. Main Features ---
+        // Notion
         async function fetchNotion() {
             if(!store.key || !store.db) return;
             try {
@@ -696,6 +643,39 @@
             });
         }
 
+        // Google Calendar
+        async function fetchGoogleCalendar() {
+            const url = store.icalUrl; const listEl = document.getElementById('gcal-list');
+            if(!url) { listEl.innerHTML = '<div class="text-xs opacity-30 mt-4">Please set iCal URL</div>'; return; }
+            try {
+                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+                if(!res.ok) throw new Error();
+                const text = await res.text();
+                const jcal = ICAL.parse(text); const comp = new ICAL.Component(jcal);
+                const vevents = comp.getAllSubcomponents('vevent');
+                const now = new Date(); const events = [];
+                vevents.forEach(vevent => {
+                    const event = new ICAL.Event(vevent); const start = event.startDate.toJSDate();
+                    if (start >= now) events.push({ summary: event.summary, start: start });
+                });
+                events.sort((a, b) => a.start - b.start);
+                listEl.innerHTML = '';
+                if(events.length > 0) {
+                    const todayEvents = events.filter(e => e.start.getDate() === now.getDate());
+                    const futureEvents = events.filter(e => e.start.getDate() !== now.getDate());
+                    if (todayEvents.length > 0) {
+                        listEl.innerHTML += '<div class="text-[9px] font-bold opacity-60 tracking-widest mb-1 mt-1 uppercase text-blue-300">TODAY</div>';
+                        todayEvents.forEach(e => listEl.innerHTML += `<div class="event-item event-item-today"><div class="text-sm font-bold truncate text-white">${e.summary}</div><div class="text-[10px] opacity-70 font-mono">${e.start.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</div></div>`);
+                    }
+                    if (futureEvents.length > 0) {
+                        listEl.innerHTML += '<div class="text-[9px] font-bold opacity-40 tracking-widest mb-1 mt-2 uppercase">UPCOMING</div>';
+                        futureEvents.slice(0, 5 - todayEvents.length).forEach(e => listEl.innerHTML += `<div class="event-item event-item-future"><div class="text-sm font-medium truncate opacity-80">${e.summary}</div><div class="text-[10px] opacity-40 font-mono">${e.start.toLocaleDateString('en-US', {month:'short', day:'numeric'})} ${e.start.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</div></div>`);
+                    }
+                } else { listEl.innerHTML = '<div class="text-xs opacity-50 mt-4">No upcoming events</div>'; }
+            } catch(e) { listEl.innerHTML = '<div class="text-xs opacity-50 text-red-300 mt-4">Calendar Error</div>'; }
+        }
+
+        // Weather
         async function fetchWeather() {
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto`;
@@ -703,8 +683,6 @@
                 document.getElementById('w-temp').textContent = `${Math.round(data.current.temperature_2m)}°`;
                 document.getElementById('w-icon-container').innerHTML = getWeatherIcon(data.current.weather_code, data.current.is_day===0);
                 document.getElementById('w-desc').textContent = getWeatherDesc(data.current.weather_code);
-                document.getElementById('w-max').textContent = Math.round(data.daily.temperature_2m_max[0]);
-                document.getElementById('w-min').textContent = Math.round(data.daily.temperature_2m_min[0]);
                 
                 const nowIso = new Date().toISOString().slice(0, 13);
                 const hIdx = data.hourly.time.findIndex(t => t.startsWith(nowIso));
@@ -732,6 +710,7 @@
             } catch(e) {}
         }
 
+        // Podcasts
         async function fetchPodcasts() {
             try {
                 const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://itunes.apple.com/jp/rss/toppodcasts/limit=3/json'));
@@ -747,6 +726,7 @@
             } catch(e) { document.getElementById('podcast-list').innerHTML = `<div class="text-center opacity-30 text-xs">Failed to load podcasts</div>`; }
         }
 
+        // Music
         async function fetchMusic() {
             const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
             const c = document.getElementById('music-container'); c.innerHTML = '';
@@ -763,6 +743,7 @@
             }
         }
         
+        // Timer
         let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
         function toggleTimer() {
             if(timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-icon').className='fas fa-play text-lg ml-1'; }
@@ -779,7 +760,7 @@
             const c=document.getElementById('timer-progress-ring'); const off=(2*Math.PI*140) - (timerSeconds/totalTime)*(2*Math.PI*140); c.style.strokeDashoffset=off;
         }
 
-        // --- Quake & Settings Logic ---
+        // Quake & Settings Logic
         function initWidgetMap() {
             if(mapInstance) return;
             mapInstance = L.map('quake-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, boxZoom:false, tap:false, keyboard:false }).setView([36, 138], 3.8);
@@ -809,7 +790,7 @@
             document.getElementById('n-stat').dataset.ptype = type; 
         }
 
-        // --- Init ---
+        // Init
         let startX=0; document.addEventListener('touchstart',e=>startX=e.changedTouches[0].screenX); document.addEventListener('touchend',e=>{if(startX<50 && e.changedTouches[0].screenX-startX>100) openSettings()});
         document.addEventListener('mousedown',e=>startX=e.clientX); document.addEventListener('mouseup',e=>{if(startX<50 && e.clientX-startX>100) openSettings()});
         
@@ -819,7 +800,6 @@
             setInterval(updateClock, 1000); setInterval(fetchNotion, 60000); setInterval(fetchWeather, 60000*30); setInterval(checkQuake, 60000); setInterval(fetchGoogleCalendar, 60000*15); setInterval(updateBackgroundBySun, 60000*30);
         };
         
-        // Geocoding and Location Init
         function initLocation() {
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(p=>{
@@ -842,12 +822,8 @@
                 const r = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=1'); const d = await r.json();
                 if(!d || d.length===0) return;
                 const q=d[0], diff=(new Date()-new Date(q.time))/1000/60;
-                // lastQuakeId logic omitted for brevity in minimized code, assuming update map always
                 updateQuakeMap(q);
-                if(diff<10) { 
-                    document.getElementById('quake-overlay').classList.add('visible'); 
-                    // Populate overlay info... (Simplified for this fix)
-                }
+                if(diff<10) { document.getElementById('quake-overlay').classList.add('visible'); }
             } catch(e){}
         }
 
@@ -879,22 +855,13 @@
             if(sWaveCircle) { sWaveCircle.setLatLng([lat,lng]); sWaveCircle.setRadius(sR); } else sWaveCircle = L.circle([lat,lng], {color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.2, weight:2, radius:sR}).addTo(mapInstance);
         }
 
-        // Missing close function
         function closeQuakeAlert() { document.getElementById('quake-overlay').classList.remove('visible'); }
-        // Missing test function
         function testBg(mode) { currentMode=''; applyBg(mode); }
-        function testQuake() { 
-            closeSettings(); 
-            document.getElementById('quake-overlay').classList.add('visible'); 
-            // Dummy data display logic would go here
-        }
+        function testQuake() { closeSettings(); document.getElementById('quake-overlay').classList.add('visible'); }
 
-        // --- Memo Logic ---
         const memoEl = document.getElementById('quick-memo');
         memoEl.value = store.memo;
-        memoEl.addEventListener('input', () => {
-            localStorage.setItem('quick_memo', memoEl.value);
-        });
+        memoEl.addEventListener('input', () => { localStorage.setItem('quick_memo', memoEl.value); });
     </script>
 </body>
 </html>
