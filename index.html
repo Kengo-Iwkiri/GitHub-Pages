@@ -6,6 +6,9 @@
     <title>Ultimate Standby Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Leaflet (Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         /* --- Base Setup --- */
         body, html {
@@ -78,6 +81,68 @@
             pointer-events: none;
         }
         main * { pointer-events: auto; }
+
+
+        /* --- Earthquake Overlay (Z-Index 10000 - 最前面) --- */
+        #quake-overlay {
+            position: fixed; inset: 0; z-index: 10000;
+            background: #1a0505; /* Deep Red-Black */
+            display: none; /* JSで制御 */
+            flex-direction: column;
+            /* justify-content: center; 中央寄せをやめて上下配置にする */
+            animation: fadeInAlert 0.3s ease-out;
+            overflow: hidden;
+        }
+        #quake-overlay.visible { display: flex; }
+        @keyframes fadeInAlert { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
+
+        /* Alert Map Container */
+        #alert-map-container {
+            position: absolute; inset: 0;
+            opacity: 1.0; /* 地図をはっきり表示 */
+            /* 赤黒くするフィルター (明るさを上げて視認性向上) */
+            filter: grayscale(100%) contrast(1.1) brightness(1.2) sepia(1) hue-rotate(-50deg) saturate(3);
+            pointer-events: none; /* 地図操作はさせない */
+        }
+        
+        /* Vignette & Scanlines Effect */
+        #quake-vignette {
+            position: absolute; inset: 0;
+            /* ビネットを少し弱めて地図を見やすく */
+            background: radial-gradient(circle, transparent 40%, rgba(50,0,0,0.4) 90%, #000 100%);
+            z-index: 1;
+            pointer-events: auto; /* クリックで閉じるため */
+        }
+        #quake-scanlines {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* Content Wrapper */
+        #quake-content {
+            position: relative; z-index: 10;
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: space-between; /* 上下に分散 */
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        .quake-scale-box {
+            border: 2px solid #ef4444;
+            color: #ef4444;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 30px;
+            border-radius: 99px;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.4), inset 0 0 20px rgba(239, 68, 68, 0.1);
+            backdrop-filter: blur(10px);
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            display: inline-block;
+        }
 
 
         /* --- Settings Drawer System (Layer 9999) --- */
@@ -167,6 +232,34 @@
         .snap-item { scroll-snap-align: start; height: 100%; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         ::-webkit-scrollbar { display: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Map Customization */
+        .leaflet-container { background: #111; font-family: sans-serif; }
+        .leaflet-control-attribution { display: none; } /* シンプル化のため非表示 */
+        
+        /* Widget Map Specific - Interaction Disabled */
+        #quake-map {
+            pointer-events: none; /* タッチイベントを透過してスクロールを優先 */
+        }
+
+        /* --- Timer Circle --- */
+        .timer-svg {
+            transform: rotate(-90deg);
+        }
+        .timer-circle-bg {
+            fill: none;
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 6;
+        }
+        .timer-circle-progress {
+            fill: none;
+            stroke: #fff;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 880; /* 2 * PI * 140 (approx) */
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -206,32 +299,133 @@
             <!-- Multi Widget -->
             <div class="glass relative overflow-hidden">
                 <div class="snap-container">
-                    <!-- 1. Weather -->
-                    <div class="snap-item p-8">
-                        <i id="w-icon" class="fas fa-sun text-8xl mb-4 opacity-90 drop-shadow-lg"></i>
-                        <div id="w-temp" class="text-6xl font-thin mb-2 mt-4 drop-shadow-md">--°</div>
-                        <div id="w-location" class="text-xl tracking-widest opacity-60 uppercase">TOKYO</div>
+                    
+                    <!-- 1. Weather (Re-balanced Layout) -->
+                    <div class="snap-item p-6 w-full flex flex-col justify-between h-full">
+                        <!-- Upper Section: 中央配置 -->
+                        <div class="flex justify-between items-center w-full flex-grow pb-4 px-4">
+                            <!-- Left: Location & Big Temp -->
+                            <div class="flex flex-col justify-center gap-2">
+                                <div id="w-location" class="text-2xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
+                                <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px]">--°</div>
+                            </div>
+                            <!-- Right: Icon, Desc, H/L -->
+                            <div class="flex flex-col items-end justify-center gap-2">
+                                <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg">
+                                    <i class="fas fa-sun text-6xl opacity-90"></i>
+                                </div>
+                                <div class="text-right">
+                                    <div id="w-desc" class="text-2xl font-bold opacity-90 drop-shadow-md">快晴</div>
+                                    <div class="flex gap-3 text-sm font-medium opacity-70 mt-1 justify-end">
+                                        <span>H:<span id="w-max">--</span>°</span>
+                                        <span>L:<span id="w-min">--</span>°</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Lower Section: 3h Forecast (Larger) -->
+                        <div class="w-full pt-6 border-t border-white/10">
+                            <div class="flex justify-between items-center">
+                                <!-- 3h later -->
+                                <div class="flex flex-col items-center gap-2 w-1/3">
+                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-1">--:--</span>
+                                    <div id="fc-icon-1" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
+                                    <span class="text-xl font-bold" id="fc-temp-1">--°</span>
+                                </div>
+                                <!-- 6h later -->
+                                <div class="flex flex-col items-center gap-2 w-1/3 border-l border-r border-white/5">
+                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-2">--:--</span>
+                                    <div id="fc-icon-2" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
+                                    <span class="text-xl font-bold" id="fc-temp-2">--°</span>
+                                </div>
+                                <!-- 9h later -->
+                                <div class="flex flex-col items-center gap-2 w-1/3">
+                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-3">--:--</span>
+                                    <div id="fc-icon-3" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
+                                    <span class="text-xl font-bold" id="fc-temp-3">--°</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <!-- 2. Calendar -->
+                    
+                    <!-- 2. Earthquake Map (New!) -->
+                    <div class="snap-item p-0 w-full relative overflow-hidden group">
+                        <!-- Map Background -->
+                        <div id="quake-map" class="w-full h-full rounded-[32px] overflow-hidden opacity-60 transition-opacity group-hover:opacity-100"></div>
+                        
+                        <!-- Info Overlay -->
+                        <div class="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none z-[500]">
+                            <!-- Header -->
+                            <div class="flex justify-between items-start">
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></div>
+                                        <span class="text-[10px] font-bold opacity-90 tracking-widest bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-white/10">LATEST QUAKE</span>
+                                    </div>
+                                    <!-- あなたの場所の予想震度 (条件付き表示) -->
+                                    <div id="q-widget-est-container" class="hidden transition-all duration-500">
+                                        <span class="text-[10px] font-bold text-yellow-300 bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-yellow-500/30 flex items-center gap-1 w-fit">
+                                            <i class="fas fa-map-marker-alt text-[8px] opacity-70"></i>
+                                            Your Area: <span id="q-widget-est-val">--</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Time (Top Right) -->
+                                <div id="q-widget-time" class="text-sm font-mono opacity-80 font-bold drop-shadow-md">--:--</div>
+                            </div>
+
+                            <!-- Main Info (Bottom) -->
+                            <div class="flex flex-col gap-1">
+                                <div class="flex items-baseline gap-3 drop-shadow-lg">
+                                    <span class="text-sm font-bold opacity-70">震度</span>
+                                    <span id="q-widget-scale" class="text-6xl font-black leading-none text-red-400">--</span>
+                                </div>
+                                <div id="q-widget-loc" class="text-xl font-bold leading-tight tracking-wide drop-shadow-md line-clamp-2">Loading...</div>
+                                <div class="text-xs font-mono opacity-60 mt-1" id="q-widget-mag">M-.--</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gradient Overlay for readability -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
+                    </div>
+
+                    <!-- 3. Calendar -->
                     <div class="snap-item p-8">
                         <div id="cal-month" class="text-3xl font-bold text-red-300 uppercase tracking-widest mb-2 drop-shadow-md">JAN</div>
                         <div id="cal-day" class="text-[120px] font-black leading-none mb-4 drop-shadow-xl">1</div>
                         <div class="text-xl tracking-[0.5em] opacity-60">TODAY</div>
                     </div>
-                    <!-- 3. Focus Timer (Pomodoro) -->
-                    <div class="snap-item p-8 w-full">
-                        <div class="text-xs font-bold opacity-50 tracking-widest mb-4">FOCUS TIMER</div>
-                        <div id="timer-display" class="text-[80px] font-thin font-mono leading-none mb-8 tabular-nums drop-shadow-lg">25:00</div>
-                        <div class="flex gap-6">
-                            <button onclick="toggleTimer()" id="timer-btn" class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition backdrop-blur-md">
-                                <i id="timer-icon" class="fas fa-play text-xl ml-1"></i>
-                            </button>
-                            <button onclick="resetTimer()" class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md">
-                                <i class="fas fa-redo text-xl"></i>
-                            </button>
+                    
+                    <!-- 4. Focus Timer (Circular Design with Label Below) -->
+                    <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
+                        <div class="relative w-[280px] h-[280px] flex items-center justify-center">
+                            <!-- SVG Ring -->
+                            <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
+                                <!-- Track -->
+                                <circle class="timer-circle-bg" cx="150" cy="150" r="140"></circle>
+                                <!-- Progress -->
+                                <circle id="timer-progress-ring" class="timer-circle-progress" cx="150" cy="150" r="140"></circle>
+                            </svg>
+                            
+                            <!-- Inside Content -->
+                            <div class="flex flex-col items-center justify-center z-10">
+                                <div id="timer-display" class="text-6xl font-mono font-thin mb-4 tabular-nums">25:00</div>
+                                <div class="flex gap-4">
+                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md">
+                                        <i id="timer-icon" class="fas fa-play text-lg ml-1"></i>
+                                    </button>
+                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md">
+                                        <i class="fas fa-redo text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                        <!-- Label moved below -->
+                        <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
                     </div>
-                    <!-- 4. Quick Memo -->
+                    
+                    <!-- 5. Quick Memo -->
                     <div class="snap-item p-8 w-full">
                         <div class="w-full h-full flex flex-col">
                             <div class="text-xs font-bold opacity-50 tracking-widest mb-3 text-left">QUICK MEMO</div>
@@ -239,8 +433,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- Indicator (4 dots) -->
+                <!-- Indicator (5 dots) -->
                 <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                     <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                     <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
                     <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
@@ -250,49 +445,96 @@
         </div>
     </main>
 
+    <!-- 地震アラートオーバーレイ -->
+    <div id="quake-overlay">
+        <div id="alert-map-container" class="w-full h-full absolute inset-0"></div>
+        <div id="quake-vignette" onclick="closeQuakeAlert()"></div>
+        <div id="quake-scanlines"></div>
+        <div id="quake-content">
+            <div class="w-full flex justify-center pt-16 pointer-events-none">
+                <div class="quake-scale-box">
+                    <h1 class="text-2xl font-black uppercase tracking-widest">緊急地震速報</h1>
+                </div>
+            </div>
+            <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
+                
+                <!-- 2カラムレイアウト: items-end を items-start に変更して高さを合わせる -->
+                <div class="flex justify-center items-start gap-16 mb-4 w-full">
+                    
+                    <!-- 全国最大震度 -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span>
+                        <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
+                            <span class="text-2xl opacity-70 font-bold">震度</span>
+                            <span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span>
+                        </div>
+                    </div>
+
+                    <!-- あなたの地域の震度 -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span>
+                        <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
+                            <span class="text-2xl opacity-70 font-bold text-yellow-400">震度</span>
+                            <span class="text-[120px] font-bold leading-none text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]" id="q-est-scale">--</span>
+                        </div>
+                        <div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div>
+                    </div>
+
+                </div>
+                
+                <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
+                <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md">
+                    <span id="q-time">12:34</span>
+                    <span class="w-px bg-white/30 h-6"></span>
+                    <span id="q-mag">M4.5</span>
+                </div>
+                
+                <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
+            </div>
+        </div>
+    </div>
+
     <!-- 設定オーバーレイ -->
     <div id="settings-overlay" onclick="closeSettings()"></div>
 
-    <!-- 設定ドロワー (2カラムレイアウト) -->
+    <!-- 設定ドロワー -->
     <div id="settings-drawer">
-        <!-- 左サイドバー -->
         <div class="settings-sidebar">
-            <div class="text-[10px] font-bold opacity-30 px-4 mb-2 tracking-widest">MENU</div>
-            <button class="tab-btn active" onclick="switchTab('bg')"><i class="fas fa-image tab-icon"></i>BG</button>
+            <div class="text-[10px] font-bold opacity-30 px-4 mb-2 tracking-widest">設定メニュー</div>
+            <button class="tab-btn active" onclick="switchTab('bg')"><i class="fas fa-image tab-icon"></i>背景</button>
             <button class="tab-btn" onclick="switchTab('notion')"><i class="fas fa-list tab-icon"></i>Notion</button>
-            <button class="tab-btn" onclick="switchTab('weather')"><i class="fas fa-cloud tab-icon"></i>Weather</button>
-            <button class="tab-btn" onclick="switchTab('timer')"><i class="fas fa-stopwatch tab-icon"></i>Timer</button>
+            <button class="tab-btn" onclick="switchTab('weather')"><i class="fas fa-cloud tab-icon"></i>天気&地震</button>
+            <button class="tab-btn" onclick="switchTab('timer')"><i class="fas fa-stopwatch tab-icon"></i>タイマー</button>
             <div class="flex-1"></div>
-            <button onclick="saveConfig()" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest mt-4">SAVE</button>
+            <button onclick="saveConfig()" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest mt-4">保存</button>
         </div>
 
-        <!-- 右メインコンテンツ -->
         <div class="settings-content">
             
             <!-- 背景設定 -->
             <div id="tab-bg" class="tab-panel active">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">BACKGROUND</h3>
+                <h3 class="text-lg font-bold mb-6 tracking-widest">背景テーマ</h3>
                 <div class="space-y-4">
-                    <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">Preview Mode</label>
+                    <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">テーマプレビュー</label>
                     <div class="grid grid-cols-1 gap-2">
                         <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-pink-500/30 transition">
-                            <span class="text-xs font-bold text-pink-200">DAWN</span>
+                            <span class="text-xs font-bold text-pink-200">夜明け</span>
                             <span class="text-[10px] opacity-50">05:00 - 08:00</span>
                         </button>
                         <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-blue-500/30 transition">
-                            <span class="text-xs font-bold text-blue-200">DAY</span>
+                            <span class="text-xs font-bold text-blue-200">昼</span>
                             <span class="text-[10px] opacity-50">08:00 - 16:00</span>
                         </button>
                         <button onclick="testBg('sunset')" class="bg-orange-500/20 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-orange-500/30 transition">
-                            <span class="text-xs font-bold text-orange-200">SUNSET</span>
+                            <span class="text-xs font-bold text-orange-200">夕方</span>
                             <span class="text-[10px] opacity-50">16:00 - 19:00</span>
                         </button>
                         <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl border border-white/5 text-left px-4 flex justify-between items-center hover:bg-indigo-900/50 transition">
-                            <span class="text-xs font-bold text-indigo-200">NIGHT</span>
+                            <span class="text-xs font-bold text-indigo-200">夜</span>
                             <span class="text-[10px] opacity-50">19:00 - 05:00</span>
                         </button>
-                        <button onclick="testBg('alert')" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4">
-                            <span class="text-xs font-bold text-red-300">ALERT TEST</span>
+                        <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl border border-red-500/30 text-left px-4 flex justify-between items-center hover:bg-red-900/60 transition mt-4">
+                            <span class="text-xs font-bold text-red-300">アラートテスト</span>
                             <i class="fas fa-exclamation-triangle text-red-400"></i>
                         </button>
                     </div>
@@ -301,60 +543,113 @@
 
             <!-- Notion設定 -->
             <div id="tab-notion" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">NOTION API</h3>
+                <h3 class="text-lg font-bold mb-6 tracking-widest">Notion連携設定</h3>
                 <div class="space-y-5">
                     <div class="relative">
                         <input type="password" id="n-key" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Notion API Key</label>
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">APIキー (secret_...)</label>
                     </div>
                     <div class="relative">
                         <input type="text" id="n-db" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Database ID</label>
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">データベースID</label>
                     </div>
-                    <div class="relative">
-                        <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Date Property Name</label>
-                        <p class="text-[10px] opacity-30 mt-1 ml-2">e.g. "Date" or "日付"</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="relative">
+                            <input type="text" id="n-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">日付プロパティ名</label>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ステータスプロパティ名</label>
+                        </div>
                     </div>
-                    <div class="relative">
-                        <input type="text" id="n-stat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Status Property Name</label>
-                        <p class="text-[10px] opacity-30 mt-1 ml-2">e.g. "Status" or "ステータス"</p>
+                    <div class="pt-4 border-t border-white/10">
+                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ステータス判定ロジック</label>
+                        <div class="mb-3">
+                            <label class="text-[10px] opacity-70 mb-1 block">プロパティの種類</label>
+                            <div class="flex bg-white/5 rounded-lg p-1 border border-white/10">
+                                <button onclick="setPropType('status')" id="btn-type-status" class="flex-1 py-2 text-xs rounded transition-colors bg-white/10">Status</button>
+                                <button onclick="setPropType('select')" id="btn-type-select" class="flex-1 py-2 text-xs rounded transition-colors opacity-50">Select</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative">
+                                <input type="text" id="n-done-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">完了の値</label>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="n-not-val" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">未着手の値</label>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- User Filter -->
+                    <div class="pt-4 border-t border-white/10">
+                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">ユーザーフィルタ (任意)</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative">
+                                <input type="text" id="n-user-prop" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">担当者プロパティ名</label>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="n-user-id" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">ユーザー名 / ID</label>
+                            </div>
+                        </div>
+                        <p class="text-[9px] opacity-30 mt-1 ml-1">指定した文字を含む担当者のタスクのみ表示します</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 天気設定 -->
+            <!-- 天気＆地震設定 -->
             <div id="tab-weather" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">LOCATION</h3>
-                <div class="space-y-5">
-                    <p class="text-xs opacity-50 leading-relaxed mb-4">
-                        Normally uses GPS. Enter coordinates manually if you want to fix the location.
-                    </p>
-                    <div class="relative">
-                        <input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Latitude</label>
+                <h3 class="text-lg font-bold mb-6 tracking-widest">LOCATION & QUAKE AREA</h3>
+                <div class="space-y-6">
+                    <!-- 天気 -->
+                    <div>
+                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">天気情報</label>
+                        <p class="text-xs opacity-50 leading-relaxed mb-4">
+                            基本はGPSを使用します。固定したい場合は座標を入力してください。
+                        </p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="relative">
+                                <input type="text" id="w-lat" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">緯度</label>
+                            </div>
+                            <div class="relative">
+                                <input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                                <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">経度</label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="relative">
-                        <input type="text" id="w-lon" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Longitude</label>
-                    </div>
-                    <div class="pt-4 border-t border-white/10 mt-4">
-                        <p class="text-[10px] font-bold opacity-30 uppercase mb-2">Default (Fallback)</p>
-                        <p class="text-xs opacity-50">Tokyo: 35.6895, 139.6917</p>
+                    
+                    <!-- 地震エリア設定 -->
+                    <div class="pt-4 border-t border-white/10">
+                        <label class="text-[10px] font-bold opacity-50 uppercase mb-3 block tracking-widest">地震情報の地域設定</label>
+                        <div class="relative mb-3">
+                            <input type="text" id="q-area" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
+                            <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">地域名 (例: 東京千代田区)</label>
+                        </div>
+                        <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="text-[10px] text-blue-300 opacity-80 hover:opacity-100 underline block mb-1">
+                            <i class="fas fa-external-link-alt mr-1"></i>地域名の確認はこちら (GitHub)
+                        </a>
+                        <p class="text-[9px] opacity-40">
+                            ※上記リンクの「name」列の名称を正確に入力してください。<br>
+                            地震発生時に、この地域の震度をアラート画面に表示します。
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Timer設定 (New) -->
+            <!-- Timer設定 -->
             <div id="tab-timer" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">FOCUS TIMER</h3>
+                <h3 class="text-lg font-bold mb-6 tracking-widest">集中タイマー設定</h3>
                 <div class="space-y-5">
                     <div class="relative">
                         <input type="number" id="t-duration" placeholder=" " class="peer w-full bg-white/5 border border-white/10 rounded-xl p-4 pt-6 text-sm text-white focus:border-white/30 focus:outline-none transition-colors">
-                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">Duration (minutes)</label>
+                        <label class="absolute left-4 top-2 text-[9px] font-bold text-white/30 uppercase tracking-wider transition-all">タイマー時間 (分)</label>
                     </div>
-                    <p class="text-[10px] opacity-30 mt-1 ml-2">Default: 25 minutes</p>
+                    <p class="text-[10px] opacity-30 mt-1 ml-2">初期値: 25分</p>
                 </div>
             </div>
 
@@ -367,8 +662,14 @@
             db: localStorage.getItem('n_db') || '',
             prop: localStorage.getItem('n_prop') || 'Date',
             statProp: localStorage.getItem('n_stat') || 'Status',
+            doneVal: localStorage.getItem('n_done_val') || 'Done',
+            notVal: localStorage.getItem('n_not_val') || 'Not started',
+            pType: localStorage.getItem('n_p_type') || 'status',
+            userProp: localStorage.getItem('n_user_prop') || '',
+            userId: localStorage.getItem('n_user_id') || '',
             lat: localStorage.getItem('w_lat') || '',
             lon: localStorage.getItem('w_lon') || '',
+            quakeArea: localStorage.getItem('q_area') || '',
             memo: localStorage.getItem('quick_memo') || '',
             timerDuration: localStorage.getItem('timer_duration') || '25'
         };
@@ -376,15 +677,55 @@
         let currentMode = 'day';
         let weatherLat = 35.6895;
         let weatherLon = 139.6917;
+        let mapInstance = null; // Widget map
+        let alertMapInstance = null; // Alert map
+
+        // --- Helper: SVG Icons ---
+        function getWeatherIcon(code, isNight) {
+            const size = 80; // Bigger Icon
+            const color = 'rgba(255,255,255,0.95)';
+            if (code === 0) {
+                return isNight 
+                    ? `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`
+                    : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+            } else if (code <= 3) {
+                return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
+            } else if (code <= 67) {
+                return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 13v8"/><path d="M12 13v8"/><path d="M16 13v8"/></svg>`;
+            } else if (code <= 77) {
+                return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 15h.01"/><path d="M12 17h.01"/><path d="M16 15h.01"/><path d="M10 19h.01"/><path d="M14 19h.01"/></svg>`;
+            } else {
+                return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="m13 13-2 4h3l-2 4"/></svg>`;
+            }
+        }
+        
+        function getSmallIcon(code) {
+             const size = 40; const color = 'rgba(255,255,255,0.7)';
+             if (code === 0) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+             if (code <= 3) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/></svg>`;
+             if (code <= 67) return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="M8 13v8"/><path d="M12 13v8"/><path d="M16 13v8"/></svg>`;
+             return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a3 3 0 0 1 0-6 4.5 4.5 0 0 1 7.2-2.8 5 5 0 0 1 8.7 3.3"/><path d="m13 13-2 4h3l-2 4"/></svg>`;
+        }
+
+        function getWeatherDesc(code) {
+            if (code === 0) return "快晴";
+            if (code <= 3) return "曇り";
+            if (code <= 48) return "霧";
+            if (code <= 57) return "霧雨";
+            if (code <= 67) return "雨";
+            if (code <= 77) return "雪";
+            if (code <= 82) return "にわか雨";
+            if (code <= 86) return "雪";
+            return "雷雨";
+        }
+
 
         // --- Swipe & Drag Logic ---
         let startX = 0; let startY = 0; let isDragging = false;
-
         document.addEventListener('touchstart', e => { startX = e.changedTouches[0].screenX; startY = e.changedTouches[0].screenY; }, {passive: true});
         document.addEventListener('touchend', e => { handleSwipe(startX, startY, e.changedTouches[0].screenX, e.changedTouches[0].screenY); }, {passive: true});
         document.addEventListener('mousedown', e => { startX = e.clientX; startY = e.clientY; if(startX < 50) isDragging = true; });
         document.addEventListener('mouseup', e => { if(!isDragging) return; isDragging = false; handleSwipe(startX, startY, e.clientX, e.clientY); });
-
         function handleSwipe(sX, sY, eX, eY) {
             if (sX < 50 && eX - sX > 100 && Math.abs(eY - sY) < 100) openSettings();
         }
@@ -393,13 +734,11 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
-            
             const btns = document.querySelectorAll('.tab-btn');
             if(tabId === 'bg') btns[0].classList.add('active');
             if(tabId === 'notion') btns[1].classList.add('active');
             if(tabId === 'weather') btns[2].classList.add('active');
             if(tabId === 'timer') btns[3].classList.add('active');
-
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
@@ -418,32 +757,293 @@
             const now = new Date();
             document.getElementById('time-disp').textContent = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
             document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            
             document.getElementById('cal-month').textContent = now.toLocaleDateString('en-US', { month: 'short' });
             document.getElementById('cal-day').textContent = now.getDate();
 
             const drawer = document.getElementById('settings-drawer');
-            if(!drawer.classList.contains('open')) {
-                const h = now.getHours();
-                let autoMode = 'day';
-                if(h >= 5 && h < 8) autoMode = 'dawn';
-                else if(h >= 8 && h < 16) autoMode = 'day';
-                else if(h >= 16 && h < 19) autoMode = 'sunset';
-                else autoMode = 'night';
-                applyBg(autoMode);
+            const quakeOverlay = document.getElementById('quake-overlay');
+            // ドロワーもアラートも開いていない時だけ更新
+            if (drawer && quakeOverlay) {
+                if(!drawer.classList.contains('open') && !quakeOverlay.classList.contains('visible')) {
+                    const h = now.getHours();
+                    let autoMode = 'day';
+                    if(h >= 5 && h < 8) autoMode = 'dawn';
+                    else if(h >= 8 && h < 16) autoMode = 'day';
+                    else if(h >= 16 && h < 19) autoMode = 'sunset';
+                    else autoMode = 'night';
+                    applyBg(autoMode);
+                }
             }
         }
 
+        // --- Quake Alert Logic ---
+        let lastQuakeId = null;
+        async function checkQuake() {
+            try {
+                const res = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=1');
+                const data = await res.json();
+                if(!data || data.length === 0) return;
+
+                const q = data[0];
+                const qTime = new Date(q.time);
+                const now = new Date();
+                const diffMin = (now - qTime) / 1000 / 60;
+
+                // 10分以内の地震、かつ新しいIDなら表示
+                if (diffMin < 10 && q.id !== lastQuakeId) {
+                    showQuakeAlert(q);
+                    lastQuakeId = q.id;
+                }
+                updateQuakeMap(q);
+            } catch(e) { console.error("Quake API Error", e); }
+        }
+
+        function showQuakeAlert(q) {
+            applyBg('alert');
+            const scaleMap = { 10:'1', 20:'2', 30:'3', 40:'4', 45:'5-', 50:'5+', 55:'6-', 60:'6+', 70:'7' };
+            const maxScale = q.earthquake.maxScale;
+            document.getElementById('q-scale').textContent = scaleMap[maxScale] || '?';
+            document.getElementById('q-loc').textContent = q.earthquake.hypocenter.name;
+            document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
+            document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
+            
+            // あなたの地域の震度
+            let myScaleText = "--";
+            if (store.quakeArea && q.points) {
+                let point = q.points.find(p => p.addr === store.quakeArea);
+                if (!point) {
+                    point = q.points.find(p => p.addr.includes(store.quakeArea));
+                }
+                if (point) {
+                    myScaleText = scaleMap[point.scale] || point.scale;
+                    document.getElementById('q-area-name').textContent = point.addr;
+                } else {
+                    document.getElementById('q-area-name').textContent = "震度情報なし";
+                }
+            } else {
+                document.getElementById('q-area-name').textContent = "地域未設定";
+            }
+            document.getElementById('q-est-scale').textContent = myScaleText;
+
+            document.getElementById('quake-overlay').classList.add('visible');
+            updateAlertMap(q); 
+        }
+
+        function closeQuakeAlert() {
+            document.getElementById('quake-overlay').classList.remove('visible');
+            currentMode = ''; 
+            updateClock();
+        }
+
+        function testQuake() {
+            const now = new Date();
+            const timeStr = now.getFullYear() + '/' + 
+                            ('0' + (now.getMonth()+1)).slice(-2) + '/' + 
+                            ('0' + now.getDate()).slice(-2) + ' ' + 
+                            ('0' + now.getHours()).slice(-2) + ':' + 
+                            ('0' + now.getMinutes()).slice(-2) + ':' + 
+                            ('0' + now.getSeconds()).slice(-2);
+            
+            const dummy = { 
+                id: 'test_' + now.getTime(), 
+                time: timeStr,
+                earthquake: { 
+                    maxScale: 50, 
+                    hypocenter: { 
+                        name: 'テスト震源地 (東京湾)', 
+                        magnitude: 7.0,
+                        latitude: 35.6895, // Tokyo
+                        longitude: 139.6917
+                    } 
+                },
+                points: [
+                    { addr: store.quakeArea || "東京千代田区", scale: 40 } // テスト用に震度4を設定
+                ]
+            };
+            closeSettings();
+            setTimeout(() => {
+                showQuakeAlert(dummy);
+                updateQuakeMap(dummy);
+            }, 300);
+        }
+
+        // --- Quake Map (Widget) ---
+        function initMap() {
+            if(mapInstance) return;
+            // 日本全土が収まるようにズームレベルと中心座標を調整
+            mapInstance = L.map('quake-map', { 
+                zoomControl: false, 
+                attributionControl: false,
+                zoomSnap: 0.1,
+                dragging: false,       
+                touchZoom: false,      
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                boxZoom: false,        
+                tap: false,            
+                keyboard: false        
+            }).setView([36, 138], 3.8); 
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(mapInstance);
+        }
+
+        // --- Alert Map (Overlay) ---
+        function initAlertMap() {
+            if(alertMapInstance) return;
+            // アラート画面用（全画面）なので少しズームを上げて日本全土表示
+            alertMapInstance = L.map('alert-map-container', { 
+                zoomControl: false, 
+                attributionControl: false, 
+                zoomAnimation: false, 
+                fadeAnimation: false,
+                zoomSnap: 0.1
+            }).setView([36, 138], 5.5);
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(alertMapInstance);
+        }
+
+        function updateAlertMap(q) {
+            initAlertMap();
+            const lat = q.earthquake.hypocenter.latitude;
+            const lng = q.earthquake.hypocenter.longitude;
+            alertMapInstance.setView([lat, lng], 6);
+            
+            alertMapInstance.eachLayer((layer) => {
+                if(layer instanceof L.Circle || layer instanceof L.CircleMarker) { alertMapInstance.removeLayer(layer); }
+            });
+
+            const qTime = new Date(q.time).getTime();
+            const now = new Date().getTime();
+            const elapsedSec = Math.max(0, (now - qTime) / 1000);
+            const pRadius = 6000 * elapsedSec;
+            const sRadius = 3500 * elapsedSec;
+
+            L.circle([lat, lng], { color: '#4facfe', fillColor: 'transparent', weight: 2, radius: pRadius }).addTo(alertMapInstance);
+            L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.3, weight: 4, radius: sRadius }).addTo(alertMapInstance);
+            L.circleMarker([lat, lng], { radius: 10, color: 'white', fillColor: '#f00', fillOpacity: 1 }).addTo(alertMapInstance);
+        }
+
+        let pWaveCircle = null; let sWaveCircle = null;
+        function updateQuakeMap(q) {
+            if(!mapInstance) initMap();
+            const lat = q.earthquake.hypocenter.latitude;
+            const lng = q.earthquake.hypocenter.longitude;
+            const name = q.earthquake.hypocenter.name;
+            const timeStr = q.time;
+            
+            const timeParts = timeStr.split(' ')[1].split(':');
+            const shortTime = `${timeParts[0]}:${timeParts[1]}`;
+
+            const scaleMap = { 10:'1', 20:'2', 30:'3', 40:'4', 45:'5-', 50:'5+', 55:'6-', 60:'6+', 70:'7' };
+            const maxScale = q.earthquake.maxScale;
+            const scaleText = scaleMap[maxScale] || '-';
+
+            mapInstance.setView([lat, lng], 4.5);
+            
+            // --- Widget Text Updates ---
+            const scaleEl = document.getElementById('q-widget-scale');
+            if(scaleEl) scaleEl.textContent = scaleText;
+            
+            const locEl = document.getElementById('q-widget-loc');
+            if(locEl) locEl.textContent = name;
+            
+            const timeEl = document.getElementById('q-widget-time');
+            if(timeEl) timeEl.textContent = shortTime;
+            
+            const magEl = document.getElementById('q-widget-mag');
+            if(magEl) magEl.textContent = `M${q.earthquake.hypocenter.magnitude}`;
+
+
+            // --- 追加: あなたの震度表示ロジック ---
+            const qLat = q.earthquake.hypocenter.latitude;
+            const qLon = q.earthquake.hypocenter.longitude;
+            const qMag = q.earthquake.hypocenter.magnitude;
+            const qDepth = q.earthquake.hypocenter.depth || 10;
+            
+            const qTimeObj = new Date(q.time).getTime();
+            const now = new Date().getTime();
+            const elapsedSec = (now - qTimeObj) / 1000;
+
+            const estContainer = document.getElementById('q-widget-est-container');
+            const estVal = document.getElementById('q-widget-est-val');
+
+            let showEst = false;
+
+            // 10分以内の地震の場合のみ計算・表示を試みる
+            // APIのpointsにデータがあればそれを優先、なければ距離減衰計算
+            if (elapsedSec < 600) {
+                let myScale = null;
+                // Points check
+                if (store.quakeArea && q.points) {
+                     let point = q.points.find(p => p.addr === store.quakeArea) || q.points.find(p => p.addr.includes(store.quakeArea));
+                     if(point) myScale = scaleMap[point.scale] || point.scale;
+                }
+                // Fallback to calc if point not found but we have coords
+                if (!myScale && qLat && qLon && weatherLat && weatherLon) {
+                     const dist = getDistance(weatherLat, weatherLon, qLat, qLon);
+                     // 距離計算による推測は「簡易演算」として扱う
+                     // myScale = calcEstimatedIntensity(qMag, qDepth, dist); 
+                     // 今回はユーザー要望により「計算は信用できない」とのことなので
+                     // pointsになければ表示しないか、"--"にするのが安全
+                }
+
+                if (myScale && myScale !== "0") {
+                    if(estVal) estVal.textContent = myScale;
+                    showEst = true;
+                }
+            }
+
+            if (estContainer) {
+                if (showEst) {
+                    estContainer.classList.remove('hidden');
+                } else {
+                    estContainer.classList.add('hidden');
+                }
+            }
+
+            // --- Animation ---
+            if(elapsedSec > 300) { 
+                if(pWaveCircle) mapInstance.removeLayer(pWaveCircle);
+                if(sWaveCircle) mapInstance.removeLayer(sWaveCircle);
+                L.circleMarker([lat, lng], { radius: 8, color: 'red', fillColor: '#f03', fillOpacity: 0.8 }).addTo(mapInstance);
+                return;
+            }
+
+            const pRadius = 6000 * elapsedSec;
+            const sRadius = 3500 * elapsedSec;
+
+            if(pWaveCircle) { pWaveCircle.setLatLng([lat, lng]); pWaveCircle.setRadius(pRadius); }
+            else { pWaveCircle = L.circle([lat, lng], { color: '#4facfe', fillColor: '#4facfe', fillOpacity: 0.1, weight: 1, radius: pRadius }).addTo(mapInstance); }
+
+            if(sWaveCircle) { sWaveCircle.setLatLng([lat, lng]); sWaveCircle.setRadius(sRadius); }
+            else { sWaveCircle = L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2, weight: 2, radius: sRadius }).addTo(mapInstance); }
+        }
+
         // --- Settings Logic ---
+        function setPropType(type) {
+            document.getElementById('btn-type-status').classList.toggle('bg-white/10', type === 'status');
+            document.getElementById('btn-type-status').classList.toggle('opacity-50', type !== 'status');
+            document.getElementById('btn-type-select').classList.toggle('bg-white/10', type === 'select');
+            document.getElementById('btn-type-select').classList.toggle('opacity-50', type !== 'select');
+            document.getElementById('n-stat').dataset.ptype = type; 
+        }
+
         function openSettings() {
             document.getElementById('n-key').value = store.key;
             document.getElementById('n-db').value = store.db;
             document.getElementById('n-prop').value = store.prop;
             document.getElementById('n-stat').value = store.statProp;
+            document.getElementById('n-done-val').value = store.doneVal;
+            document.getElementById('n-not-val').value = store.notVal;
+            document.getElementById('n-user-prop').value = store.userProp;
+            document.getElementById('n-user-id').value = store.userId;
             document.getElementById('w-lat').value = store.lat;
             document.getElementById('w-lon').value = store.lon;
+            document.getElementById('q-area').value = store.quakeArea;
             document.getElementById('t-duration').value = store.timerDuration;
-            
+            setPropType(store.pType);
+            document.getElementById('n-stat').dataset.ptype = store.pType;
+
             document.getElementById('settings-overlay').classList.add('visible');
             document.getElementById('settings-drawer').classList.add('open');
         }
@@ -460,22 +1060,34 @@
             store.db = document.getElementById('n-db').value.trim();
             store.prop = document.getElementById('n-prop').value.trim();
             store.statProp = document.getElementById('n-stat').value.trim();
+            store.doneVal = document.getElementById('n-done-val').value.trim() || 'Done';
+            store.notVal = document.getElementById('n-not-val').value.trim() || 'Not started';
+            store.pType = document.getElementById('n-stat').dataset.ptype || 'status';
+            store.userProp = document.getElementById('n-user-prop').value.trim();
+            store.userId = document.getElementById('n-user-id').value.trim();
             store.lat = document.getElementById('w-lat').value.trim();
             store.lon = document.getElementById('w-lon').value.trim();
+            store.quakeArea = document.getElementById('q-area').value.trim();
             store.timerDuration = document.getElementById('t-duration').value.trim();
             
             localStorage.setItem('n_key', store.key);
             localStorage.setItem('n_db', store.db);
             localStorage.setItem('n_prop', store.prop);
             localStorage.setItem('n_stat', store.statProp);
+            localStorage.setItem('n_done_val', store.doneVal);
+            localStorage.setItem('n_not_val', store.notVal);
+            localStorage.setItem('n_p_type', store.pType);
+            localStorage.setItem('n_user_prop', store.userProp);
+            localStorage.setItem('n_user_id', store.userId);
             localStorage.setItem('w_lat', store.lat);
             localStorage.setItem('w_lon', store.lon);
+            localStorage.setItem('q_area', store.quakeArea);
             localStorage.setItem('timer_duration', store.timerDuration);
             
             closeSettings();
             fetchNotion();
             initLocation();
-            resetTimer(); // Apply new timer setting
+            resetTimer(); 
         }
 
         // --- Notion API ---
@@ -501,15 +1113,40 @@
 
         function renderTasks(tasks) {
             const list = document.getElementById('task-list');
-            if(!tasks || tasks.length === 0) {
+            
+            // --- User Filtering Logic ---
+            let filteredTasks = tasks;
+            if (store.userProp && store.userId) {
+                filteredTasks = tasks.filter(t => {
+                    const uObj = t.properties[store.userProp];
+                    if (!uObj) return false;
+                    
+                    let uVal = "";
+                    // Handle different property types (People, Select, RichText)
+                    if (uObj.type === 'people') {
+                        // People: check all assigned users
+                        return uObj.people.some(p => (p.name && p.name.includes(store.userId)) || (p.id && p.id === store.userId));
+                    } else if (uObj.type === 'select') {
+                        uVal = uObj.select?.name || "";
+                    } else if (uObj.type === 'rich_text') {
+                        uVal = uObj.rich_text[0]?.plain_text || "";
+                    }
+                    
+                    return uVal.includes(store.userId);
+                });
+            }
+
+            if(!filteredTasks || filteredTasks.length === 0) {
                 list.innerHTML = `<div class="mt-10 text-center opacity-40 text-sm tracking-widest">NO TASKS TODAY</div>`;
                 return;
             }
-            list.innerHTML = tasks.map(t => {
+            
+            list.innerHTML = filteredTasks.map(t => {
                 const title = Object.values(t.properties).find(p => p.type === 'title')?.title[0]?.plain_text || "Untitled";
                 const sObj = t.properties[store.statProp];
-                const sName = sObj?.status?.name || sObj?.select?.name || "";
-                const isDone = ['Done', '完了', 'Complete', '済み'].includes(sName);
+                let sName = "";
+                if (sObj) { if (sObj.status) sName = sObj.status.name; else if (sObj.select) sName = sObj.select.name; }
+                const isDone = sName === store.doneVal;
                 return `
                     <div class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors ${isDone ? 'opacity-30' : ''}">
                         <input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" ${isDone ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)">
@@ -519,34 +1156,107 @@
         }
 
         async function toggleTask(id, checked) {
-            const newVal = checked ? "Done" : "Not started";
+            const newVal = checked ? store.doneVal : store.notVal;
             const url = `https://corsproxy.io/?${encodeURIComponent(`https://api.notion.com/v1/pages/${id}`)}`;
+            let properties = {};
+            if (store.pType === 'select') { properties[store.statProp] = { select: { name: newVal } }; } 
+            else { properties[store.statProp] = { status: { name: newVal } }; }
             try {
                 await fetch(url, {
                     method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${store.key}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ properties: { [store.statProp]: { status: { name: newVal } } } })
+                    body: JSON.stringify({ properties: properties })
                 });
-            } catch(e) {}
+            } catch(e) { alert("Sync Error"); }
         }
 
         // --- Weather & Location ---
         async function fetchWeather() {
             try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current_weather=true`);
+                // Request detailed current + hourly + daily
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+                
+                const res = await fetch(url);
                 const data = await res.json();
-                document.getElementById('w-temp').textContent = `${Math.round(data.current_weather.temperature)}°`;
-                const c = data.current_weather.weathercode;
-                let i = 'fa-sun';
-                if(c > 3) i = 'fa-cloud'; if(c > 50) i = 'fa-cloud-rain';
-                document.getElementById('w-icon').className = `fas ${i} text-8xl mb-4 opacity-90 drop-shadow-lg`;
-            } catch(e) {}
+                
+                // Current
+                const current = data.current;
+                document.getElementById('w-temp').textContent = `${Math.round(current.temperature_2m)}°`;
+
+                // Icon (Big)
+                const isNight = current.is_day === 0;
+                document.getElementById('w-icon-container').innerHTML = getWeatherIcon(current.weather_code, isNight);
+
+                // Description logic
+                document.getElementById('w-desc').textContent = getWeatherDesc(current.weather_code);
+
+                // Daily Max/Min
+                const daily = data.daily;
+                if(daily) {
+                    const max = Math.round(daily.temperature_2m_max[0]);
+                    const min = Math.round(daily.temperature_2m_min[0]);
+                    document.getElementById('w-max').textContent = max;
+                    document.getElementById('w-min').textContent = min;
+                }
+
+                // Hourly Forecast (Current index + 3, +6, +9)
+                const nowIso = new Date().toISOString().slice(0, 13); // YYYY-MM-DDTHH
+                const hourIndex = data.hourly.time.findIndex(t => t.startsWith(nowIso));
+                
+                if (hourIndex !== -1) {
+                    [3, 6, 9].forEach((offset, i) => {
+                        const idx = hourIndex + offset;
+                        if (data.hourly.time[idx]) {
+                            const tStr = data.hourly.time[idx].split('T')[1];
+                            const temp = Math.round(data.hourly.temperature_2m[idx]);
+                            const code = data.hourly.weather_code[idx];
+                            
+                            document.getElementById(`fc-time-${i+1}`).textContent = tStr;
+                            document.getElementById(`fc-temp-${i+1}`).textContent = `${temp}°`;
+                            document.getElementById(`fc-icon-${i+1}`).innerHTML = getSmallIcon(code);
+                        }
+                    });
+                }
+
+            } catch(e) { console.error("Weather Error", e); }
         }
+        
+        // 距離計算 (km) - Haversine Formula (Added missing function)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // --- Geocoding Function ---
+        async function fetchLocationName(lat, lon) {
+            try {
+                const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ja`);
+                const data = await res.json();
+                // locality, city, principalSubdivision などから適切なものを表示
+                const name = data.locality || data.city || data.principalSubdivision || "Unknown";
+                document.getElementById('w-location').textContent = name.toUpperCase();
+            } catch(e) {
+                document.getElementById('w-location').textContent = "GPS LOC";
+            }
+        }
+
 
         function initLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (p) => { weatherLat = p.coords.latitude; weatherLon = p.coords.longitude; document.getElementById('w-location').textContent = "GPS LOCATION"; fetchWeather(); },
+                    (p) => { 
+                        weatherLat = p.coords.latitude; 
+                        weatherLon = p.coords.longitude; 
+                        // 地名取得を追加
+                        fetchLocationName(weatherLat, weatherLon);
+                        fetchWeather(); 
+                    },
                     (e) => { useManualOrFallback(); }
                 );
             } else { useManualOrFallback(); }
@@ -554,8 +1264,16 @@
 
         function useManualOrFallback() {
             const mLat = parseFloat(store.lat); const mLon = parseFloat(store.lon);
-            if (!isNaN(mLat) && !isNaN(mLon)) { weatherLat = mLat; weatherLon = mLon; document.getElementById('w-location').textContent = "CUSTOM LOCATION"; } 
-            else { weatherLat = 35.6895; weatherLon = 139.6917; document.getElementById('w-location').textContent = "TOKYO"; }
+            if (!isNaN(mLat) && !isNaN(mLon)) { 
+                weatherLat = mLat; 
+                weatherLon = mLon; 
+                // 手動の場合も地名を取得してみる
+                fetchLocationName(weatherLat, weatherLon);
+            } else { 
+                weatherLat = 35.6895; 
+                weatherLon = 139.6917; 
+                document.getElementById('w-location').textContent = "TOKYO"; 
+            }
             fetchWeather();
         }
 
@@ -563,35 +1281,53 @@
         let timerInterval;
         let timerSeconds = parseInt(store.timerDuration) * 60;
         let timerRunning = false;
+        let totalTime = parseInt(store.timerDuration) * 60;
 
         function toggleTimer() {
             if(timerRunning) {
                 clearInterval(timerInterval);
                 timerRunning = false;
-                document.getElementById('timer-icon').className = 'fas fa-play text-xl ml-1';
+                document.getElementById('timer-icon').className = 'fas fa-play text-lg ml-1';
             } else {
+                if (timerSeconds <= 0) resetTimer(); // Auto reset if finished
+                
                 timerInterval = setInterval(() => {
                     timerSeconds--;
                     updateTimerDisplay();
-                    if(timerSeconds <= 0) { clearInterval(timerInterval); timerRunning = false; alert("Time's up!"); }
+                    if(timerSeconds <= 0) { 
+                        clearInterval(timerInterval); 
+                        timerRunning = false; 
+                        document.getElementById('timer-icon').className = 'fas fa-play text-lg ml-1';
+                        alert("Time's up!"); 
+                    }
                 }, 1000);
                 timerRunning = true;
-                document.getElementById('timer-icon').className = 'fas fa-pause text-xl';
+                document.getElementById('timer-icon').className = 'fas fa-pause text-lg';
             }
         }
 
         function resetTimer() {
             clearInterval(timerInterval);
             timerRunning = false;
-            timerSeconds = parseInt(store.timerDuration) * 60;
+            // Get latest duration from store
+            totalTime = parseInt(store.timerDuration) * 60;
+            timerSeconds = totalTime;
             updateTimerDisplay();
-            document.getElementById('timer-icon').className = 'fas fa-play text-xl ml-1';
+            document.getElementById('timer-icon').className = 'fas fa-play text-lg ml-1';
         }
 
         function updateTimerDisplay() {
             const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
             const s = (timerSeconds % 60).toString().padStart(2, '0');
             document.getElementById('timer-display').textContent = `${m}:${s}`;
+            
+            // Update Ring Progress
+            const circle = document.getElementById('timer-progress-ring');
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            
+            const offset = circumference - (timerSeconds / totalTime) * circumference;
+            circle.style.strokeDashoffset = offset;
         }
 
         // --- Memo Logic ---
@@ -602,8 +1338,23 @@
         });
 
         // --- Init ---
-        setInterval(updateClock, 1000); setInterval(fetchNotion, 60000); setInterval(fetchWeather, 60000 * 30);
-        updateClock(); fetchNotion(); initLocation(); resetTimer(); // Initialize timer display
+        // Use window.onload to ensure all elements are present
+        window.onload = function() {
+            // Map init
+            setTimeout(initMap, 1000); 
+
+            // Initial calls
+            updateClock();
+            fetchNotion();
+            initLocation();
+            resetTimer();
+
+            // Start intervals
+            setInterval(updateClock, 1000);
+            setInterval(fetchNotion, 60000);
+            setInterval(fetchWeather, 60000 * 30);
+            setInterval(checkQuake, 60000);
+        };
     </script>
 </body>
 </html>
