@@ -210,6 +210,16 @@
         }
         .hidden-toggle:checked + .toggle-label { background: #34C759; }
         .hidden-toggle:checked + .toggle-label::after { transform: translateX(18px); }
+
+        /* Tutorial Hint */
+        #tutorial-hint { pointer-events: none; }
+        #tutorial-hint.visible { opacity: 1; }
+        .hint-content { animation: hintSlide 2s infinite; }
+        @keyframes hintSlide { 
+            0% { transform: translateX(0); opacity: 0.5; } 
+            50% { transform: translateX(10px); opacity: 1; } 
+            100% { transform: translateX(0); opacity: 0.5; } 
+        }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -223,6 +233,14 @@
         <div id="bg-evening" class="bg-layer theme-evening"></div>
         <div id="bg-night" class="bg-layer theme-night"></div>
         <div id="bg-alert" class="bg-layer theme-alert"></div>
+    </div>
+
+    <!-- 初回チュートリアルヒント (左端) -->
+    <div id="tutorial-hint" class="fixed inset-y-0 left-0 w-24 bg-gradient-to-r from-white/10 to-transparent z-[9000] flex items-center pl-4 opacity-0 transition-opacity duration-500">
+        <div class="flex flex-col items-center gap-2 hint-content">
+            <i class="fas fa-chevron-right text-2xl opacity-80"></i>
+            <span class="text-[10px] font-bold tracking-widest uppercase opacity-60" style="writing-mode: vertical-rl; text-orientation: mixed;">Settings</span>
+        </div>
     </div>
 
     <!-- 設定ボタン -->
@@ -1208,6 +1226,14 @@
 
         // Settings Logic (Improved)
         function openSettings() {
+            // Tutorial Done
+            localStorage.setItem('tutorial_done', 'true');
+            const hint = document.getElementById('tutorial-hint');
+            if(hint) {
+                hint.classList.remove('visible');
+                setTimeout(() => hint.remove(), 1000);
+            }
+
             setVal('n-key', store.key); setVal('n-db', store.db); setVal('n-prop', store.prop);
             setVal('n-stat', store.statProp); setVal('n-done-val', store.doneVal); setVal('n-not-val', store.notVal);
             setVal('n-user-prop', store.userProp); setVal('n-user-id', store.userId);
@@ -1430,6 +1456,12 @@
         document.addEventListener('mouseup',e=>{if(startX<100 && e.clientX-startX>60) openSettings()});
         
         window.onload = function() {
+            // Check Tutorial
+            if (!localStorage.getItem('tutorial_done')) {
+                const hint = document.getElementById('tutorial-hint');
+                if(hint) hint.classList.add('visible');
+            }
+
             setTimeout(initWidgetMap, 1000);
             updateClock(); 
             renderCalendar(); 
