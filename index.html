@@ -880,8 +880,13 @@
             if (store.userProp && store.userId) {
                 filtered = tasks.filter(t => {
                     const u = t.properties[store.userProp]; if (!u) return false;
-                    let v = ""; if(u.type==='people') return u.people.some(p=>p.name.includes(store.userId));
-                    if(u.type==='select') v=u.select?.name||""; if(u.type==='rich_text') v=u.rich_text[0]?.plain_text||"";
+                    let v = ""; 
+                    // 修正: ユーザー名での判定を削除し、ID(UUID)のみで絞り込むように変更
+                    if(u.type==='people') {
+                        return u.people.some(p => p.id && p.id.includes(store.userId));
+                    }
+                    if(u.type==='select') v=u.select?.name||""; 
+                    if(u.type==='rich_text') v=u.rich_text[0]?.plain_text||"";
                     return v.includes(store.userId);
                 });
             }
