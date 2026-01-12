@@ -226,17 +226,16 @@
         #timer-popup.visible #timer-popup-content { transform: scale(1); }
 
         /* ========================================= */
-        /* --- Weather Background Effects (New) --- */
+        /* --- Weather Background Effects (Ported) --- */
         /* ========================================= */
         
-        /* Weather Gradient Layer (Inside Card) */
+        /* Weather Gradient Layer (Inside Card) - Ported colors */
         #w-weather-gradient {
             position: absolute; inset: 0; z-index: 0;
             transition: background 1s ease;
-            opacity: 0.2; /* 薄いグラデーション */
+            /* 色の透明度をさらに下げて (0.2 - 0.4)、極限まで透け感を出す */
         }
-        /* 極限まで透け感を出すグラデーション */
-        #w-weather-gradient.sunny { background: linear-gradient(to bottom, rgba(0, 150, 255, 0.4) 0%, rgba(100, 255, 218, 0.04) 100%); }
+        #w-weather-gradient.sunny { background: linear-gradient(to bottom, rgba(0, 150, 255, 0.4) 0%, rgba(100, 255, 218, 0.4) 100%); }
         #w-weather-gradient.rainy { background: linear-gradient(to bottom, rgba(32, 58, 67, 0.4) 0%, rgba(44, 83, 100, 0.4) 100%); }
         #w-weather-gradient.cloudy { background: linear-gradient(to bottom, rgba(96, 108, 136, 0.4) 0%, rgba(63, 76, 107, 0.4) 100%); }
         #w-weather-gradient.snowy { background: linear-gradient(to bottom, rgba(131, 164, 212, 0.3) 0%, rgba(182, 251, 255, 0.3) 100%); }
@@ -248,32 +247,59 @@
             border-radius: 32px; /* カードに合わせる */
         }
 
-        /* Sunny Effects */
+        /* Sunny Effects - 強化版 */
         .sun-ray {
-            position: absolute; top: -100px; right: -100px; width: 400px; height: 400px;
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
             background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
-            border-radius: 50%; filter: blur(20px);
-            animation: sun-pulse 4s infinite alternate; z-index: 0;
+            border-radius: 50%;
+            filter: blur(20px);
+            animation: sun-pulse 4s infinite alternate;
+            z-index: 0;
         }
+        /* 追加: 強い光のグレア（回転する光の筋） */
         .sun-glare {
-            position: absolute; top: -50px; right: -50px; width: 600px; height: 600px;
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 600px;
+            height: 600px;
             background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.1) 20deg, transparent 40deg, rgba(255,255,255,0.1) 60deg, transparent 80deg);
-            border-radius: 50%; animation: sun-rotate 20s linear infinite; z-index: 0; opacity: 0.6;
+            border-radius: 50%;
+            animation: sun-rotate 20s linear infinite;
+            z-index: 0;
+            opacity: 0.6;
         }
-        @keyframes sun-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.1); opacity: 0.8; } }
-        @keyframes sun-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes sun-pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+        @keyframes sun-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         
         /* Rain Effects */
         .raindrop {
-            position: absolute; background-color: rgba(255, 255, 255, 0.5);
-            width: 1px; height: 10px; top: -20px;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.5);
+            width: 1px;
+            height: 10px;
+            top: -20px;
             animation: fall linear infinite;
         }
-        @keyframes fall { to { transform: translateY(600px); } }
+        @keyframes fall {
+            to { transform: translateY(600px); } /* カードの高さ分落下 */
+        }
 
         /* Snow Effects */
         .snowflake {
-            position: absolute; color: #fff; top: -20px;
+            position: absolute;
+            color: #fff;
+            top: -20px;
             animation: fall-snow linear infinite;
         }
         @keyframes fall-snow {
@@ -281,43 +307,96 @@
             100% { transform: translateY(600px) translateX(20px); opacity: 0; }
         }
 
-        /* Water Droplets on Glass */
+        /* --- 改良版: ガラスに付く水滴のエフェクト --- */
         .glass-droplet {
-            position: absolute; background: rgba(255, 255, 255, 0.0001);
-            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
-            border-radius: 50%;
-            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.8), inset -2px -2px 5px rgba(0, 0, 0, 0.1), 1px 1px 2px rgba(0, 0, 0, 0.3);
-            z-index: 2; pointer-events: none; opacity: 0;
-            animation: droplet-appear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1); /* より透明に */
+            /* 重要: 水滴の向こう側をぼかすことでレンズ効果を出す */
+            backdrop-filter: blur(3px); 
+            -webkit-backdrop-filter: blur(3px);
+            
+            border-radius: 50%; /* JSでランダムに変更するがベースは丸 */
+            
+            /* シャドウを調整して、くっきりしたハイライトと立体感を出す */
+            box-shadow: 
+                inset 2px 2px 5px rgba(255, 255, 255, 0.8), /* 強いハイライト */
+                inset -2px -2px 5px rgba(0, 0, 0, 0.1),   /* 内側の影 */
+                1px 1px 2px rgba(0, 0, 0, 0.3);           /* 外側のドロップシャドウ */
+            
+            z-index: 2; 
+            
+            pointer-events: none;
+            opacity: 0;
+            animation: droplet-appear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; /* 弾むような出現 */
         }
+
+        /* 水滴にキラッと光る点を入れる */
         .glass-droplet::after {
-            content: ''; position: absolute; top: 15%; left: 15%; width: 30%; height: 30%;
-            border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%); opacity: 0.8;
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            width: 30%;
+            height: 30%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0.8;
         }
-        @keyframes droplet-appear { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .glass-droplet.drip { animation: drip-fall 1.5s ease-in forwards; }
+
+        @keyframes droplet-appear {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* 水滴が垂れるアニメーション - 改良版 */
+        .glass-droplet.drip {
+            animation: drip-fall 1.5s ease-in forwards; 
+        }
         @keyframes drip-fall {
             0% { transform: translateY(0) scale(1); opacity: 1; }
             20% { transform: translateY(10px) scale(1.1, 0.9); opacity: 1; }
-            80% { opacity: 1; } 100% { transform: translateY(400px) scale(0.9, 1.1); opacity: 0; }
+            80% { opacity: 1; } /* ギリギリまで透明度を保つ */
+            100% { transform: translateY(400px) scale(0.9, 1.1); opacity: 0; } /* 最後スッと消える */
         }
 
-        /* Cloud Effects */
+        /* Cloud Effects (Updated) */
         .cloud {
-            position: absolute; background: rgba(255, 255, 255, 0.6);
-            border-radius: 50px; animation: drift linear infinite;
-            filter: blur(8px); z-index: 1;
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6); /* 濃くして雲っぽさを出す */
+            border-radius: 50px; /* 横長の丸 */
+            animation: drift linear infinite;
+            filter: blur(8px); /* ぼかしを少し弱めて形を見せる */
+            z-index: 1; /* 背景レイヤー内: 水滴より奥 */
         }
+        /* モコモコ感を出すための擬似要素 */
         .cloud::after, .cloud::before {
-            content: ''; position: absolute; background: inherit; border-radius: 50%;
+            content: '';
+            position: absolute;
+            background: inherit;
+            border-radius: 50%;
         }
-        .cloud::after { width: 50%; height: 100%; top: -40%; left: 15%; }
-        .cloud::before { width: 40%; height: 100%; top: -30%; left: 45%; }
-        @keyframes drift { from { transform: translateX(-150px); } to { transform: translateX(400px); } }
+        .cloud::after {
+            width: 50%;
+            height: 100%;
+            top: -40%;
+            left: 15%;
+        }
+        .cloud::before {
+            width: 40%;
+            height: 100%;
+            top: -30%;
+            left: 45%;
+        }
+        @keyframes drift {
+            from { transform: translateX(-250px); }
+            to { transform: translateX(500px); } 
+        }
 
         /* Weather Card Specific Overrides */
         #widget-weather-card {
-            background: rgba(255, 255, 255, 0.0) !important; /* 完全透明 */
+            background: rgba(255, 255, 255, 0.01) !important; /* 天気.htmlに合わせる */
+            backdrop-filter: blur(8px); /* ぼかしを弱めて背景をくっきりさせる */
+            -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.1); 
         }
     </style>
@@ -1053,7 +1132,7 @@
             });
         }
 
-        // --- Weather Widget Background Effects (New) ---
+        // --- Weather Widget Background Effects (Ported) ---
         function clearWidgetWeatherIntervals() {
             widgetWeatherIntervals.forEach(i => clearInterval(i));
             widgetWeatherIntervals = [];
@@ -1080,11 +1159,19 @@
             clearWidgetWeatherIntervals();
 
             if (type === 'sunny') {
-                const ray = document.createElement('div'); ray.className = 'sun-ray'; container.appendChild(ray);
-                const glare = document.createElement('div'); glare.className = 'sun-glare'; container.appendChild(glare);
+                // 1. メインの太陽光
+                const ray = document.createElement('div');
+                ray.className = 'sun-ray';
+                container.appendChild(ray);
+
+                // 2. 回転する光の筋
+                const glare = document.createElement('div');
+                glare.className = 'sun-glare';
+                container.appendChild(glare);
             } 
             else if (type === 'rainy') {
-                const amount = 30; // 控えめに
+                // 1. 降る雨 (背景側)
+                const amount = 50; 
                 for (let i = 0; i < amount; i++) {
                     const drop = document.createElement('div');
                     drop.className = 'raindrop';
@@ -1093,59 +1180,106 @@
                     drop.style.animationDelay = Math.random() * 2 + 's';
                     container.appendChild(drop);
                 }
+
+                // 2. ガラスに付く水滴 (手前側) - 改良版
                 const createDroplet = () => {
-                    if(container.querySelectorAll('.glass-droplet').length > 15) return;
+                    // 画面がいっぱいになりすぎないように制限
+                    if(container.querySelectorAll('.glass-droplet').length > 25) return;
+
                     const droplet = document.createElement('div');
                     droplet.className = 'glass-droplet';
-                    const size = Math.random() * 6 + 4;
-                    droplet.style.width = size + 'px'; droplet.style.height = size + 'px';
-                    const r1=Math.floor(Math.random()*40+30), r2=Math.floor(Math.random()*40+30), r3=Math.floor(Math.random()*40+30), r4=Math.floor(Math.random()*40+30);
+                    
+                    // ランダムなサイズ (少し大きめに調整: 6px - 14px)
+                    const size = Math.random() * 8 + 6;
+                    droplet.style.width = size + 'px';
+                    droplet.style.height = size + 'px';
+                    
+                    // 形を少し歪ませて自然な水滴にする
+                    const r1 = Math.floor(Math.random() * 40 + 30);
+                    const r2 = Math.floor(Math.random() * 40 + 30);
+                    const r3 = Math.floor(Math.random() * 40 + 30);
+                    const r4 = Math.floor(Math.random() * 40 + 30);
                     droplet.style.borderRadius = `${r1}% ${100-r1}% ${r3}% ${100-r3}% / ${r2}% ${r4}% ${100-r4}% ${100-r2}%`;
-                    droplet.style.left = Math.random() * 95 + '%'; droplet.style.top = Math.random() * 90 + '%';
+                    
+                    // ランダムな配置
+                    droplet.style.left = Math.random() * 95 + '%';
+                    droplet.style.top = Math.random() * 90 + '%';
+                    
                     container.appendChild(droplet);
+
+                    // 確率で垂れるアニメーションを付与
                     if (Math.random() > 0.7) { 
-                        setTimeout(() => { droplet.classList.add('drip'); }, Math.random() * 1000 + 500);
-                        setTimeout(() => { droplet.remove(); }, 2500);
-                    } else {
                         setTimeout(() => {
+                            droplet.classList.add('drip');
+                        }, Math.random() * 1000 + 500);
+                        
+                        setTimeout(() => {
+                            droplet.remove();
+                        }, 2500); // dripアニメーション(1.5s) + 余裕
+                    } else {
+                        // 垂れないやつは「乾いて」消える
+                        // 少しランダムな寿命を持たせる
+                        setTimeout(() => {
+                            // JSでTransitionを設定してゆっくり消す
                             droplet.style.transition = 'opacity 2s ease, transform 2s ease';
-                            droplet.style.opacity = 0; droplet.style.transform = 'scale(0.5)';
+                            droplet.style.opacity = 0;
+                            droplet.style.transform = 'scale(0.5)'; // 小さくなりながら
+                            
                             setTimeout(() => droplet.remove(), 2000);
                         }, 3000 + Math.random() * 2000);
                     }
                 };
-                for(let i=0; i<8; i++) createDroplet();
-                const rainInterval = setInterval(createDroplet, 500);
+
+                // 最初に少し作っておく
+                for(let i=0; i<12; i++) createDroplet();
+
+                // ポツポツと増やす
+                const rainInterval = setInterval(createDroplet, 300);
                 widgetWeatherIntervals.push(rainInterval);
             }
             else if (type === 'snowy') {
                 const createSnowflake = () => {
                     const flake = document.createElement('div');
                     flake.className = 'snowflake';
-                    const size = Math.random() * 4 + 2;
-                    flake.style.width = size + 'px'; flake.style.height = size + 'px';
-                    flake.style.background = 'white'; flake.style.borderRadius = '50%';
-                    flake.style.left = Math.random() * 100 + '%'; flake.style.opacity = Math.random();
+                    const size = Math.random() * 5 + 2;
+                    flake.style.width = size + 'px';
+                    flake.style.height = size + 'px';
+                    flake.style.background = 'white';
+                    flake.style.borderRadius = '50%';
+                    flake.style.left = Math.random() * 100 + '%';
+                    flake.style.opacity = Math.random();
                     flake.style.animationDuration = Math.random() * 3 + 3 + 's';
                     flake.style.filter = 'blur(1px)';
                     container.appendChild(flake);
                     setTimeout(() => flake.remove(), 6000);
                 };
-                const snowInterval = setInterval(createSnowflake, 200);
+                const snowInterval = setInterval(createSnowflake, 150);
                 widgetWeatherIntervals.push(snowInterval);
             }
             else if (type === 'cloudy') {
-                const cloudCount = 5;
+                // 雲の数を増やし、サイズや位置をランダムにして立体感を出す
+                const cloudCount = 8;
+                
                 for (let i = 0; i < cloudCount; i++) {
-                    const cloud = document.createElement('div'); cloud.className = 'cloud';
-                    const width = Math.random() * 100 + 80;
-                    const height = width * 0.4;
-                    cloud.style.width = width + 'px'; cloud.style.height = height + 'px';
+                    const cloud = document.createElement('div');
+                    cloud.className = 'cloud';
+                    
+                    // サイズをバラバラに
+                    const width = Math.random() * 120 + 100;
+                    const height = width * 0.4; // 縦横比を維持
+                    
+                    cloud.style.width = width + 'px';
+                    cloud.style.height = height + 'px';
+                    
+                    // 高さをランダムに配置
                     cloud.style.top = Math.random() * 60 + 10 + '%';
+                    
                     const duration = Math.random() * 15 + 15;
                     cloud.style.animationDuration = duration + 's';
                     cloud.style.animationDelay = (Math.random() * -30) + 's';
-                    cloud.style.opacity = Math.random() * 0.3 + 0.3;
+                    
+                    cloud.style.opacity = Math.random() * 0.4 + 0.4;
+
                     container.appendChild(cloud);
                 }
             }
