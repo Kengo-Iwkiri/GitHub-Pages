@@ -513,9 +513,6 @@
                         <div><span class="text-[9px] font-bold opacity-40 block mb-1">夜 (NIGHT)</span><input type="text" id="bg-url-night" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
                     </div>
                      <div class="grid grid-cols-1 gap-2 mt-4">
-                         <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-pink-200">テスト: 夜明け</button>
-                         <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-blue-200">テスト: 昼</button>
-                         <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-indigo-200">テスト: 夜</button>
                          <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-red-300">地震アラートテスト</button>
                      </div>
                 </div>
@@ -531,7 +528,7 @@
                         <label for="show-notion" class="toggle-label"></label>
                     </div>
                 </div>
-                <p class="text-xs opacity-50 mb-4">Notionのタスクデータベースと連携します。</p>
+                <p class="text-xs opacity-50 mb-4">Notion　API 連携</p>
                 <div class="space-y-4">
                     <input type="password" id="n-key" placeholder="インテグレーションキー (API Key)" class="bg-white/10 rounded p-3 w-full text-xs text-white">
                     <input type="text" id="n-db" placeholder="データベースID" class="bg-white/10 rounded p-3 w-full text-xs text-white">
@@ -549,7 +546,7 @@
                     </div>
                     
                     <div class="border-t border-white/10 my-4 pt-4">
-                        <p class="text-xs opacity-50 mb-2">担当者による絞り込み (任意)</p>
+                        <p class="text-xs opacity-50 mb-2">フィルター</p>
                         <div class="grid grid-cols-2 gap-2">
                             <div><span class="text-[9px] font-bold opacity-40 block mb-1">担当者プロパティ名</span><input type="text" id="n-user-prop" placeholder="例: Assignee" class="bg-white/10 rounded p-2 text-xs w-full"></div>
                             <div><span class="text-[9px] font-bold opacity-40 block mb-1">ユーザーID / 名前</span><input type="text" id="n-user-id" placeholder="ユーザー名" class="bg-white/10 rounded p-2 text-xs w-full"></div>
@@ -568,7 +565,7 @@
                         <label for="show-weather" class="toggle-label"></label>
                     </div>
                 </div>
-                <p class="text-xs opacity-50 mb-4">現在地と監視したい3つの都市の座標を設定します。</p>
+                <p class="text-xs opacity-50 mb-4">現在地と表示したい3つの都市の座標を設定します。</p>
                 <div class="space-y-4">
                     <div>
                         <span class="text-[9px] font-bold opacity-40 block mb-1">現在地の座標 (メイン表示)</span>
@@ -741,9 +738,8 @@
             bg_blur: localStorage.getItem('bg_blur') !== 'false'
         };
 
-        // ★修正点1: グローバルスコープで定義
+        // グローバル変数
         let lastQuakeId = null;
-
         let currentMode = 'day';
         let weatherLat = 35.6895;
         let weatherLon = 139.6917;
@@ -778,6 +774,12 @@
 
             const panel = document.getElementById(`tab-${tabId}`);
             if (panel) panel.classList.add('active');
+
+            // 修正: 地震タブを開いた時に地図サイズを再計算
+            // Leafletはdisplay:noneの状態から復帰するとサイズが狂うため
+            if(tabId === 'quake' && alertMapInstance) {
+                setTimeout(() => { alertMapInstance.invalidateSize(); }, 350); 
+            }
         }
 
         function applyBg(mode) {
@@ -790,6 +792,7 @@
                 target.classList.add('active');
             }
         }
+        
         function testBg(mode) { currentMode = ''; applyBg(mode); }
 
         async function updateBackgroundBySun() {
@@ -996,8 +999,8 @@
                 const ogTitle = doc.querySelector('meta[property="og:title"]')?.content || 'Apple Music';
                 const ogDescription = doc.querySelector('meta[property="og:description"]')?.content || '';
 
-                // タイトルのクリーニング (例: "Song Name on Apple Music" -> "Song Name")
-                const cleanTitle = ogTitle.replace(/ on Apple Music$/, '').replace(/ on Apple Music$/, '');
+                // 修正: 重複していたreplaceを削除
+                const cleanTitle = ogTitle.replace(/ on Apple Music$/, '');
 
                 return {
                     title: cleanTitle,
@@ -1146,10 +1149,13 @@
             L.circle([lat, lng], { color: '#4facfe', fillColor: 'transparent', weight: 2, radius: pRadius }).addTo(alertMapInstance);
             L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.3, weight: 4, radius: sRadius }).addTo(alertMapInstance);
             L.circleMarker([lat, lng], { radius: 10, color: 'white', fillColor: '#f00', fillOpacity: 1 }).addTo(alertMapInstance);
+            
+            // 地図の表示崩れ対策
+            setTimeout(() => { alertMapInstance.invalidateSize(); }, 100);
         }
 
         function closeQuakeAlert() { document.getElementById('quake-overlay').classList.remove('visible'); }
-        function testBg(mode) { currentMode=''; applyBg(mode); }
+        
         function testQuake() { 
             closeSettings(); 
             const q = { earthquake: { maxScale: 50, hypocenter: { name: 'Test Quake (Tokyo)', magnitude: 7.0, latitude: 35.6895, longitude: 139.6917 } }, time: new Date().toString(), points: [] };
@@ -1294,6 +1300,11 @@
             toggleEl('widget-weather-card', showWeather);
             store.show_quake = showQuake; 
             if(!showQuake) toggleEl('quake-widget-card', false);
+            
+            // 修正: 地震ウィジェットが表示になった時も地図をリサイズ
+            if(showQuake && mapInstance) {
+                setTimeout(() => { mapInstance.invalidateSize(); }, 100);
+            }
 
             toggleEl('widget-calendar-card', showCalendar);
             toggleEl('widget-timer-card', showTimer);
