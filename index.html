@@ -225,6 +225,11 @@
         <div id="bg-alert" class="bg-layer theme-alert"></div>
     </div>
 
+    <!-- 設定ボタン -->
+    <button onclick="openSettings()" class="fixed top-6 left-6 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/30 hover:text-white transition-all backdrop-blur-md opacity-0 hover:opacity-100">
+        <i class="fas fa-cog"></i>
+    </button>
+
     <!-- コンテンツ -->
     <main class="max-w-7xl mx-auto w-full gap-6">
         <!-- 時計エリア -->
@@ -496,22 +501,22 @@
                         <label for="bg-blur-toggle" class="toggle-label"></label>
                     </div>
                 </div>
-                
+                <p class="text-xs opacity-50 mb-4">時間帯に合わせて自動で切り替わる背景画像を設定できます。</p>
                 <div class="space-y-4">
-                     <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">カスタム画像URL</label>
+                     <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">カスタム背景画像URL</label>
                     <div class="grid grid-cols-1 gap-3">
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">DAWN</span><input type="text" id="bg-url-dawn" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">MORNING</span><input type="text" id="bg-url-morning" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">DAY</span><input type="text" id="bg-url-day" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">SUNSET</span><input type="text" id="bg-url-sunset" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">EVENING</span><input type="text" id="bg-url-evening" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">NIGHT</span><input type="text" id="bg-url-night" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">夜明け (DAWN)</span><input type="text" id="bg-url-dawn" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">朝 (MORNING)</span><input type="text" id="bg-url-morning" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">昼 (DAY)</span><input type="text" id="bg-url-day" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">夕方 (SUNSET)</span><input type="text" id="bg-url-sunset" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">日没後 (EVENING)</span><input type="text" id="bg-url-evening" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">夜 (NIGHT)</span><input type="text" id="bg-url-night" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
                     </div>
                      <div class="grid grid-cols-1 gap-2 mt-4">
-                         <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-pink-200">夜明け</button>
-                         <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-blue-200">昼</button>
-                         <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-indigo-200">夜</button>
-                         <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-red-300">アラートテスト</button>
+                         <button onclick="testBg('dawn')" class="bg-pink-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-pink-200">テスト: 夜明け</button>
+                         <button onclick="testBg('day')" class="bg-blue-500/20 py-4 rounded-xl text-left px-4 text-xs font-bold text-blue-200">テスト: 昼</button>
+                         <button onclick="testBg('night')" class="bg-indigo-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-indigo-200">テスト: 夜</button>
+                         <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-red-300">地震アラートテスト</button>
                      </div>
                 </div>
             </div>
@@ -526,38 +531,72 @@
                         <label for="show-notion" class="toggle-label"></label>
                     </div>
                 </div>
+                <p class="text-xs opacity-50 mb-4">Notionのタスクデータベースと連携します。</p>
                 <div class="space-y-4">
-                    <input type="password" id="n-key" placeholder="API Key" class="bg-white/10 rounded p-3 w-full text-xs text-white">
-                    <input type="text" id="n-db" placeholder="Database ID" class="bg-white/10 rounded p-3 w-full text-xs text-white">
-                    <div class="grid grid-cols-2 gap-2"><input type="text" id="n-prop" placeholder="Date Prop" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="n-stat" placeholder="Status Prop" class="bg-white/10 rounded p-2 text-xs"></div>
-                    <div class="flex gap-2"><button onclick="setPropType('status')" id="btn-type-status" class="bg-white/10 rounded p-2 text-xs flex-1">Status</button><button onclick="setPropType('select')" id="btn-type-select" class="bg-white/5 rounded p-2 text-xs flex-1 opacity-50">Select</button></div>
-                    <div class="grid grid-cols-2 gap-2"><input type="text" id="n-done-val" placeholder="Done Val" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="n-not-val" placeholder="Not Val" class="bg-white/10 rounded p-2 text-xs"></div>
-                    <div class="grid grid-cols-2 gap-2"><input type="text" id="n-user-prop" placeholder="User Prop" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="n-user-id" placeholder="User ID" class="bg-white/10 rounded p-2 text-xs"></div>
+                    <input type="password" id="n-key" placeholder="インテグレーションキー (API Key)" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+                    <input type="text" id="n-db" placeholder="データベースID" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">日付プロパティ名</span><input type="text" id="n-prop" placeholder="例: Date" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">ステータスプロパティ名</span><input type="text" id="n-stat" placeholder="例: Status" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="setPropType('status')" id="btn-type-status" class="bg-white/10 rounded p-2 text-xs flex-1">ステータス形式</button>
+                        <button onclick="setPropType('select')" id="btn-type-select" class="bg-white/5 rounded p-2 text-xs flex-1 opacity-50">セレクト形式</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                         <div><span class="text-[9px] font-bold opacity-40 block mb-1">完了の値</span><input type="text" id="n-done-val" placeholder="例: Done" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                         <div><span class="text-[9px] font-bold opacity-40 block mb-1">未完了の値</span><input type="text" id="n-not-val" placeholder="例: Not started" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    </div>
+                    
+                    <div class="border-t border-white/10 my-4 pt-4">
+                        <p class="text-xs opacity-50 mb-2">担当者による絞り込み (任意)</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div><span class="text-[9px] font-bold opacity-40 block mb-1">担当者プロパティ名</span><input type="text" id="n-user-prop" placeholder="例: Assignee" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                            <div><span class="text-[9px] font-bold opacity-40 block mb-1">ユーザーID / 名前</span><input type="text" id="n-user-id" placeholder="ユーザー名" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Weather Tab -->
             <div id="tab-weather" class="tab-panel">
                 <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">WEATHER</h3>
+                    <h3 class="text-lg font-bold tracking-widest">天気予報</h3>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-bold opacity-50">表示</span>
                         <input type="checkbox" id="show-weather" class="hidden-toggle" onchange="updateWidgetVisibility()">
                         <label for="show-weather" class="toggle-label"></label>
                     </div>
                 </div>
+                <p class="text-xs opacity-50 mb-4">現在地と監視したい3つの都市の座標を設定します。</p>
                 <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-2"><input type="text" id="w-lat" placeholder="Lat" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="w-lon" placeholder="Lon" class="bg-white/10 rounded p-2 text-xs"></div>
-                    <div class="space-y-2"><input type="text" id="sub1-label" placeholder="Sub1 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lat" placeholder="Sub1 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lon" placeholder="Sub1 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    <div class="space-y-2"><input type="text" id="sub2-label" placeholder="Sub2 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lat" placeholder="Sub2 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lon" placeholder="Sub2 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    <div class="space-y-2"><input type="text" id="sub3-label" placeholder="Sub3 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lat" placeholder="Sub3 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lon" placeholder="Sub3 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    <div>
+                        <span class="text-[9px] font-bold opacity-40 block mb-1">現在地の座標 (メイン表示)</span>
+                        <div class="grid grid-cols-2 gap-2"><input type="text" id="w-lat" placeholder="緯度 (Lat)" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="w-lon" placeholder="経度 (Lon)" class="bg-white/10 rounded p-2 text-xs"></div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                         <span class="text-[9px] font-bold opacity-40 block mb-1">サブ都市 1</span>
+                         <input type="text" id="sub1-label" placeholder="都市名 (例: NYC)" class="bg-white/10 rounded p-2 text-xs w-full">
+                         <div class="grid grid-cols-2 gap-2"><input type="text" id="sub1-lat" placeholder="緯度" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lon" placeholder="経度" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    </div>
+                    <div class="space-y-2">
+                         <span class="text-[9px] font-bold opacity-40 block mb-1">サブ都市 2</span>
+                         <input type="text" id="sub2-label" placeholder="都市名 (例: LON)" class="bg-white/10 rounded p-2 text-xs w-full">
+                         <div class="grid grid-cols-2 gap-2"><input type="text" id="sub2-lat" placeholder="緯度" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lon" placeholder="経度" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    </div>
+                    <div class="space-y-2">
+                         <span class="text-[9px] font-bold opacity-40 block mb-1">サブ都市 3</span>
+                         <input type="text" id="sub3-label" placeholder="都市名 (例: PAR)" class="bg-white/10 rounded p-2 text-xs w-full">
+                         <div class="grid grid-cols-2 gap-2"><input type="text" id="sub3-lat" placeholder="緯度" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lon" placeholder="経度" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- Quake Tab -->
             <div id="tab-quake" class="tab-panel">
                 <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">QUAKE ALERT</h3>
+                    <h3 class="text-lg font-bold tracking-widest">地震速報アラート</h3>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-bold opacity-50">表示</span>
                         <input type="checkbox" id="show-quake" class="hidden-toggle" onchange="updateWidgetVisibility()">
@@ -566,13 +605,13 @@
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <span class="text-[9px] font-bold opacity-40 block mb-1">YOUR AREA</span>
+                        <span class="text-[9px] font-bold opacity-40 block mb-1">通知対象エリア</span>
                         <input type="text" id="q-area" placeholder="例: 東京都" class="bg-white/10 rounded p-2 text-xs w-full text-white">
                     </div>
                     <p class="text-xs opacity-50">緊急地震速報を受信した際に、設定した地域（都道府県名など）の予想震度を表示します。</p>
-                    <p class="text-xs opacity-50 mt-2">
-                        ※地域名は正確に入力してください。<br>
-                        <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="underline hover:text-white">地域名一覧はこちら</a>を確認してください。
+                    <p class="text-xs opacity-50 mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded">
+                        <i class="fas fa-exclamation-triangle mr-1 text-yellow-500"></i> 注意: 地域名は正確に入力してください。<br>
+                        <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="underline hover:text-white text-yellow-200">地域名一覧はこちら</a>を確認してください。
                     </p>
                 </div>
             </div>
@@ -580,31 +619,33 @@
             <!-- Calendar Tab -->
             <div id="tab-calendar" class="tab-panel">
                 <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">CALENDAR</h3>
+                    <h3 class="text-lg font-bold tracking-widest">カレンダー</h3>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-bold opacity-50">表示</span>
                         <input type="checkbox" id="show-calendar" class="hidden-toggle" onchange="updateWidgetVisibility()">
                         <label for="show-calendar" class="toggle-label"></label>
                     </div>
                 </div>
-                <input type="text" id="g-cal" placeholder="iCal URL" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+                <p class="text-xs opacity-50 mb-4">Googleカレンダーなどの公開URL(.ics)を設定します。</p>
+                <input type="text" id="g-cal" placeholder="iCal形式のURL" class="bg-white/10 rounded p-3 w-full text-xs text-white">
             </div>
             <!-- Timer Tab -->
             <div id="tab-timer" class="tab-panel">
                 <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">TIMER</h3>
+                    <h3 class="text-lg font-bold tracking-widest">集中タイマー</h3>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-bold opacity-50">表示</span>
                         <input type="checkbox" id="show-timer" class="hidden-toggle" onchange="updateWidgetVisibility()">
                         <label for="show-timer" class="toggle-label"></label>
                     </div>
                 </div>
-                <input type="number" id="t-duration" placeholder="Minutes" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+                 <p class="text-xs opacity-50 mb-4">ポモドーロタイマーのデフォルト時間を設定します。</p>
+                <input type="number" id="t-duration" placeholder="集中時間 (分)" class="bg-white/10 rounded p-3 w-full text-xs text-white">
             </div>
             <!-- Memo Tab -->
             <div id="tab-memo" class="tab-panel">
                 <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">MEMO</h3>
+                    <h3 class="text-lg font-bold tracking-widest">クイックメモ</h3>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-bold opacity-50">表示</span>
                         <input type="checkbox" id="show-memo" class="hidden-toggle" onchange="updateWidgetVisibility()">
@@ -616,22 +657,31 @@
             <!-- Music Tab -->
             <div id="tab-music" class="tab-panel">
                 <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">APPLE MUSIC</h3>
+                    <h3 class="text-lg font-bold tracking-widest">Apple Music</h3>
                     <div class="flex items-center gap-2">
                          <span class="text-[10px] font-bold opacity-50">表示</span>
                         <input type="checkbox" id="show-music" class="hidden-toggle" onchange="updateWidgetVisibility()">
                         <label for="show-music" class="toggle-label"></label>
                     </div>
                 </div>
+                <p class="text-xs opacity-50 mb-4">キーワードで検索するか、アルバム/プレイリストのURLを直接指定します。</p>
                 <div class="space-y-4">
-                    <div><input type="text" id="m1-keyword" placeholder="M1 Keyword" class="bg-white/10 rounded p-2 text-xs w-full mb-1"><input type="text" id="m1-link" placeholder="M1 Link" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    <div><input type="text" id="m2-keyword" placeholder="M2 Keyword" class="bg-white/10 rounded p-2 text-xs w-full mb-1"><input type="text" id="m2-link" placeholder="M2 Link" class="bg-white/10 rounded p-2 text-xs w-full"></div>
+                    <div class="p-3 bg-white/5 rounded-xl">
+                        <span class="text-[10px] font-bold opacity-60 block mb-2">スロット 1</span>
+                        <input type="text" id="m1-keyword" placeholder="検索キーワード" class="bg-white/10 rounded p-2 text-xs w-full mb-2 text-white">
+                        <input type="text" id="m1-link" placeholder="Apple Music リンク" class="bg-white/10 rounded p-2 text-xs w-full text-white">
+                    </div>
+                    <div class="p-3 bg-white/5 rounded-xl">
+                        <span class="text-[10px] font-bold opacity-60 block mb-2">スロット 2</span>
+                        <input type="text" id="m2-keyword" placeholder="検索キーワード" class="bg-white/10 rounded p-2 text-xs w-full mb-2 text-white">
+                        <input type="text" id="m2-link" placeholder="Apple Music リンク" class="bg-white/10 rounded p-2 text-xs w-full text-white">
+                    </div>
                 </div>
             </div>
             <!-- Podcast Tab -->
             <div id="tab-podcast" class="tab-panel">
                 <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">APPLE PODCAST</h3>
+                    <h3 class="text-lg font-bold tracking-widest">Apple Podcast</h3>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-bold opacity-50">表示</span>
                         <input type="checkbox" id="show-podcast" class="hidden-toggle" onchange="updateWidgetVisibility()">
