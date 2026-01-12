@@ -220,6 +220,106 @@
             50% { transform: translateX(10px); opacity: 1; } 
             100% { transform: translateX(0); opacity: 0.5; } 
         }
+
+        /* Timer Popup */
+        #timer-popup.visible { opacity: 1; pointer-events: auto; }
+        #timer-popup.visible #timer-popup-content { transform: scale(1); }
+
+        /* ========================================= */
+        /* --- Weather Background Effects (New) --- */
+        /* ========================================= */
+        
+        /* Weather Gradient Layer (Inside Card) */
+        #w-weather-gradient {
+            position: absolute; inset: 0; z-index: 0;
+            transition: background 1s ease;
+            opacity: 0.8; /* 全体的な透明度 */
+        }
+        /* 極限まで透け感を出すグラデーション */
+        #w-weather-gradient.sunny { background: linear-gradient(to bottom, rgba(0, 150, 255, 0.4) 0%, rgba(100, 255, 218, 0.4) 100%); }
+        #w-weather-gradient.rainy { background: linear-gradient(to bottom, rgba(32, 58, 67, 0.4) 0%, rgba(44, 83, 100, 0.4) 100%); }
+        #w-weather-gradient.cloudy { background: linear-gradient(to bottom, rgba(96, 108, 136, 0.4) 0%, rgba(63, 76, 107, 0.4) 100%); }
+        #w-weather-gradient.snowy { background: linear-gradient(to bottom, rgba(131, 164, 212, 0.3) 0%, rgba(182, 251, 255, 0.3) 100%); }
+
+        /* Effects Container */
+        #w-bg-effects {
+            position: absolute; inset: 0; z-index: 1; 
+            pointer-events: none; overflow: hidden;
+            border-radius: 32px; /* カードに合わせる */
+        }
+
+        /* Sunny Effects */
+        .sun-ray {
+            position: absolute; top: -100px; right: -100px; width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
+            border-radius: 50%; filter: blur(20px);
+            animation: sun-pulse 4s infinite alternate; z-index: 0;
+        }
+        .sun-glare {
+            position: absolute; top: -50px; right: -50px; width: 600px; height: 600px;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.1) 20deg, transparent 40deg, rgba(255,255,255,0.1) 60deg, transparent 80deg);
+            border-radius: 50%; animation: sun-rotate 20s linear infinite; z-index: 0; opacity: 0.6;
+        }
+        @keyframes sun-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.1); opacity: 0.8; } }
+        @keyframes sun-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Rain Effects */
+        .raindrop {
+            position: absolute; background-color: rgba(255, 255, 255, 0.5);
+            width: 1px; height: 10px; top: -20px;
+            animation: fall linear infinite;
+        }
+        @keyframes fall { to { transform: translateY(600px); } }
+
+        /* Snow Effects */
+        .snowflake {
+            position: absolute; color: #fff; top: -20px;
+            animation: fall-snow linear infinite;
+        }
+        @keyframes fall-snow {
+            0% { transform: translateY(-20px) translateX(0); opacity: 0.8; }
+            100% { transform: translateY(600px) translateX(20px); opacity: 0; }
+        }
+
+        /* Water Droplets on Glass */
+        .glass-droplet {
+            position: absolute; background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+            border-radius: 50%;
+            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.8), inset -2px -2px 5px rgba(0, 0, 0, 0.1), 1px 1px 2px rgba(0, 0, 0, 0.3);
+            z-index: 2; pointer-events: none; opacity: 0;
+            animation: droplet-appear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .glass-droplet::after {
+            content: ''; position: absolute; top: 15%; left: 15%; width: 30%; height: 30%;
+            border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%); opacity: 0.8;
+        }
+        @keyframes droplet-appear { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .glass-droplet.drip { animation: drip-fall 1.5s ease-in forwards; }
+        @keyframes drip-fall {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            20% { transform: translateY(10px) scale(1.1, 0.9); opacity: 1; }
+            80% { opacity: 1; } 100% { transform: translateY(400px) scale(0.9, 1.1); opacity: 0; }
+        }
+
+        /* Cloud Effects */
+        .cloud {
+            position: absolute; background: rgba(255, 255, 255, 0.6);
+            border-radius: 50px; animation: drift linear infinite;
+            filter: blur(8px); z-index: 1;
+        }
+        .cloud::after, .cloud::before {
+            content: ''; position: absolute; background: inherit; border-radius: 50%;
+        }
+        .cloud::after { width: 50%; height: 100%; top: -40%; left: 15%; }
+        .cloud::before { width: 40%; height: 100%; top: -30%; left: 45%; }
+        @keyframes drift { from { transform: translateX(-150px); } to { transform: translateX(400px); } }
+
+        /* Weather Card Specific Overrides */
+        #widget-weather-card {
+            background: rgba(255, 255, 255, 0.05) !important; /* より透明に */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -240,6 +340,20 @@
         <div class="flex flex-col items-center gap-2 hint-content">
             <i class="fas fa-chevron-right text-2xl opacity-80"></i>
             <span class="text-[10px] font-bold tracking-widest uppercase opacity-60" style="writing-mode: vertical-rl; text-orientation: mixed;">Settings</span>
+        </div>
+    </div>
+
+    <!-- タイマー完了ポップアップ -->
+    <div id="timer-popup" class="fixed inset-0 z-[10001] bg-black/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass p-8 flex flex-col items-center gap-6 max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300" id="timer-popup-content">
+            <div class="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center animate-pulse">
+                <i class="fas fa-bell text-4xl text-yellow-300"></i>
+            </div>
+            <div class="text-center">
+                <h2 class="text-2xl font-bold tracking-widest mb-2">TIME'S UP</h2>
+                <p class="text-sm opacity-60">集中時間が終了しました。<br>休憩を取りましょう。</p>
+            </div>
+            <button onclick="closeTimerPopup()" class="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition tracking-widest text-xs">OK</button>
         </div>
     </div>
 
@@ -275,68 +389,76 @@
             <div class="glass relative overflow-hidden transition-all duration-500" id="multi-widget-container">
                 <div class="snap-container">
                     
-                    <!-- 1. Weather -->
-                    <div id="widget-weather-card" class="snap-item p-5 w-full flex flex-col justify-between h-full">
-                        <div class="flex justify-between items-start w-full pt-1 px-1">
-                            <div class="flex flex-col justify-start gap-2">
-                                <div id="w-location" class="text-xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
-                                <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px] mt-[-5px]">--°</div>
-                            </div>
-                            <div class="flex flex-col items-end justify-start gap-2">
-                                <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg mt-[-5px]">
-                                    <i class="fas fa-sun text-6xl opacity-90"></i>
-                                </div>
-                                <div class="text-right mt-1">
-                                    <div id="w-desc" class="text-2xl font-bold opacity-90 drop-shadow-md">快晴</div>
-                                    <div class="flex gap-3 text-sm font-medium opacity-70 mt-1 justify-end">
-                                        <span>H:<span id="w-max">--</span>°</span>
-                                        <span>L:<span id="w-min">--</span>°</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- 1. Weather (Modified) -->
+                    <div id="widget-weather-card" class="snap-item p-5 w-full flex flex-col justify-between h-full relative overflow-hidden">
                         
-                        <div class="w-full pt-2 mb-2 mt-auto">
-                            <div class="flex justify-between items-center h-full">
-                                <div class="flex flex-col items-center justify-center gap-1 w-1/3">
-                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-1">--:--</span>
-                                    <div id="fc-icon-1" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                    <span class="text-xl font-bold" id="fc-temp-1">--°</span>
+                        <!-- Weather Background Layers -->
+                        <div id="w-weather-gradient" class="sunny"></div>
+                        <div id="w-bg-effects"></div>
+
+                        <!-- Content (z-index for overlay) -->
+                        <div class="relative z-10 flex flex-col justify-between h-full">
+                            <div class="flex justify-between items-start w-full pt-1 px-1">
+                                <div class="flex flex-col justify-start gap-2">
+                                    <div id="w-location" class="text-xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
+                                    <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px] mt-[-5px]">--°</div>
                                 </div>
-                                <div class="flex flex-col items-center justify-center gap-1 w-1/3 border-l border-r border-white/5">
-                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-2">--:--</span>
-                                    <div id="fc-icon-2" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                    <span class="text-xl font-bold" id="fc-temp-2">--°</span>
-                                </div>
-                                <div class="flex flex-col items-center justify-center gap-1 w-1/3">
-                                    <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-3">--:--</span>
-                                    <div id="fc-icon-3" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                    <span class="text-xl font-bold" id="fc-temp-3">--°</span>
+                                <div class="flex flex-col items-end justify-start gap-2">
+                                    <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg mt-[-5px]">
+                                        <i class="fas fa-sun text-6xl opacity-90 text-white"></i>
+                                    </div>
+                                    <div class="text-right mt-1">
+                                        <div id="w-desc" class="text-2xl font-bold opacity-90 drop-shadow-md">快晴</div>
+                                        <div class="flex gap-3 text-sm font-medium opacity-70 mt-1 justify-end">
+                                            <span>H:<span id="w-max">--</span>°</span>
+                                            <span>L:<span id="w-min">--</span>°</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            
+                            <div class="w-full pt-2 mb-2 mt-auto">
+                                <div class="flex justify-between items-center h-full">
+                                    <div class="flex flex-col items-center justify-center gap-1 w-1/3">
+                                        <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-1">--:--</span>
+                                        <div id="fc-icon-1" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
+                                        <span class="text-xl font-bold" id="fc-temp-1">--°</span>
+                                    </div>
+                                    <div class="flex flex-col items-center justify-center gap-1 w-1/3 border-l border-r border-white/5">
+                                        <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-2">--:--</span>
+                                        <div id="fc-icon-2" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
+                                        <span class="text-xl font-bold" id="fc-temp-2">--°</span>
+                                    </div>
+                                    <div class="flex flex-col items-center justify-center gap-1 w-1/3">
+                                        <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-3">--:--</span>
+                                        <div id="fc-icon-3" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
+                                        <span class="text-xl font-bold" id="fc-temp-3">--°</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div class="w-full pt-3 border-t border-white/10 mt-2">
-                            <div class="flex justify-between items-center px-1">
-                                <div class="flex flex-col items-center justify-center w-1/3">
-                                    <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub1-name">NYC</span>
-                                    <div class="flex items-center gap-2">
-                                        <div id="sub1-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-lg font-bold" id="sub1-temp">--°</span>
+                            <div class="w-full pt-3 border-t border-white/10 mt-2">
+                                <div class="flex justify-between items-center px-1">
+                                    <div class="flex flex-col items-center justify-center w-1/3">
+                                        <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub1-name">NYC</span>
+                                        <div class="flex items-center gap-2">
+                                            <div id="sub1-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
+                                            <span class="text-lg font-bold" id="sub1-temp">--°</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="flex flex-col items-center justify-center w-1/3 border-l border-r border-white/5">
-                                    <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub2-name">LON</span>
-                                    <div class="flex items-center gap-2">
-                                        <div id="sub2-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-lg font-bold" id="sub2-temp">--°</span>
+                                    <div class="flex flex-col items-center justify-center w-1/3 border-l border-r border-white/5">
+                                        <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub2-name">LON</span>
+                                        <div class="flex items-center gap-2">
+                                            <div id="sub2-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
+                                            <span class="text-lg font-bold" id="sub2-temp">--°</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="flex flex-col items-center justify-center w-1/3">
-                                    <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub3-name">PAR</span>
-                                    <div class="flex items-center gap-2">
-                                        <div id="sub3-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-lg font-bold" id="sub3-temp">--°</span>
+                                    <div class="flex flex-col items-center justify-center w-1/3">
+                                        <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub3-name">PAR</span>
+                                        <div class="flex items-center gap-2">
+                                            <div id="sub3-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
+                                            <span class="text-lg font-bold" id="sub3-temp">--°</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -763,6 +885,7 @@
         let weatherLon = 139.6917;
         let mapInstance = null;
         let alertMapInstance = null;
+        let widgetWeatherIntervals = [];
 
         // --- Helper: SVG Icons ---
         function getWeatherIcon(code, isNight) {
@@ -935,6 +1058,104 @@
             });
         }
 
+        // --- Weather Widget Background Effects (New) ---
+        function clearWidgetWeatherIntervals() {
+            widgetWeatherIntervals.forEach(i => clearInterval(i));
+            widgetWeatherIntervals = [];
+        }
+
+        function updateWidgetWeatherEffects(weatherCode) {
+            // Determine weather type
+            let type = 'cloudy'; // Default
+            if (weatherCode === 0 || weatherCode === 1) type = 'sunny';
+            else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(weatherCode)) type = 'rainy';
+            else if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) type = 'snowy';
+            else type = 'cloudy'; // 2, 3, 45, 48
+
+            const bg = document.getElementById('w-weather-gradient');
+            if(bg) bg.className = type;
+
+            createWidgetBackgroundEffects(type);
+        }
+
+        function createWidgetBackgroundEffects(type) {
+            const container = document.getElementById('w-bg-effects');
+            if(!container) return;
+            container.innerHTML = '';
+            clearWidgetWeatherIntervals();
+
+            if (type === 'sunny') {
+                const ray = document.createElement('div'); ray.className = 'sun-ray'; container.appendChild(ray);
+                const glare = document.createElement('div'); glare.className = 'sun-glare'; container.appendChild(glare);
+            } 
+            else if (type === 'rainy') {
+                const amount = 30; // 控えめに
+                for (let i = 0; i < amount; i++) {
+                    const drop = document.createElement('div');
+                    drop.className = 'raindrop';
+                    drop.style.left = Math.random() * 100 + '%'; 
+                    drop.style.animationDuration = Math.random() * 0.5 + 0.5 + 's';
+                    drop.style.animationDelay = Math.random() * 2 + 's';
+                    container.appendChild(drop);
+                }
+                const createDroplet = () => {
+                    if(container.querySelectorAll('.glass-droplet').length > 15) return;
+                    const droplet = document.createElement('div');
+                    droplet.className = 'glass-droplet';
+                    const size = Math.random() * 6 + 4;
+                    droplet.style.width = size + 'px'; droplet.style.height = size + 'px';
+                    const r1=Math.floor(Math.random()*40+30), r2=Math.floor(Math.random()*40+30), r3=Math.floor(Math.random()*40+30), r4=Math.floor(Math.random()*40+30);
+                    droplet.style.borderRadius = `${r1}% ${100-r1}% ${r3}% ${100-r3}% / ${r2}% ${r4}% ${100-r4}% ${100-r2}%`;
+                    droplet.style.left = Math.random() * 95 + '%'; droplet.style.top = Math.random() * 90 + '%';
+                    container.appendChild(droplet);
+                    if (Math.random() > 0.7) { 
+                        setTimeout(() => { droplet.classList.add('drip'); }, Math.random() * 1000 + 500);
+                        setTimeout(() => { droplet.remove(); }, 2500);
+                    } else {
+                        setTimeout(() => {
+                            droplet.style.transition = 'opacity 2s ease, transform 2s ease';
+                            droplet.style.opacity = 0; droplet.style.transform = 'scale(0.5)';
+                            setTimeout(() => droplet.remove(), 2000);
+                        }, 3000 + Math.random() * 2000);
+                    }
+                };
+                for(let i=0; i<8; i++) createDroplet();
+                const rainInterval = setInterval(createDroplet, 500);
+                widgetWeatherIntervals.push(rainInterval);
+            }
+            else if (type === 'snowy') {
+                const createSnowflake = () => {
+                    const flake = document.createElement('div');
+                    flake.className = 'snowflake';
+                    const size = Math.random() * 4 + 2;
+                    flake.style.width = size + 'px'; flake.style.height = size + 'px';
+                    flake.style.background = 'white'; flake.style.borderRadius = '50%';
+                    flake.style.left = Math.random() * 100 + '%'; flake.style.opacity = Math.random();
+                    flake.style.animationDuration = Math.random() * 3 + 3 + 's';
+                    flake.style.filter = 'blur(1px)';
+                    container.appendChild(flake);
+                    setTimeout(() => flake.remove(), 6000);
+                };
+                const snowInterval = setInterval(createSnowflake, 200);
+                widgetWeatherIntervals.push(snowInterval);
+            }
+            else if (type === 'cloudy') {
+                const cloudCount = 5;
+                for (let i = 0; i < cloudCount; i++) {
+                    const cloud = document.createElement('div'); cloud.className = 'cloud';
+                    const width = Math.random() * 100 + 80;
+                    const height = width * 0.4;
+                    cloud.style.width = width + 'px'; cloud.style.height = height + 'px';
+                    cloud.style.top = Math.random() * 60 + 10 + '%';
+                    const duration = Math.random() * 15 + 15;
+                    cloud.style.animationDuration = duration + 's';
+                    cloud.style.animationDelay = (Math.random() * -30) + 's';
+                    cloud.style.opacity = Math.random() * 0.3 + 0.3;
+                    container.appendChild(cloud);
+                }
+            }
+        }
+
         async function fetchWeather() {
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto`;
@@ -943,6 +1164,9 @@
                 document.getElementById('w-icon-container').innerHTML = getWeatherIcon(data.current.weather_code, data.current.is_day===0);
                 document.getElementById('w-desc').textContent = getWeatherDesc(data.current.weather_code);
                 
+                // Update Background Effects
+                updateWidgetWeatherEffects(data.current.weather_code);
+
                 if(data.daily) {
                     document.getElementById('w-max').textContent = Math.round(data.daily.temperature_2m_max[0]);
                     document.getElementById('w-min').textContent = Math.round(data.daily.temperature_2m_min[0]);
@@ -1125,11 +1349,30 @@
         }
         
         let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
+        
+        function showTimerPopup() {
+            const el = document.getElementById('timer-popup');
+            if(el) el.classList.add('visible');
+        }
+        function closeTimerPopup() {
+            const el = document.getElementById('timer-popup');
+            if(el) el.classList.remove('visible');
+            resetTimer(); 
+        }
+
         function toggleTimer() {
             if(timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-icon').className='fas fa-play text-lg ml-1'; }
             else {
                 if(timerSeconds<=0) resetTimer();
-                timerInterval = setInterval(() => { timerSeconds--; updateTimerDisplay(); if(timerSeconds<=0) { clearInterval(timerInterval); timerRunning=false; alert("Time's up!"); } }, 1000);
+                timerInterval = setInterval(() => { 
+                    timerSeconds--; 
+                    updateTimerDisplay(); 
+                    if(timerSeconds<=0) { 
+                        clearInterval(timerInterval); 
+                        timerRunning=false; 
+                        showTimerPopup(); // Use popup instead of alert
+                    } 
+                }, 1000);
                 timerRunning = true; document.getElementById('timer-icon').className='fas fa-pause text-lg';
             }
         }
@@ -1328,9 +1571,8 @@
                 if(multiWidget) multiWidget.classList.add('max-w-xl', 'mx-auto');
             }
 
-            toggleEl('widget-weather-card', showWeather);
-            store.show_quake = showQuake; 
-            if(!showQuake) toggleEl('quake-widget-card', false);
+            toggleEl('widget-weather-card', store.show_weather);
+            if(!store.show_quake) toggleEl('quake-widget-card', false);
             
             // 修正: 地震ウィジェットが表示になった時も地図をリサイズ
             if(showQuake && mapInstance) {
