@@ -30,13 +30,17 @@
             background: #000;
         }
 
+        :root {
+            --bg-blur: 60px; /* Default blur amount */
+        }
+
         .bg-layer {
             position: absolute; inset: -20px;
             background-size: cover;
             background-position: center;
             opacity: 0;
-            transition: opacity 3s ease-in-out; 
-            filter: blur(60px) saturate(1.2) brightness(0.85);
+            transition: opacity 3s ease-in-out, filter 0.5s ease; 
+            filter: blur(var(--bg-blur)) saturate(1.2) brightness(0.85);
             transform: scale(1.1);
         }
 
@@ -179,11 +183,7 @@
         /* Podcast/Music Styles */
         .podcast-hero-img { width: 180px; height: 180px; border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); object-fit: cover; }
         .podcast-small-img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; min-width: 48px; }
-        .music-item { position: relative; overflow: hidden; border-radius: 16px; aspect-ratio: 1/1; cursor: pointer; transition: transform 0.2s; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .music-item:hover { transform: scale(1.02); }
-        .music-img { width: 100%; height: 100%; object-fit: cover; }
-        .music-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); }
-
+        
         /* Calendar Styles */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; width: 100%; text-align: center; }
         .cal-day { font-size: 11px; padding: 4px; border-radius: 6px; color: rgba(255,255,255,0.9); transition: all 0.2s; }
@@ -195,6 +195,21 @@
         .event-item::before { content: ''; position: absolute; left: 0; top: 6px; width: 4px; height: 4px; border-radius: 50%; }
         .event-item-today::before { background: #60a5fa; box-shadow: 0 0 8px rgba(96, 165, 250, 0.8); }
         .event-item-future::before { background: rgba(255, 255, 255, 0.3); }
+
+        /* iOS Toggle Switch */
+        .hidden-toggle { display: none; }
+        .toggle-label {
+            width: 44px; height: 26px; background: #555; border-radius: 999px;
+            position: relative; cursor: pointer; transition: background 0.3s;
+        }
+        .toggle-label::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 22px; height: 22px; background: white; border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .hidden-toggle:checked + .toggle-label { background: #34C759; }
+        .hidden-toggle:checked + .toggle-label::after { transform: translateX(18px); }
     </style>
 </head>
 <body class="p-6 box-border text-white">
@@ -221,9 +236,9 @@
         </div>
 
         <!-- ウィジェットエリア -->
-        <div class="h-[60%] grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
+        <div class="h-[60%] grid grid-cols-1 md:grid-cols-2 gap-6 pb-4" id="main-grid">
             <!-- Notion Tasks -->
-            <div class="glass flex flex-col p-8 relative overflow-hidden">
+            <div id="widget-notion-card" class="glass flex flex-col p-8 relative overflow-hidden transition-all duration-500">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xs font-bold tracking-widest uppercase opacity-50">TASKS</h2>
                     <div id="api-status" class="w-2 h-2 rounded-full bg-white/20"></div>
@@ -234,11 +249,11 @@
             </div>
 
             <!-- Multi Widget -->
-            <div class="glass relative overflow-hidden">
+            <div class="glass relative overflow-hidden transition-all duration-500" id="multi-widget-container">
                 <div class="snap-container">
                     
                     <!-- 1. Weather -->
-                    <div class="snap-item p-5 w-full flex flex-col justify-between h-full">
+                    <div id="widget-weather-card" class="snap-item p-5 w-full flex flex-col justify-between h-full">
                         <div class="flex justify-between items-start w-full pt-1 px-1">
                             <div class="flex flex-col justify-start gap-2">
                                 <div id="w-location" class="text-xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
@@ -337,7 +352,7 @@
                     </div>
 
                     <!-- 3. Calendar & Events -->
-                    <div class="snap-item p-6 w-full flex flex-row items-stretch gap-6">
+                    <div id="widget-calendar-card" class="snap-item p-6 w-full flex flex-row items-stretch gap-6">
                         <div class="w-5/12 flex flex-col justify-center">
                             <div class="flex justify-between items-end mb-3 px-1">
                                 <div id="cal-title" class="text-sm font-bold tracking-widest uppercase opacity-90">JAN</div>
@@ -357,7 +372,7 @@
                     </div>
                     
                     <!-- 4. Focus Timer -->
-                    <div class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
+                    <div id="widget-timer-card" class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
                         <div class="relative w-[280px] h-[280px] flex items-center justify-center">
                             <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
                                 <circle class="timer-circle-bg" cx="150" cy="150" r="140"></circle>
@@ -375,7 +390,7 @@
                     </div>
                     
                     <!-- 5. Quick Memo -->
-                    <div class="snap-item p-8 w-full">
+                    <div id="widget-memo-card" class="snap-item p-8 w-full">
                         <div class="w-full h-full flex flex-col">
                             <div class="text-xs font-bold opacity-50 tracking-widest mb-3 text-left">QUICK MEMO</div>
                             <textarea id="quick-memo" class="flex-1 w-full bg-transparent border-none text-2xl resize-none focus:outline-none placeholder-white/20 font-medium leading-relaxed" placeholder="Type anything..."></textarea>
@@ -383,7 +398,7 @@
                     </div>
 
                     <!-- 6. Podcast -->
-                    <div class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900">
+                    <div id="widget-podcast-card" class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900">
                         <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE PODCASTS</div>
                         <div id="podcast-list" class="w-full h-full flex flex-col items-center justify-center p-8 pt-10 gap-6">
                             <div class="text-center opacity-30 text-sm">Loading...</div>
@@ -391,9 +406,13 @@
                     </div>
 
                     <!-- 7. Apple Music -->
-                    <div class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-600">
+                    <div id="widget-music-card" class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-600">
                         <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
-                        <div class="w-full h-full flex flex-col items-center justify-center p-6 pt-12">
+                        <!-- 音符マーク (追加) -->
+                        <div class="absolute top-6 right-6 z-10 opacity-30">
+                            <i class="fas fa-music text-3xl"></i>
+                        </div>
+                        <div class="w-full h-full flex flex-col items-center justify-center p-6 pt-16">
                             <div class="grid grid-cols-2 gap-4 w-full" id="music-container"></div>
                         </div>
                     </div>
@@ -455,10 +474,13 @@
             <div class="text-[10px] font-bold opacity-30 px-4 mb-2 tracking-widest">設定メニュー</div>
             <button class="tab-btn active" onclick="switchTab('bg')"><i class="fas fa-image tab-icon"></i>背景</button>
             <button class="tab-btn" onclick="switchTab('notion')"><i class="fas fa-list tab-icon"></i>Notion</button>
-            <button class="tab-btn" onclick="switchTab('weather')"><i class="fas fa-cloud tab-icon"></i>天気&地震</button>
+            <button class="tab-btn" onclick="switchTab('weather')"><i class="fas fa-cloud tab-icon"></i>天気</button>
+            <button class="tab-btn" onclick="switchTab('quake')"><i class="fas fa-exclamation-triangle tab-icon"></i>地震</button>
             <button class="tab-btn" onclick="switchTab('calendar')"><i class="fas fa-calendar-alt tab-icon"></i>カレンダー</button>
             <button class="tab-btn" onclick="switchTab('timer')"><i class="fas fa-stopwatch tab-icon"></i>タイマー</button>
+            <button class="tab-btn" onclick="switchTab('memo')"><i class="fas fa-pen tab-icon"></i>Memo</button>
             <button class="tab-btn" onclick="switchTab('music')"><i class="fas fa-music tab-icon"></i>MUSIC</button>
+            <button class="tab-btn" onclick="switchTab('podcast')"><i class="fas fa-podcast tab-icon"></i>Podcast</button>
             <div class="flex-1"></div>
             <button onclick="saveConfig()" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest mt-4">保存</button>
         </div>
@@ -466,7 +488,15 @@
         <div class="settings-content">
             <!-- 背景設定 -->
             <div id="tab-bg" class="tab-panel active">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">背景テーマ</h3>
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">背景テーマ</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">ぼかし効果</span>
+                        <input type="checkbox" id="bg-blur-toggle" class="hidden-toggle" onchange="updateBgBlur()">
+                        <label for="bg-blur-toggle" class="toggle-label"></label>
+                    </div>
+                </div>
+                
                 <div class="space-y-4">
                      <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">カスタム画像URL</label>
                     <div class="grid grid-cols-1 gap-3">
@@ -488,7 +518,14 @@
             
             <!-- Notion設定 -->
             <div id="tab-notion" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">Notion連携設定</h3>
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">Notion連携</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-notion" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-notion" class="toggle-label"></label>
+                    </div>
+                </div>
                 <div class="space-y-4">
                     <input type="password" id="n-key" placeholder="API Key" class="bg-white/10 rounded p-3 w-full text-xs text-white">
                     <input type="text" id="n-db" placeholder="Database ID" class="bg-white/10 rounded p-3 w-full text-xs text-white">
@@ -501,32 +538,107 @@
 
             <!-- Weather Tab -->
             <div id="tab-weather" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">LOCATION</h3>
+                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">WEATHER</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-weather" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-weather" class="toggle-label"></label>
+                    </div>
+                </div>
                 <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-2"><input type="text" id="w-lat" placeholder="Lat" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="w-lon" placeholder="Lon" class="bg-white/10 rounded p-2 text-xs"></div>
                     <div class="space-y-2"><input type="text" id="sub1-label" placeholder="Sub1 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lat" placeholder="Sub1 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lon" placeholder="Sub1 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
                     <div class="space-y-2"><input type="text" id="sub2-label" placeholder="Sub2 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lat" placeholder="Sub2 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lon" placeholder="Sub2 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
                     <div class="space-y-2"><input type="text" id="sub3-label" placeholder="Sub3 Name" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lat" placeholder="Sub3 Lat" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lon" placeholder="Sub3 Lon" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    <input type="text" id="q-area" placeholder="Quake Area" class="bg-white/10 rounded p-2 text-xs w-full">
                 </div>
             </div>
+
+            <!-- Quake Tab -->
+            <div id="tab-quake" class="tab-panel">
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">QUAKE ALERT</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-quake" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-quake" class="toggle-label"></label>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-[9px] font-bold opacity-40 block mb-1">YOUR AREA</span>
+                        <input type="text" id="q-area" placeholder="例: 東京都" class="bg-white/10 rounded p-2 text-xs w-full text-white">
+                    </div>
+                    <p class="text-xs opacity-50">緊急地震速報を受信した際に、設定した地域（都道府県名など）の予想震度を表示します。</p>
+                    <p class="text-xs opacity-50 mt-2">
+                        ※地域名は正確に入力してください。<br>
+                        <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="underline hover:text-white">地域名一覧はこちら</a>を確認してください。
+                    </p>
+                </div>
+            </div>
+
             <!-- Calendar Tab -->
             <div id="tab-calendar" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">CALENDAR</h3>
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">CALENDAR</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-calendar" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-calendar" class="toggle-label"></label>
+                    </div>
+                </div>
                 <input type="text" id="g-cal" placeholder="iCal URL" class="bg-white/10 rounded p-3 w-full text-xs text-white">
             </div>
             <!-- Timer Tab -->
             <div id="tab-timer" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">TIMER</h3>
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">TIMER</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-timer" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-timer" class="toggle-label"></label>
+                    </div>
+                </div>
                 <input type="number" id="t-duration" placeholder="Minutes" class="bg-white/10 rounded p-3 w-full text-xs text-white">
+            </div>
+            <!-- Memo Tab -->
+            <div id="tab-memo" class="tab-panel">
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">MEMO</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-memo" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-memo" class="toggle-label"></label>
+                    </div>
+                </div>
+                <p class="text-xs opacity-50">クイックメモはブラウザに保存されます。</p>
             </div>
             <!-- Music Tab -->
             <div id="tab-music" class="tab-panel">
-                <h3 class="text-lg font-bold mb-6 tracking-widest">MUSIC</h3>
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">APPLE MUSIC</h3>
+                    <div class="flex items-center gap-2">
+                         <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-music" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-music" class="toggle-label"></label>
+                    </div>
+                </div>
                 <div class="space-y-4">
                     <div><input type="text" id="m1-keyword" placeholder="M1 Keyword" class="bg-white/10 rounded p-2 text-xs w-full mb-1"><input type="text" id="m1-link" placeholder="M1 Link" class="bg-white/10 rounded p-2 text-xs w-full"></div>
                     <div><input type="text" id="m2-keyword" placeholder="M2 Keyword" class="bg-white/10 rounded p-2 text-xs w-full mb-1"><input type="text" id="m2-link" placeholder="M2 Link" class="bg-white/10 rounded p-2 text-xs w-full"></div>
                 </div>
+            </div>
+            <!-- Podcast Tab -->
+            <div id="tab-podcast" class="tab-panel">
+                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                    <h3 class="text-lg font-bold tracking-widest">APPLE PODCAST</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold opacity-50">表示</span>
+                        <input type="checkbox" id="show-podcast" class="hidden-toggle" onchange="updateWidgetVisibility()">
+                        <label for="show-podcast" class="toggle-label"></label>
+                    </div>
+                </div>
+                <p class="text-xs opacity-50">日本の人気Podcastランキングを表示します。</p>
             </div>
         </div>
     </div>
@@ -563,10 +675,20 @@
             bg_sunset: localStorage.getItem('bg_url_sunset') || '',
             bg_evening: localStorage.getItem('bg_url_evening') || '',
             bg_night: localStorage.getItem('bg_url_night') || '',
-            m1_key: localStorage.getItem('m1_key') || 'New Jeans',
+            m1_key: localStorage.getItem('m1_key') || '',
             m1_link: localStorage.getItem('m1_link') || '',
-            m2_key: localStorage.getItem('m2_key') || 'Lo-Fi',
-            m2_link: localStorage.getItem('m2_link') || ''
+            m2_key: localStorage.getItem('m2_key') || '',
+            m2_link: localStorage.getItem('m2_link') || '',
+            // Visibility Settings (Default: true)
+            show_notion: localStorage.getItem('show_notion') !== 'false',
+            show_weather: localStorage.getItem('show_weather') !== 'false',
+            show_quake: localStorage.getItem('show_quake') !== 'false',
+            show_calendar: localStorage.getItem('show_calendar') !== 'false',
+            show_timer: localStorage.getItem('show_timer') !== 'false',
+            show_memo: localStorage.getItem('show_memo') !== 'false',
+            show_music: localStorage.getItem('show_music') !== 'false',
+            show_podcast: localStorage.getItem('show_podcast') !== 'false',
+            bg_blur: localStorage.getItem('bg_blur') !== 'false'
         };
 
         // ★修正点1: グローバルスコープで定義
@@ -595,11 +717,17 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            
+            // ID Mapping based on manual order
+            const map = {
+                'bg': 0, 'notion': 1, 'weather': 2, 'quake': 3, 
+                'calendar': 4, 'timer': 5, 'memo': 6, 'music': 7, 'podcast': 8
+            };
             const btns = document.querySelectorAll('.tab-btn');
-            if(tabId === 'bg') btns[0].classList.add('active'); if(tabId === 'notion') btns[1].classList.add('active');
-            if(tabId === 'weather') btns[2].classList.add('active'); if(tabId === 'calendar') btns[3].classList.add('active');
-            if(tabId === 'timer') btns[4].classList.add('active'); if(tabId === 'music') btns[5].classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
+            if (btns[map[tabId]]) btns[map[tabId]].classList.add('active');
+
+            const panel = document.getElementById(`tab-${tabId}`);
+            if (panel) panel.classList.add('active');
         }
 
         function applyBg(mode) {
@@ -706,7 +834,6 @@
             }
             if(!filtered || filtered.length === 0) { list.innerHTML = `<div class="mt-10 text-center opacity-40 text-sm tracking-widest">NO TASKS TODAY</div>`; return; }
             
-            // ★修正点2: DOM操作で安全に要素を生成
             list.innerHTML = '';
             filtered.forEach(t => {
                 const title = Object.values(t.properties).find(p => p.type === 'title')?.title[0]?.plain_text || "Untitled";
@@ -718,9 +845,7 @@
                 
                 div.innerHTML = `<input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" ${isDone?'checked':''} onchange="toggleTask('${t.id}', this.checked)"><span class="text-lg leading-snug ${isDone?'line-through':''} task-title"></span>`;
                 
-                // タイトルをtextContentで設定（XSS対策）
                 div.querySelector('.task-title').textContent = title;
-                
                 list.appendChild(div);
             });
         }
@@ -742,8 +867,15 @@
                 document.getElementById('w-icon-container').innerHTML = getWeatherIcon(data.current.weather_code, data.current.is_day===0);
                 document.getElementById('w-desc').textContent = getWeatherDesc(data.current.weather_code);
                 
-                const nowIso = new Date().toISOString().slice(0, 13);
-                const hIdx = data.hourly.time.findIndex(t => t.startsWith(nowIso));
+                if(data.daily) {
+                    document.getElementById('w-max').textContent = Math.round(data.daily.temperature_2m_max[0]);
+                    document.getElementById('w-min').textContent = Math.round(data.daily.temperature_2m_min[0]);
+                }
+
+                const now = new Date();
+                const currentHourStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:00`;
+                const hIdx = data.hourly.time.indexOf(currentHourStr);
+
                 if(hIdx !== -1) {
                     [3,6,9].forEach((o,i) => {
                         const idx = hIdx + o;
@@ -783,37 +915,136 @@
             } catch(e) { document.getElementById('podcast-list').innerHTML = `<div class="text-center opacity-30 text-xs">Failed to load podcasts</div>`; }
         }
 
+        // --- Apple Music Logic (Enhanced OGP Scraping) ---
+        // Helper to get high-res image from Apple Music OGP URL
+        const enhanceImageUrl = (originalUrl) => {
+            try {
+                if (!originalUrl) return null;
+                // Replace resolution (e.g., 1200x630bb) with 4000x4000
+                return originalUrl.replace(/\/(\d+)x(\d+)([^/]*)\./, '/4000x4000$3.');
+            } catch (e) {
+                return originalUrl;
+            }
+        };
+
+        // OGP取得用のヘルパー関数 (music.htmlのロジックを移植)
+        async function fetchOGP(url) {
+            try {
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+                const response = await fetch(proxyUrl);
+                if (!response.ok) return null;
+                const htmlText = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+
+                const ogImage = doc.querySelector('meta[property="og:image"]')?.content ||
+                                doc.querySelector('meta[name="twitter:image"]')?.content ||
+                                doc.querySelector('link[rel="image_src"]')?.href;
+                
+                if (!ogImage) return null;
+
+                const ogTitle = doc.querySelector('meta[property="og:title"]')?.content || 'Apple Music';
+                const ogDescription = doc.querySelector('meta[property="og:description"]')?.content || '';
+
+                // タイトルのクリーニング (例: "Song Name on Apple Music" -> "Song Name")
+                const cleanTitle = ogTitle.replace(/ on Apple Music$/, '').replace(/ on Apple Music$/, '');
+
+                return {
+                    title: cleanTitle,
+                    artist: ogDescription, // descriptionをアーティスト/詳細として使用
+                    img: enhanceImageUrl(ogImage),
+                    link: url
+                };
+            } catch (e) {
+                console.error("OGP Fetch Error:", e);
+                return null;
+            }
+        }
+
         async function fetchMusic() {
             const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
             const c = document.getElementById('music-container'); c.innerHTML = '';
+            
             for(const i of items) {
+                // Skip if no link and no keyword
                 if(!i.k && !i.l) continue;
-                try {
-                    const url = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&entity=song&limit=1`);
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    
-                    if(data.resultCount > 0) {
-                        const track = data.results[0];
-                        const imgUrl = track.artworkUrl100.replace('100x100bb', '600x600bb');
-                        const linkUrl = i.l || track.trackViewUrl;
+                
+                let trackData = null; // { title, artist, img, link }
+
+                // 1. URLがある場合、OGP取得を試みる (music.htmlのロジックを適用)
+                if (i.l && i.l.includes('music.apple.com')) {
+                    trackData = await fetchOGP(i.l);
+                }
+
+                // 2. OGP取得失敗、またはURLがない場合 -> iTunes Search API (既存ロジック)
+                if (!trackData) {
+                    try {
+                        let id = null;
+                        // Try extract ID from link
+                        if (i.l) {
+                             try {
+                                const urlObj = new URL(i.l);
+                                id = urlObj.searchParams.get('i');
+                                if(!id) {
+                                    const matches = urlObj.pathname.match(/\/(?:album|playlist|track)(?:\/[^\/]+)?\/(\d+)/);
+                                    if(matches) id = matches[1];
+                                }
+                             } catch(e) {}
+                        }
+
+                        let data = null;
+                        // Lookup by ID
+                        if (id) {
+                             const lookupUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/lookup?id=${id}&country=JP`);
+                             const r = await fetch(lookupUrl);
+                             const j = await r.json();
+                             if(j.resultCount > 0) data = j;
+                        }
                         
-                        const div = document.createElement('a');
-                        div.href = linkUrl;
-                        div.target = '_blank';
-                        div.className = 'music-item group';
-                        div.innerHTML = `
-                            <img src="${imgUrl}" class="music-img group-hover:scale-105 transition-transform duration-500">
-                            <div class="music-overlay">
-                                <div class="text-xs font-bold truncate">${track.trackName}</div>
-                                <div class="text-[10px] opacity-70 truncate">${track.artistName}</div>
-                            </div>
-                        `;
-                        c.appendChild(div);
-                    } else {
-                        c.innerHTML += `<div class="bg-white/10 rounded-2xl aspect-square flex items-center justify-center flex-col gap-2"><i class="fas fa-question opacity-30 text-2xl"></i><span class="text-[10px] opacity-40">Not Found</span></div>`;
+                        // Search by Keyword if lookup failed
+                        if(!data && i.k) {
+                             const searchUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&entity=song&limit=1`);
+                             const r = await fetch(searchUrl);
+                             data = await r.json();
+                        }
+
+                        if(data && data.resultCount > 0) {
+                            const t = data.results[0];
+                            trackData = {
+                                title: t.trackName || t.collectionName,
+                                artist: t.artistName,
+                                img: t.artworkUrl100.replace('100x100bb', '600x600bb'),
+                                link: i.l || t.trackViewUrl
+                            };
+                        }
+                    } catch(e) {
+                        console.error("API Search failed", e);
                     }
-                } catch(e) {}
+                }
+
+                // Render Item
+                if(trackData) {
+                    const div = document.createElement('a');
+                    div.href = trackData.link;
+                    div.target = '_blank';
+                    div.className = 'music-item group flex flex-col gap-2 w-full no-underline'; 
+                    div.innerHTML = `
+                        <div class="relative w-full aspect-square overflow-hidden rounded-xl shadow-lg bg-black/20">
+                            <img src="${trackData.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                <i class="fas fa-play text-white opacity-0 group-hover:opacity-100 transition-opacity text-2xl drop-shadow-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <div class="text-xs font-bold truncate text-white leading-tight">${trackData.title}</div>
+                            <div class="text-[10px] opacity-70 truncate text-white/90 leading-tight">${trackData.artist}</div>
+                        </div>
+                    `;
+                    c.appendChild(div);
+                } else if (i.l) {
+                     // Link only fallback (Icon)
+                     c.innerHTML += `<a href="${i.l}" target="_blank" class="bg-white/10 rounded-2xl flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition aspect-square text-white/50 hover:text-white"><i class="fas fa-link text-2xl"></i><span class="text-[10px] opacity-60">Link</span></a>`;
+                }
             }
         }
         
@@ -867,53 +1098,200 @@
             L.circleMarker([lat, lng], { radius: 10, color: 'white', fillColor: '#f00', fillOpacity: 1 }).addTo(alertMapInstance);
         }
 
-        function openSettings() {
-            document.getElementById('n-key').value = store.key; document.getElementById('n-db').value = store.db; document.getElementById('n-prop').value = store.prop;
-            document.getElementById('n-stat').value = store.statProp; document.getElementById('n-done-val').value = store.doneVal; document.getElementById('n-not-val').value = store.notVal;
-            document.getElementById('n-user-prop').value = store.userProp; document.getElementById('n-user-id').value = store.userId;
-            document.getElementById('w-lat').value = store.lat; document.getElementById('w-lon').value = store.lon; document.getElementById('q-area').value = store.quakeArea;
-            document.getElementById('t-duration').value = store.timerDuration; document.getElementById('g-cal').value = store.icalUrl;
-            document.getElementById('sub1-label').value=store.sub1_name; document.getElementById('sub1-lat').value=store.sub1_lat; document.getElementById('sub1-lon').value=store.sub1_lon;
-            document.getElementById('sub2-label').value=store.sub2_name; document.getElementById('sub2-lat').value=store.sub2_lat; document.getElementById('sub2-lon').value=store.sub2_lon;
-            document.getElementById('sub3-label').value=store.sub3_name; document.getElementById('sub3-lat').value=store.sub3_lat; document.getElementById('sub3-lon').value=store.sub3_lon;
-            document.getElementById('bg-url-dawn').value=store.bg_dawn; document.getElementById('bg-url-morning').value=store.bg_morning; document.getElementById('bg-url-day').value=store.bg_day;
-            document.getElementById('bg-url-sunset').value=store.bg_sunset; document.getElementById('bg-url-evening').value=store.bg_evening; document.getElementById('bg-url-night').value=store.bg_night;
-            document.getElementById('m1-keyword').value=store.m1_key; document.getElementById('m1-link').value=store.m1_link;
-            document.getElementById('m2-keyword').value=store.m2_key; document.getElementById('m2-link').value=store.m2_link;
-            setPropType(store.pType); document.getElementById('settings-overlay').classList.add('visible'); document.getElementById('settings-drawer').classList.add('open');
+        function closeQuakeAlert() { document.getElementById('quake-overlay').classList.remove('visible'); }
+        function testBg(mode) { currentMode=''; applyBg(mode); }
+        function testQuake() { 
+            closeSettings(); 
+            const q = { earthquake: { maxScale: 50, hypocenter: { name: 'Test Quake (Tokyo)', magnitude: 7.0, latitude: 35.6895, longitude: 139.6917 } }, time: new Date().toString(), points: [] };
+            
+            // Force show widget
+            document.getElementById('quake-widget-card').classList.remove('hidden');
+            updateQuakeMap(q);
+
+            document.getElementById('q-scale').textContent = '5+';
+            document.getElementById('q-loc').textContent = 'TEST TOKYO BAY';
+            document.getElementById('q-time').textContent = '12:34';
+            document.getElementById('q-mag').textContent = 'M7.0';
+            document.getElementById('q-est-scale').textContent = '5-';
+            document.getElementById('q-area-name').textContent = 'Test Area';
+            document.getElementById('quake-overlay').classList.add('visible'); 
+            updateAlertMap(q);
         }
-        function closeSettings() { document.getElementById('settings-drawer').classList.remove('open'); document.getElementById('settings-overlay').classList.remove('visible'); currentMode=''; updateClock(); }
+
+        const memoEl = document.getElementById('quick-memo');
+        memoEl.value = store.memo;
+        memoEl.addEventListener('input', () => { localStorage.setItem('quick_memo', memoEl.value); });
+        
+        // Settings Helpers
+        function setVal(id, val) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.value = val || '';
+            }
+        }
+        function setCheck(id, val) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.checked = val;
+            }
+        }
+        
+        function getVal(id) {
+            const el = document.getElementById(id);
+            return el ? el.value.trim() : '';
+        }
+        function getCheck(id) {
+            const el = document.getElementById(id);
+            return el ? el.checked : true;
+        }
+
+        // Settings Logic (Improved)
+        function openSettings() {
+            setVal('n-key', store.key); setVal('n-db', store.db); setVal('n-prop', store.prop);
+            setVal('n-stat', store.statProp); setVal('n-done-val', store.doneVal); setVal('n-not-val', store.notVal);
+            setVal('n-user-prop', store.userProp); setVal('n-user-id', store.userId);
+            setVal('w-lat', store.lat); setVal('w-lon', store.lon); setVal('q-area', store.quakeArea);
+            setVal('t-duration', store.timerDuration); setVal('g-cal', store.icalUrl);
+            setVal('sub1-label', store.sub1_name); setVal('sub1-lat', store.sub1_lat); setVal('sub1-lon', store.sub1_lon);
+            setVal('sub2-label', store.sub2_name); setVal('sub2-lat', store.sub2_lat); setVal('sub2-lon', store.sub2_lon);
+            setVal('sub3-label', store.sub3_name); setVal('sub3-lat', store.sub3_lat); setVal('sub3-lon', store.sub3_lon);
+            setVal('bg-url-dawn', store.bg_dawn); setVal('bg-url-morning', store.bg_morning); setVal('bg-url-day', store.bg_day);
+            setVal('bg-url-sunset', store.bg_sunset); setVal('bg-url-evening', store.bg_evening); setVal('bg-url-night', store.bg_night);
+            setVal('m1-keyword', store.m1_key); setVal('m1-link', store.m1_link);
+            setVal('m2-keyword', store.m2_key); setVal('m2-link', store.m2_link);
+            
+            // Set Toggles
+            setCheck('show-notion', store.show_notion);
+            setCheck('show-weather', store.show_weather);
+            setCheck('show-quake', store.show_quake);
+            setCheck('show-calendar', store.show_calendar);
+            setCheck('show-timer', store.show_timer);
+            setCheck('show-memo', store.show_memo);
+            setCheck('show-music', store.show_music);
+            setCheck('show-podcast', store.show_podcast);
+            setCheck('bg-blur-toggle', store.bg_blur);
+
+            setPropType(store.pType); 
+            
+            const overlay = document.getElementById('settings-overlay');
+            const drawer = document.getElementById('settings-drawer');
+            if(overlay) overlay.classList.add('visible'); 
+            if(drawer) drawer.classList.add('open');
+        }
+        function closeSettings() { 
+            const drawer = document.getElementById('settings-drawer');
+            const overlay = document.getElementById('settings-overlay');
+            if(drawer) drawer.classList.remove('open'); 
+            if(overlay) overlay.classList.remove('visible'); 
+            currentMode=''; updateClock(); 
+        }
         function setPropType(type) {
-            document.getElementById('btn-type-status').classList.toggle('bg-white/10', type === 'status');
-            document.getElementById('btn-type-status').classList.toggle('opacity-50', type !== 'status');
-            document.getElementById('btn-type-select').classList.toggle('bg-white/10', type === 'select');
-            document.getElementById('btn-type-select').classList.toggle('opacity-50', type !== 'select');
-            document.getElementById('n-stat').dataset.ptype = type; 
+            const btnStatus = document.getElementById('btn-type-status');
+            const btnSelect = document.getElementById('btn-type-select');
+            const nStat = document.getElementById('n-stat');
+            
+            if(btnStatus) {
+                btnStatus.classList.toggle('bg-white/10', type === 'status');
+                btnStatus.classList.toggle('opacity-50', type !== 'status');
+            }
+            if(btnSelect) {
+                btnSelect.classList.toggle('bg-white/10', type === 'select');
+                btnSelect.classList.toggle('opacity-50', type !== 'select');
+            }
+            if(nStat) nStat.dataset.ptype = type; 
+        }
+
+        // Widget Visibility Control
+        function updateWidgetVisibility() {
+            const showNotion = document.getElementById('show-notion').checked;
+            const showWeather = document.getElementById('show-weather').checked;
+            const showQuake = document.getElementById('show-quake').checked;
+            const showCalendar = document.getElementById('show-calendar').checked;
+            const showTimer = document.getElementById('show-timer').checked;
+            const showMemo = document.getElementById('show-memo').checked;
+            const showMusic = document.getElementById('show-music').checked;
+            const showPodcast = document.getElementById('show-podcast').checked;
+
+            // Apply to DOM
+            const toggleEl = (id, show) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
+                }
+            };
+
+            // Notion special handling
+            const notionCard = document.getElementById('widget-notion-card');
+            const mainGrid = document.getElementById('main-grid');
+            const multiWidget = document.getElementById('multi-widget-container');
+
+            if (showNotion) {
+                if(notionCard) notionCard.classList.remove('hidden');
+                if(mainGrid) {
+                    mainGrid.classList.remove('grid-cols-1');
+                    mainGrid.classList.add('md:grid-cols-2');
+                }
+                if(multiWidget) multiWidget.classList.remove('max-w-xl', 'mx-auto');
+            } else {
+                if(notionCard) notionCard.classList.add('hidden');
+                if(mainGrid) {
+                    mainGrid.classList.remove('md:grid-cols-2');
+                    mainGrid.classList.add('grid-cols-1');
+                }
+                if(multiWidget) multiWidget.classList.add('max-w-xl', 'mx-auto');
+            }
+
+            toggleEl('widget-weather-card', showWeather);
+            store.show_quake = showQuake; 
+            if(!showQuake) toggleEl('quake-widget-card', false);
+
+            toggleEl('widget-calendar-card', showCalendar);
+            toggleEl('widget-timer-card', showTimer);
+            toggleEl('widget-memo-card', showMemo);
+            toggleEl('widget-music-card', showMusic);
+            toggleEl('widget-podcast-card', showPodcast);
+        }
+
+        function updateBgBlur() {
+            const isBlur = document.getElementById('bg-blur-toggle').checked;
+            const val = isBlur ? '60px' : '0px';
+            document.documentElement.style.setProperty('--bg-blur', val);
         }
 
         function saveConfig() {
-            store.key = document.getElementById('n-key').value.trim();
-            store.db = document.getElementById('n-db').value.trim();
-            store.prop = document.getElementById('n-prop').value.trim();
-            store.statProp = document.getElementById('n-stat').value.trim();
-            store.doneVal = document.getElementById('n-done-val').value.trim() || 'Done';
-            store.notVal = document.getElementById('n-not-val').value.trim() || 'Not started';
-            store.pType = document.getElementById('n-stat').dataset.ptype || 'status';
-            store.userProp = document.getElementById('n-user-prop').value.trim();
-            store.userId = document.getElementById('n-user-id').value.trim();
-            store.lat = document.getElementById('w-lat').value.trim();
-            store.lon = document.getElementById('w-lon').value.trim();
-            store.quakeArea = document.getElementById('q-area').value.trim();
-            store.timerDuration = document.getElementById('t-duration').value.trim();
-            store.icalUrl = document.getElementById('g-cal').value.trim();
+            store.key = getVal('n-key');
+            store.db = getVal('n-db');
+            store.prop = getVal('n-prop');
+            store.statProp = getVal('n-stat');
+            store.doneVal = getVal('n-done-val') || 'Done';
+            store.notVal = getVal('n-not-val') || 'Not started';
+            store.pType = document.getElementById('n-stat')?.dataset.ptype || 'status';
+            store.userProp = getVal('n-user-prop');
+            store.userId = getVal('n-user-id');
+            store.lat = getVal('w-lat');
+            store.lon = getVal('w-lon');
+            store.quakeArea = getVal('q-area');
+            store.timerDuration = getVal('t-duration');
+            store.icalUrl = getVal('g-cal');
             
-            store.sub1_name = document.getElementById('sub1-label').value.trim(); store.sub1_lat = document.getElementById('sub1-lat').value.trim(); store.sub1_lon = document.getElementById('sub1-lon').value.trim();
-            store.sub2_name = document.getElementById('sub2-label').value.trim(); store.sub2_lat = document.getElementById('sub2-lat').value.trim(); store.sub2_lon = document.getElementById('sub2-lon').value.trim();
-            store.sub3_name = document.getElementById('sub3-label').value.trim(); store.sub3_lat = document.getElementById('sub3-lat').value.trim(); store.sub3_lon = document.getElementById('sub3-lon').value.trim();
-            store.bg_dawn = document.getElementById('bg-url-dawn').value.trim(); store.bg_morning = document.getElementById('bg-url-morning').value.trim(); store.bg_day = document.getElementById('bg-url-day').value.trim();
-            store.bg_sunset = document.getElementById('bg-url-sunset').value.trim(); store.bg_evening = document.getElementById('bg-url-evening').value.trim(); store.bg_url_night = document.getElementById('bg-url-night').value.trim();
-            store.m1_key = document.getElementById('m1-keyword').value.trim(); store.m1_link = document.getElementById('m1-link').value.trim(); store.m2_key = document.getElementById('m2-keyword').value.trim(); store.m2_link = document.getElementById('m2-link').value.trim();
+            store.sub1_name = getVal('sub1-label'); store.sub1_lat = getVal('sub1-lat'); store.sub1_lon = getVal('sub1-lon');
+            store.sub2_name = getVal('sub2-label'); store.sub2_lat = getVal('sub2-lat'); store.sub2_lon = getVal('sub2-lon');
+            store.sub3_name = getVal('sub3-label'); store.sub3_lat = getVal('sub3-lat'); store.sub3_lon = getVal('sub3-lon');
+            store.bg_dawn = getVal('bg-url-dawn'); store.bg_morning = getVal('bg-url-morning'); store.bg_day = getVal('bg-url-day');
+            store.bg_sunset = getVal('bg-url-sunset'); store.bg_evening = getVal('bg-url-evening'); store.bg_night = getVal('bg-url-night');
+            store.m1_key = getVal('m1-keyword'); store.m1_link = getVal('m1-link'); store.m2_key = getVal('m2-keyword'); store.m2_link = getVal('m2-link');
             
+            // Save Toggles
+            store.show_notion = getCheck('show-notion');
+            store.show_weather = getCheck('show-weather');
+            store.show_quake = getCheck('show-quake');
+            store.show_calendar = getCheck('show-calendar');
+            store.show_timer = getCheck('show-timer');
+            store.show_memo = getCheck('show-memo');
+            store.show_music = getCheck('show-music');
+            store.show_podcast = getCheck('show-podcast');
+            store.bg_blur = getCheck('bg-blur-toggle');
+
             localStorage.setItem('n_key', store.key); localStorage.setItem('n_db', store.db); localStorage.setItem('n_prop', store.prop); localStorage.setItem('n_stat', store.statProp);
             localStorage.setItem('n_done_val', store.doneVal); localStorage.setItem('n_not_val', store.notVal); localStorage.setItem('n_p_type', store.pType);
             localStorage.setItem('n_user_prop', store.userProp); localStorage.setItem('n_user_id', store.userId);
@@ -926,19 +1304,78 @@
             localStorage.setItem('bg_url_sunset', store.bg_sunset); localStorage.setItem('bg_url_evening', store.bg_evening); localStorage.setItem('bg_url_night', store.bg_night);
             localStorage.setItem('m1_key', store.m1_key); localStorage.setItem('m1_link', store.m1_link); localStorage.setItem('m2_key', store.m2_key); localStorage.setItem('m2_link', store.m2_link);
             
+            // Save Visibility & Blur
+            localStorage.setItem('show_notion', store.show_notion);
+            localStorage.setItem('show_weather', store.show_weather);
+            localStorage.setItem('show_quake', store.show_quake);
+            localStorage.setItem('show_calendar', store.show_calendar);
+            localStorage.setItem('show_timer', store.show_timer);
+            localStorage.setItem('show_memo', store.show_memo);
+            localStorage.setItem('show_music', store.show_music);
+            localStorage.setItem('show_podcast', store.show_podcast);
+            localStorage.setItem('bg_blur', store.bg_blur);
+
             closeSettings();
             fetchNotion(); initLocation(); resetTimer(); fetchGoogleCalendar(); fetchMusic(); updateBackgroundBySun();
+            applyVisibilityFromStore();
+            updateBgBlur(); // Ensure blur is updated on save
         }
+        
+        function applyVisibilityFromStore() {
+            const toggleEl = (id, show) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
+                }
+            };
 
+            const notionCard = document.getElementById('widget-notion-card');
+            const mainGrid = document.getElementById('main-grid');
+            const multiWidget = document.getElementById('multi-widget-container');
+
+            if (store.show_notion) {
+                if(notionCard) notionCard.classList.remove('hidden');
+                if(mainGrid) { mainGrid.classList.remove('grid-cols-1'); mainGrid.classList.add('md:grid-cols-2'); }
+                if(multiWidget) multiWidget.classList.remove('max-w-xl', 'mx-auto');
+            } else {
+                if(notionCard) notionCard.classList.add('hidden');
+                if(mainGrid) { mainGrid.classList.remove('md:grid-cols-2'); mainGrid.classList.add('grid-cols-1'); }
+                if(multiWidget) multiWidget.classList.add('max-w-xl', 'mx-auto');
+            }
+
+            toggleEl('widget-weather-card', store.show_weather);
+            if(!store.show_quake) toggleEl('quake-widget-card', false);
+            toggleEl('widget-calendar-card', store.show_calendar);
+            toggleEl('widget-timer-card', store.show_timer);
+            toggleEl('widget-memo-card', store.show_memo);
+            toggleEl('widget-music-card', store.show_music);
+            toggleEl('widget-podcast-card', store.show_podcast);
+            
+            // Apply blur
+            const val = store.bg_blur ? '60px' : '0px';
+            document.documentElement.style.setProperty('--bg-blur', val);
+        }
+        
         // Init
-        let startX=0; document.addEventListener('touchstart',e=>startX=e.changedTouches[0].screenX); document.addEventListener('touchend',e=>{if(startX<50 && e.changedTouches[0].screenX-startX>100) openSettings()});
-        document.addEventListener('mousedown',e=>startX=e.clientX); document.addEventListener('mouseup',e=>{if(startX<50 && e.clientX-startX>100) openSettings()});
+        let startX=0; 
+        document.addEventListener('touchstart',e=>startX=e.changedTouches[0].screenX); 
+        document.addEventListener('touchend',e=>{if(startX<100 && e.changedTouches[0].screenX-startX>60) openSettings()});
+        document.addEventListener('mousedown',e=>startX=e.clientX); 
+        document.addEventListener('mouseup',e=>{if(startX<100 && e.clientX-startX>60) openSettings()});
         
         window.onload = function() {
             setTimeout(initWidgetMap, 1000);
-            updateClock(); renderCalendar(); fetchGoogleCalendar(); fetchNotion(); initLocation(); resetTimer(); fetchPodcasts(); fetchMusic();
+            updateClock(); 
+            renderCalendar(); 
+            fetchGoogleCalendar(); 
+            fetchNotion(); 
+            initLocation(); 
+            resetTimer(); 
+            fetchPodcasts(); 
+            fetchMusic();
+            applyVisibilityFromStore(); // Apply initial visibility
             
-            // ★修正点3: 地震チェックを15秒間隔に変更
+            // Interval Settings
             setInterval(updateClock, 1000); 
             setInterval(fetchNotion, 60000); 
             setInterval(fetchWeather, 60000*30); 
@@ -965,6 +1402,9 @@
         
         let pWaveCircle=null, sWaveCircle=null;
         async function checkQuake() {
+            // Check visibility setting first
+            if(!store.show_quake) return; 
+
             try {
                 const r = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=1'); const d = await r.json();
                 if(!d || d.length===0) return;
@@ -1024,30 +1464,6 @@
             if(pWaveCircle) { pWaveCircle.setLatLng([lat,lng]); pWaveCircle.setRadius(pR); } else pWaveCircle = L.circle([lat,lng], {color:'#4facfe', fillColor:'transparent', weight:1, radius:pR}).addTo(mapInstance);
             if(sWaveCircle) { sWaveCircle.setLatLng([lat,lng]); sWaveCircle.setRadius(sR); } else sWaveCircle = L.circle([lat,lng], {color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.2, weight:2, radius:sR}).addTo(mapInstance);
         }
-
-        function closeQuakeAlert() { document.getElementById('quake-overlay').classList.remove('visible'); }
-        function testBg(mode) { currentMode=''; applyBg(mode); }
-        function testQuake() { 
-            closeSettings(); 
-            const q = { earthquake: { maxScale: 50, hypocenter: { name: 'Test Quake (Tokyo)', magnitude: 7.0, latitude: 35.6895, longitude: 139.6917 } }, time: new Date().toString(), points: [] };
-            
-            // Force show widget
-            document.getElementById('quake-widget-card').classList.remove('hidden');
-            updateQuakeMap(q);
-
-            document.getElementById('q-scale').textContent = '5+';
-            document.getElementById('q-loc').textContent = 'TEST TOKYO BAY';
-            document.getElementById('q-time').textContent = '12:34';
-            document.getElementById('q-mag').textContent = 'M7.0';
-            document.getElementById('q-est-scale').textContent = '5-';
-            document.getElementById('q-area-name').textContent = 'Test Area';
-            document.getElementById('quake-overlay').classList.add('visible'); 
-            updateAlertMap(q);
-        }
-
-        const memoEl = document.getElementById('quick-memo');
-        memoEl.value = store.memo;
-        memoEl.addEventListener('input', () => { localStorage.setItem('quick_memo', memoEl.value); });
     </script>
 </body>
 </html>
