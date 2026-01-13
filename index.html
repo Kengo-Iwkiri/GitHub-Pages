@@ -559,22 +559,22 @@
 
                     <!-- 6. Podcast -->
                     <div id="widget-podcast-card" class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900">
-                        <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE PODCASTS</div>
-                        <div id="podcast-list" class="w-full h-full flex flex-col items-center justify-center p-8 pt-10 gap-6">
-                            <div class="text-center opacity-30 text-sm">Loading...</div>
+                        <!-- Slider Container -->
+                        <div id="p-slider-container" class="w-full h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar relative z-10">
+                            <!-- Slides will be injected here -->
                         </div>
+                        <!-- Dots -->
+                        <div id="p-slider-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20"></div>
                     </div>
 
                     <!-- 7. Apple Music -->
                     <div id="widget-music-card" class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-600">
-                        <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
-                        <!-- 音符マーク (追加) -->
-                        <div class="absolute top-6 right-6 z-10 opacity-30">
-                            <i class="fas fa-music text-3xl"></i>
+                        <!-- Slider Container -->
+                        <div id="m-slider-container" class="w-full h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar relative z-10">
+                            <!-- Slides will be injected here -->
                         </div>
-                        <div class="w-full h-full flex flex-col items-center justify-center p-6 pt-16">
-                            <div class="grid grid-cols-2 gap-4 w-full" id="music-container"></div>
-                        </div>
+                        <!-- Dots -->
+                        <div id="m-slider-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20"></div>
                     </div>
                 </div>
                 <!-- Indicator (7 dots) -->
@@ -1390,19 +1390,86 @@
             renderWeatherSlides(results);
         }
 
-        async function fetchPodcasts() {
-            try {
-                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://itunes.apple.com/jp/rss/toppodcasts/limit=3/json'));
-                const data = await res.json(); const e = data.feed.entry;
-                const c = document.getElementById('podcast-list'); c.innerHTML = '';
-                const f = e[0];
-                c.innerHTML += `<a href="${f.link.attributes.href}" target="_blank" class="flex flex-col items-center justify-center w-full mb-4 group"><div class="relative mb-2"><img src="${f['im:image'][2].label}" class="podcast-hero-img group-hover:scale-105 transition-transform"><div class="absolute -top-2 -right-2 bg-yellow-400 text-black font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs">1</div></div><div class="text-center w-full px-2"><div class="font-bold text-sm truncate w-full">${f['im:name'].label}</div><div class="text-[10px] opacity-60 truncate w-full">${f['im:artist'].label}</div></div></a>`;
-                const row = document.createElement('div'); row.className = 'flex gap-2 w-full justify-center';
-                [e[1], e[2]].forEach((item, i) => {
-                    row.innerHTML += `<a href="${item.link.attributes.href}" target="_blank" class="flex items-center bg-white/10 rounded-lg p-2 gap-2 w-1/2 hover:bg-white/20 transition"><div class="relative"><img src="${item['im:image'][0].label}" class="podcast-small-img"><div class="absolute -top-1 -left-1 bg-white/20 backdrop-blur-md text-white font-bold rounded-full w-4 h-4 flex items-center justify-center text-[8px]">${i+2}</div></div><div class="flex-1 min-w-0"><div class="font-bold text-[10px] truncate">${item['im:name'].label}</div><div class="text-[8px] opacity-60 truncate">${item['im:artist'].label}</div></div></a>`;
+        // --- Generic Slider Logic ---
+        function initGenericSliderObserver(containerId, dotsId) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            const slides = container.querySelectorAll('.snap-center');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        const parts = entry.target.id.split('-');
+                        const index = parseInt(parts[parts.length-1]);
+                        updateGenericDots(dotsId, index);
+                    }
                 });
-                c.appendChild(row);
-            } catch(e) { document.getElementById('podcast-list').innerHTML = `<div class="text-center opacity-30 text-xs">Failed to load podcasts</div>`; }
+            }, { root: container, threshold: 0.5 });
+            
+            slides.forEach(s => observer.observe(s));
+        }
+
+        function updateGenericDots(dotsId, index) {
+            const dotsContainer = document.getElementById(dotsId);
+            if(!dotsContainer) return;
+            const dots = dotsContainer.children;
+            for(let i=0; i<dots.length; i++) {
+                if(i === index) {
+                    dots[i].className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white opacity-100 scale-125';
+                } else {
+                    dots[i].className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white/40 hover:bg-white/60';
+                }
+            }
+        }
+
+        async function fetchPodcasts() {
+            const genres = [
+                { name: 'TOP PODCASTS', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/json' },
+                { name: 'NEWS', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/genre=1489/json' },
+                { name: 'COMEDY', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/genre=1303/json' },
+                { name: 'BUSINESS', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/genre=1321/json' }
+            ];
+
+            const container = document.getElementById('p-slider-container');
+            const dotsContainer = document.getElementById('p-slider-dots');
+            if(!container || !dotsContainer) return;
+            
+            container.innerHTML = '';
+            dotsContainer.innerHTML = '';
+
+            for(let i=0; i<genres.length; i++) {
+                const g = genres[i];
+                let contentHTML = '<div class="text-center opacity-30 text-sm">Loading...</div>';
+
+                try {
+                    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(g.url));
+                    const data = await res.json();
+                    const e = data.feed.entry;
+                    if(e && e.length > 0) {
+                        const f = e[0];
+                        let subItemsHTML = '';
+                        e.slice(1, 4).forEach((item, idx) => {
+                            subItemsHTML += `<a href="${item.link.attributes.href}" target="_blank" class="flex items-center bg-white/10 rounded-lg p-2 gap-2 w-full hover:bg-white/20 transition"><div class="relative flex-shrink-0"><img src="${item['im:image'][0].label}" class="podcast-small-img"><div class="absolute -top-1 -left-1 bg-white/20 backdrop-blur-md text-white font-bold rounded-full w-4 h-4 flex items-center justify-center text-[8px]">${idx+2}</div></div><div class="flex-1 min-w-0"><div class="font-bold text-[10px] truncate">${item['im:name'].label}</div><div class="text-[8px] opacity-60 truncate">${item['im:artist'].label}</div></div></a>`;
+                        });
+
+                        contentHTML = `
+                            <a href="${f.link.attributes.href}" target="_blank" class="flex flex-col items-center justify-center w-full mb-3 group"><div class="relative mb-2"><img src="${f['im:image'][2].label}" class="podcast-hero-img group-hover:scale-105 transition-transform"><div class="absolute -top-2 -right-2 bg-yellow-400 text-black font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs">1</div></div><div class="text-center w-full px-2"><div class="font-bold text-sm truncate w-full">${f['im:name'].label}</div><div class="text-[10px] opacity-60 truncate w-full">${f['im:artist'].label}</div></div></a>
+                            <div class="flex flex-col gap-2 w-full px-4">${subItemsHTML}</div>
+                        `;
+                    }
+                } catch(e) {}
+
+                const slide = document.createElement('div');
+                slide.className = 'w-full h-full flex-shrink-0 snap-center relative pt-10 pb-4 flex flex-col items-center justify-start overflow-y-auto no-scrollbar';
+                slide.id = `p-slide-${i}`;
+                slide.innerHTML = `<div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${g.name}</div>${contentHTML}`;
+                container.appendChild(slide);
+
+                const dot = document.createElement('div');
+                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${i===0 ? 'bg-white opacity-100 scale-125' : 'bg-white/40 hover:bg-white/60'}`;
+                dotsContainer.appendChild(dot);
+            }
+            initGenericSliderObserver('p-slider-container', 'p-slider-dots');
         }
 
         // --- Apple Music Logic (Enhanced OGP Scraping) ---
@@ -1451,10 +1518,25 @@
             }
         }
 
+        async function fetchAppleMusicRanking(genreId) {
+            try {
+                let url = 'https://itunes.apple.com/jp/rss/topsongs/limit=4/json';
+                if(genreId) url = `https://itunes.apple.com/jp/rss/topsongs/limit=4/genre=${genreId}/json`;
+                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+                const data = await res.json();
+                return data.feed.entry;
+            } catch(e) { return []; }
+        }
+
         async function fetchMusic() {
+            const container = document.getElementById('m-slider-container');
+            const dotsContainer = document.getElementById('m-slider-dots');
+            if(!container || !dotsContainer) return;
+            container.innerHTML = ''; dotsContainer.innerHTML = '';
+
+            // --- Slide 0: Custom (Existing Logic) ---
             const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
-            const c = document.getElementById('music-container'); c.innerHTML = '';
-            
+            let customSlideContent = '';
             for(const i of items) {
                 // Skip if no link and no keyword
                 if(!i.k && !i.l) continue;
@@ -1518,7 +1600,8 @@
                     div.href = trackData.link;
                     div.target = '_blank';
                     div.className = 'music-item group flex flex-col gap-2 w-full no-underline'; 
-                    div.innerHTML = `
+                    customSlideContent += `
+                    <a href="${trackData.link}" target="_blank" class="music-item group flex flex-col gap-2 w-full no-underline">
                         <div class="relative w-full aspect-square overflow-hidden rounded-xl shadow-lg bg-black/20">
                             <img src="${trackData.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -1528,14 +1611,52 @@
                         <div class="flex flex-col min-w-0">
                             <div class="text-xs font-bold truncate text-white leading-tight">${trackData.title}</div>
                             <div class="text-[10px] opacity-70 truncate text-white/90 leading-tight">${trackData.artist}</div>
-                        </div>
+                        </div></a>
                     `;
-                    c.appendChild(div);
                 } else if (i.l) {
                      // Link only fallback (Icon)
-                     c.innerHTML += `<a href="${i.l}" target="_blank" class="bg-white/10 rounded-2xl flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition aspect-square text-white/50 hover:text-white"><i class="fas fa-link text-2xl"></i><span class="text-[10px] opacity-60">Link</span></a>`;
+                     customSlideContent += `<a href="${i.l}" target="_blank" class="bg-white/10 rounded-2xl flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition aspect-square text-white/50 hover:text-white"><i class="fas fa-link text-2xl"></i><span class="text-[10px] opacity-60">Link</span></a>`;
                 }
             }
+            
+            // Add Slide 0
+            const slide0 = document.createElement('div');
+            slide0.className = 'w-full h-full flex-shrink-0 snap-center relative pt-16 pb-6 px-6 flex flex-col items-center justify-center';
+            slide0.id = 'm-slide-0';
+            slide0.innerHTML = `
+                <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
+                <div class="absolute top-6 right-6 z-10 opacity-30"><i class="fas fa-music text-3xl"></i></div>
+                <div class="grid grid-cols-2 gap-4 w-full">${customSlideContent || '<div class="col-span-2 text-center opacity-30 text-xs">No items set</div>'}</div>
+            `;
+            container.appendChild(slide0);
+            dotsContainer.innerHTML += `<div class="w-2 h-2 rounded-full bg-white opacity-100 scale-125 transition-all duration-300"></div>`;
+
+            // --- Ranking Slides ---
+            const rankings = [
+                { name: 'TOP SONGS', id: null },
+                { name: 'J-POP', id: '27' },
+                { name: 'ANIME', id: '29' },
+                { name: 'ROCK', id: '21' }
+            ];
+
+            for(let i=0; i<rankings.length; i++) {
+                const r = rankings[i];
+                const entries = await fetchAppleMusicRanking(r.id);
+                let gridHTML = '';
+                entries.forEach(e => {
+                    const img = e['im:image'][2].label.replace('170x170bb', '300x300bb');
+                    gridHTML += `<a href="${e.link.attributes.href}" target="_blank" class="group flex flex-col gap-1 w-full no-underline"><div class="relative w-full aspect-square overflow-hidden rounded-lg shadow-md bg-black/20"><img src="${img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"></div><div class="text-[9px] font-bold truncate text-white leading-tight mt-1">${e['im:name'].label}</div></a>`;
+                });
+
+                const slide = document.createElement('div');
+                slide.className = 'w-full h-full flex-shrink-0 snap-center relative pt-16 pb-6 px-6 flex flex-col items-center justify-center';
+                slide.id = `m-slide-${i+1}`;
+                slide.innerHTML = `<div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${r.name}</div><div class="grid grid-cols-2 gap-4 w-full">${gridHTML}</div>`;
+                container.appendChild(slide);
+                dotsContainer.innerHTML += `<div class="w-2 h-2 rounded-full bg-white/40 hover:bg-white/60 transition-all duration-300"></div>`;
+            }
+
+            initGenericSliderObserver('m-slider-container', 'm-slider-dots');
         }
         
         let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
