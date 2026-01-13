@@ -1306,8 +1306,14 @@
                             const time = hourly.time[idx].split('T')[1];
                             const temp = Math.round(hourly.temperature_2m[idx]);
                             const icon = getSmallIcon(hourly.weather_code[idx]);
+                            
+                            // 配置調整: 左端は左寄せ、右端は右寄せ、中間は中央寄せ
+                            let alignClass = 'items-center';
+                            if (i === 1) alignClass = 'items-start pl-2';
+                            else if (i === 6) alignClass = 'items-end pr-2';
+
                             hourlyHTML += `
-                                <div class="flex flex-col items-center justify-center gap-1 w-1/6 ${i>1 ? 'border-l border-white/5' : ''}">
+                                <div class="flex flex-col ${alignClass} justify-center gap-1 w-1/6 ${i>1 ? 'border-l border-white/10' : ''}">
                                     <span class="text-[10px] opacity-80 font-bold tracking-wider drop-shadow-md">${time}</span>
                                     <div class="w-7 h-7 flex items-center justify-center opacity-90">${icon}</div>
                                     <span class="text-base font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">${temp}°</span>
@@ -1326,14 +1332,14 @@
                     <div class="grid grid-rows-2 h-full w-full">
                         <div class="flex justify-between items-start w-full pt-2">
                             <div class="flex flex-col items-start justify-start z-20">
-                                <div id="w-location-${index}" class="text-lg font-bold tracking-[0.2em] uppercase opacity-90 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] truncate max-w-[180px] text-left pl-1">${item.name}</div>
+                                <div id="w-location-${index}" class="text-lg font-bold tracking-[0.2em] uppercase opacity-90 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] truncate max-w-[180px] text-left pl-2">${item.name}</div>
                                 <div class="text-[110px] font-thin tracking-tighter leading-[0.9] drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] -ml-2 mt-1">${Math.round(current.temperature_2m)}°</div>
                             </div>
                             <div class="flex flex-col items-end justify-start z-20">
                                 <div class="w-24 h-24 flex items-center justify-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] -mr-2">
                                     ${getWeatherIcon(current.weather_code, current.is_day===0)}
                                 </div>
-                                <div class="text-right mt-1 pr-1">
+                                <div class="text-right mt-1 pr-2">
                                     <div class="text-xl font-bold opacity-90 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">${getWeatherDesc(current.weather_code)}</div>
                                     <div class="flex gap-3 text-sm font-medium opacity-90 mt-1 justify-end tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
                                         <span>H:<span>${Math.round(daily.temperature_2m_max[0])}</span>°</span>
@@ -1345,7 +1351,7 @@
                         
                         <div class="flex flex-col justify-center">
                             <div class="w-full pt-4 mb-2">
-                                <div class="flex justify-between items-center h-full px-1">
+                                <div class="flex justify-between items-center h-full px-0">
                                     ${hourlyHTML}
                                 </div>
                             </div>
@@ -1937,6 +1943,10 @@
                         // 背景画像のブラーを復帰
                         const isBlur = store.bg_blur;
                         document.documentElement.style.setProperty('--bg-blur', isBlur ? '60px' : '0px');
+                        
+                        // 天気ウィジェットから離れたら、スライドを現在地（先頭）にリセット
+                        const slider = document.getElementById('w-slider-container');
+                        if(slider) slider.scrollLeft = 0;
                     }
                 });
             }, {
