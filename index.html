@@ -392,12 +392,13 @@
             to { transform: translateX(500px); } 
         }
 
-        /* Weather Card Specific Overrides */
+        /* Weather Card Specific Overrides - UI改善版 */
         #widget-weather-card {
-            background: rgba(255, 255, 255, 0.01) !important; /* 天気.htmlに合わせる */
-            backdrop-filter: blur(2px); /* ぼかしを弱めて背景をくっきりさせる(8px -> 2px) */
-            -webkit-backdrop-filter: blur(2px);
-            border: 1px solid rgba(255, 255, 255, 0.1); 
+            background: rgba(255, 255, 255, 0) !important; /* 完全透明に近い背景 */
+            backdrop-filter: blur(0px); /* ブラーをほぼ無くしてクリアに */
+            -webkit-backdrop-filter: blur(0px);
+            border: 1px solid rgba(255, 255, 255, 0.08); /* 枠線をより薄く */
+            box-shadow: none; /* 影を消してフラットに */
         }
     </style>
 </head>
@@ -464,26 +465,29 @@
                 <div class="snap-container">
                     
                     <!-- 1. Weather (Modified) -->
+                    <!-- p-5からp-4に変更し、端まで使いやすくする -->
                     <div id="widget-weather-card" class="snap-item p-5 w-full flex flex-col justify-between h-full relative overflow-hidden">
                         
-                        <!-- Weather Background Layers -->
                         <div id="w-weather-gradient" class="sunny"></div>
                         <div id="w-bg-effects"></div>
 
-                        <!-- Content (z-index for overlay) -->
-                        <div class="relative z-10 flex flex-col justify-between h-full">
-                            <div class="flex justify-between items-start w-full pt-1 px-1">
-                                <div class="flex flex-col justify-start gap-2">
-                                    <div id="w-location" class="text-xl font-bold tracking-widest uppercase opacity-80 drop-shadow-md truncate max-w-[200px]">TOKYO</div>
-                                    <div id="w-temp" class="text-[100px] font-thin tracking-tighter leading-none drop-shadow-xl ml-[-6px] mt-[-5px]">--°</div>
+                        <div class="relative z-10 flex flex-col justify-between h-full w-full">
+                            
+                            <div class="flex justify-between items-start w-full pt-2">
+                                
+                                <div class="flex flex-col items-start justify-start z-20">
+                                    <div id="w-location" class="text-lg font-bold tracking-[0.2em] uppercase opacity-90 drop-shadow-md truncate max-w-[180px] text-left pl-1">TOKYO</div>
+                                    <div id="w-temp" class="text-[110px] font-thin tracking-tighter leading-[0.9] drop-shadow-xl -ml-2 mt-1">--°</div>
                                 </div>
-                                <div class="flex flex-col items-end justify-start gap-2">
-                                    <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg mt-[-5px]">
+
+                                <div class="flex flex-col items-end justify-start z-20">
+                                    <div id="w-icon-container" class="w-24 h-24 flex items-center justify-center drop-shadow-lg -mr-2">
                                         <i class="fas fa-sun text-6xl opacity-90 text-white"></i>
                                     </div>
-                                    <div class="text-right mt-1">
-                                        <div id="w-desc" class="text-2xl font-bold opacity-90 drop-shadow-md">快晴</div>
-                                        <div class="flex gap-3 text-sm font-medium opacity-70 mt-1 justify-end">
+                                    
+                                    <div class="text-right mt-1 pr-1">
+                                        <div id="w-desc" class="text-xl font-bold opacity-90 drop-shadow-md">快晴</div>
+                                        <div class="flex gap-3 text-sm font-medium opacity-70 mt-1 justify-end tracking-wider">
                                             <span>H:<span id="w-max">--</span>°</span>
                                             <span>L:<span id="w-min">--</span>°</span>
                                         </div>
@@ -491,48 +495,39 @@
                                 </div>
                             </div>
                             
-                            <div class="w-full pt-2 mb-2 mt-auto">
-                                <div class="flex justify-between items-center h-full">
+                            <div class="w-full pt-4 mb-2 mt-auto">
+                                <div class="flex justify-between items-center h-full px-2">
                                     <div class="flex flex-col items-center justify-center gap-1 w-1/3">
-                                        <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-1">--:--</span>
-                                        <div id="fc-icon-1" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-xl font-bold" id="fc-temp-1">--°</span>
+                                        <span class="text-[10px] opacity-60 font-bold tracking-wider" id="fc-time-1">--:--</span>
+                                        <div id="fc-icon-1" class="w-8 h-8 flex items-center justify-center opacity-90 scale-90"></div>
+                                        <span class="text-lg font-bold" id="fc-temp-1">--°</span>
                                     </div>
                                     <div class="flex flex-col items-center justify-center gap-1 w-1/3 border-l border-r border-white/5">
-                                        <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-2">--:--</span>
-                                        <div id="fc-icon-2" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-xl font-bold" id="fc-temp-2">--°</span>
+                                        <span class="text-[10px] opacity-60 font-bold tracking-wider" id="fc-time-2">--:--</span>
+                                        <div id="fc-icon-2" class="w-8 h-8 flex items-center justify-center opacity-90 scale-90"></div>
+                                        <span class="text-lg font-bold" id="fc-temp-2">--°</span>
                                     </div>
                                     <div class="flex flex-col items-center justify-center gap-1 w-1/3">
-                                        <span class="text-xs opacity-50 font-bold tracking-wider" id="fc-time-3">--:--</span>
-                                        <div id="fc-icon-3" class="w-10 h-10 flex items-center justify-center opacity-90"></div>
-                                        <span class="text-xl font-bold" id="fc-temp-3">--°</span>
+                                        <span class="text-[10px] opacity-60 font-bold tracking-wider" id="fc-time-3">--:--</span>
+                                        <div id="fc-icon-3" class="w-8 h-8 flex items-center justify-center opacity-90 scale-90"></div>
+                                        <span class="text-lg font-bold" id="fc-temp-3">--°</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="w-full pt-3 border-t border-white/10 mt-2">
-                                <div class="flex justify-between items-center px-1">
-                                    <div class="flex flex-col items-center justify-center w-1/3">
-                                        <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub1-name">NYC</span>
-                                        <div class="flex items-center gap-2">
-                                            <div id="sub1-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                            <span class="text-lg font-bold" id="sub1-temp">--°</span>
-                                        </div>
+                            <div class="w-full pt-3 border-t border-white/10 mt-1">
+                                <div class="flex justify-between items-center px-2">
+                                    <div class="flex items-center gap-2 w-1/3 justify-start opacity-80">
+                                        <span class="text-[10px] font-bold tracking-widest uppercase" id="sub1-name">NYC</span>
+                                        <span class="text-sm font-bold" id="sub1-temp">--°</span>
                                     </div>
-                                    <div class="flex flex-col items-center justify-center w-1/3 border-l border-r border-white/5">
-                                        <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub2-name">LON</span>
-                                        <div class="flex items-center gap-2">
-                                            <div id="sub2-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                            <span class="text-lg font-bold" id="sub2-temp">--°</span>
-                                        </div>
+                                    <div class="flex items-center gap-2 w-1/3 justify-center border-l border-r border-white/5 opacity-80">
+                                        <span class="text-[10px] font-bold tracking-widest uppercase" id="sub2-name">LON</span>
+                                        <span class="text-sm font-bold" id="sub2-temp">--°</span>
                                     </div>
-                                    <div class="flex flex-col items-center justify-center w-1/3">
-                                        <span class="text-xs opacity-60 font-bold tracking-wider uppercase mb-1" id="sub3-name">PAR</span>
-                                        <div class="flex items-center gap-2">
-                                            <div id="sub3-icon" class="w-5 h-5 flex items-center justify-center opacity-90"></div>
-                                            <span class="text-lg font-bold" id="sub3-temp">--°</span>
-                                        </div>
+                                    <div class="flex items-center gap-2 w-1/3 justify-end opacity-80">
+                                        <span class="text-[10px] font-bold tracking-widest uppercase" id="sub3-name">PAR</span>
+                                        <span class="text-sm font-bold" id="sub3-temp">--°</span>
                                     </div>
                                 </div>
                             </div>
