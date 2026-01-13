@@ -707,6 +707,57 @@
                             <div><span class="text-[9px] font-bold opacity-40 block mb-1">ユーザーID</span><input type="text" id="n-user-id" placeholder="ユーザーID (UUID)" class="bg-white/10 rounded p-2 text-xs w-full"></div>
                         </div>
                     </div>
+                    
+                    <div class="border-t border-white/10 my-4 pt-4">
+                        <p class="text-xs opacity-50 mb-2">表示プロパティ (最大3つ)</p>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="n-p1-name" placeholder="プロパティ名 1" class="col-span-2 bg-white/10 rounded p-2 text-xs w-full text-white placeholder-white/30 focus:outline-none focus:bg-white/20 transition-colors">
+                                <div class="relative col-span-1">
+                                    <select id="n-p1-type" class="appearance-none bg-white/10 rounded p-2 text-xs w-full text-white focus:outline-none focus:bg-white/20 transition-colors cursor-pointer pr-6">
+                                        <option value="text" class="bg-[#222] text-white">Text</option>
+                                        <option value="select" class="bg-[#222] text-white">Select</option>
+                                        <option value="date" class="bg-[#222] text-white">Date</option>
+                                        <option value="person" class="bg-[#222] text-white">Person</option>
+                                        <option value="checkbox" class="bg-[#222] text-white">Checkbox</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
+                                        <i class="fas fa-chevron-down text-[8px]"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="n-p2-name" placeholder="プロパティ名 2" class="col-span-2 bg-white/10 rounded p-2 text-xs w-full text-white placeholder-white/30 focus:outline-none focus:bg-white/20 transition-colors">
+                                <div class="relative col-span-1">
+                                    <select id="n-p2-type" class="appearance-none bg-white/10 rounded p-2 text-xs w-full text-white focus:outline-none focus:bg-white/20 transition-colors cursor-pointer pr-6">
+                                        <option value="text" class="bg-[#222] text-white">Text</option>
+                                        <option value="select" class="bg-[#222] text-white">Select</option>
+                                        <option value="date" class="bg-[#222] text-white">Date</option>
+                                        <option value="person" class="bg-[#222] text-white">Person</option>
+                                        <option value="checkbox" class="bg-[#222] text-white">Checkbox</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
+                                        <i class="fas fa-chevron-down text-[8px]"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="text" id="n-p3-name" placeholder="プロパティ名 3" class="col-span-2 bg-white/10 rounded p-2 text-xs w-full text-white placeholder-white/30 focus:outline-none focus:bg-white/20 transition-colors">
+                                <div class="relative col-span-1">
+                                    <select id="n-p3-type" class="appearance-none bg-white/10 rounded p-2 text-xs w-full text-white focus:outline-none focus:bg-white/20 transition-colors cursor-pointer pr-6">
+                                        <option value="text" class="bg-[#222] text-white">Text</option>
+                                        <option value="select" class="bg-[#222] text-white">Select</option>
+                                        <option value="date" class="bg-[#222] text-white">Date</option>
+                                        <option value="person" class="bg-[#222] text-white">Person</option>
+                                        <option value="checkbox" class="bg-[#222] text-white">Checkbox</option>
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
+                                        <i class="fas fa-chevron-down text-[8px]"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -856,6 +907,12 @@
             pType: localStorage.getItem('n_p_type') || 'status',
             userProp: localStorage.getItem('n_user_prop') || '',
             userId: localStorage.getItem('n_user_id') || '',
+            p1_name: localStorage.getItem('n_p1_name') || '',
+            p1_type: localStorage.getItem('n_p1_type') || 'text',
+            p2_name: localStorage.getItem('n_p2_name') || '',
+            p2_type: localStorage.getItem('n_p2_type') || 'text',
+            p3_name: localStorage.getItem('n_p3_name') || '',
+            p3_type: localStorage.getItem('n_p3_type') || 'text',
             lat: localStorage.getItem('w_lat') || '',
             lon: localStorage.getItem('w_lon') || '',
             quakeArea: localStorage.getItem('q_area') || '',
@@ -1047,6 +1104,30 @@
             } catch(e) { document.getElementById('api-status').className = 'w-2 h-2 rounded-full bg-red-500'; }
         }
 
+        function getNotionPropValue(prop) {
+            if (!prop) return null;
+            const type = prop.type;
+            if (type === 'rich_text' || type === 'title') {
+                return prop[type].map(t => t.plain_text).join('');
+            } else if (type === 'select') {
+                return prop.select ? prop.select.name : null;
+            } else if (type === 'multi_select') {
+                return prop.multi_select.map(s => s.name).join(', ');
+            } else if (type === 'date') {
+                if (!prop.date) return null;
+                return prop.date.start;
+            } else if (type === 'people') {
+                return prop.people.map(p => p.name).join(', ');
+            } else if (type === 'checkbox') {
+                return prop.checkbox ? '☑' : '☐';
+            } else if (type === 'number') {
+                return prop.number;
+            } else if (type === 'status') {
+                return prop.status ? prop.status.name : null;
+            }
+            return null;
+        }
+
         function renderTasks(tasks) {
             const list = document.getElementById('task-list');
             let filtered = tasks;
@@ -1072,9 +1153,28 @@
                 const isDone = sName === store.doneVal;
                 
                 const div = document.createElement('div');
-                div.className = `flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors ${isDone?'opacity-30':''}`;
+                div.className = `flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group ${isDone?'opacity-30':''}`;
                 
-                div.innerHTML = `<input type="checkbox" class="task-checkbox flex-shrink-0 mt-0.5" ${isDone?'checked':''} onchange="toggleTask('${t.id}', this.checked)"><span class="text-lg leading-snug ${isDone?'line-through':''} task-title"></span>`;
+                // Additional Properties
+                let propsHTML = '';
+                const propsConfig = [
+                    {n: store.p1_name, t: store.p1_type},
+                    {n: store.p2_name, t: store.p2_type},
+                    {n: store.p3_name, t: store.p3_type}
+                ];
+                
+                propsConfig.forEach(cfg => {
+                    if(cfg.n && t.properties[cfg.n]) {
+                        const val = getNotionPropValue(t.properties[cfg.n]);
+                        if(val) {
+                            let displayVal = val;
+                            // Simple styling based on type or just generic badge
+                            propsHTML += `<span class="bg-white/10 px-2 py-0.5 rounded text-[10px] opacity-70 truncate max-w-[150px]">${displayVal}</span>`;
+                        }
+                    }
+                });
+
+                div.innerHTML = `<input type="checkbox" class="task-checkbox flex-shrink-0 mt-1" ${isDone?'checked':''} onchange="toggleTask('${t.id}', this.checked)"><div class="flex-1 min-w-0"><div class="text-lg leading-snug ${isDone?'line-through':''} task-title font-medium"></div><div class="flex flex-wrap gap-2 mt-1.5">${propsHTML}</div></div>`;
                 
                 div.querySelector('.task-title').textContent = title;
                 list.appendChild(div);
@@ -1437,39 +1537,61 @@
             container.innerHTML = '';
             dotsContainer.innerHTML = '';
 
-            for(let i=0; i<genres.length; i++) {
-                const g = genres[i];
-                let contentHTML = '<div class="text-center opacity-30 text-sm">Loading...</div>';
+            // 1. Render Skeletons (枠組みを先に表示)
+            genres.forEach((g, i) => {
+                const slide = document.createElement('div');
+                slide.className = 'w-full h-full flex-shrink-0 snap-center relative pt-10 pb-4 flex flex-col items-center justify-start overflow-y-auto no-scrollbar';
+                slide.id = `p-slide-${i}`;
+                slide.innerHTML = `
+                    <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${g.name}</div>
+                    <div id="p-content-${i}" class="w-full mt-2 flex flex-col items-center gap-4 px-4">
+                        <div class="w-32 h-32 bg-white/5 rounded-xl animate-pulse shrink-0 mt-4"></div>
+                        <div class="w-full h-10 bg-white/5 rounded-lg animate-pulse"></div>
+                        <div class="w-full h-10 bg-white/5 rounded-lg animate-pulse"></div>
+                        <div class="w-full h-10 bg-white/5 rounded-lg animate-pulse"></div>
+                    </div>
+                `;
+                container.appendChild(slide);
 
+                const dot = document.createElement('div');
+                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${i === 0 ? 'bg-white opacity-100 scale-125' : 'bg-white/40 hover:bg-white/60'}`;
+                dotsContainer.appendChild(dot);
+            });
+
+            initGenericSliderObserver('p-slider-container', 'p-slider-dots');
+
+            // 2. Fetch Data (後からデータを流し込む)
+            genres.forEach(async (g, i) => {
                 try {
                     const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(g.url));
                     const data = await res.json();
-                    const e = data.feed.entry;
-                    if(e && e.length > 0) {
+                    const e = data.feed?.entry || [];
+                    
+                    if(e.length > 0) {
                         const f = e[0];
                         let subItemsHTML = '';
                         e.slice(1, 4).forEach((item, idx) => {
                             subItemsHTML += `<a href="${item.link.attributes.href}" target="_blank" class="flex items-center bg-white/10 rounded-lg p-2 gap-2 w-full hover:bg-white/20 transition"><div class="relative flex-shrink-0"><img src="${item['im:image'][0].label}" class="podcast-small-img"><div class="absolute -top-1 -left-1 bg-white/20 backdrop-blur-md text-white font-bold rounded-full w-4 h-4 flex items-center justify-center text-[8px]">${idx+2}</div></div><div class="flex-1 min-w-0"><div class="font-bold text-[10px] truncate">${item['im:name'].label}</div><div class="text-[8px] opacity-60 truncate">${item['im:artist'].label}</div></div></a>`;
                         });
 
-                        contentHTML = `
+                        const contentHTML = `
                             <a href="${f.link.attributes.href}" target="_blank" class="flex flex-col items-center justify-center w-full mb-3 group"><div class="relative mb-2"><img src="${f['im:image'][2].label}" class="podcast-hero-img group-hover:scale-105 transition-transform"><div class="absolute -top-2 -right-2 bg-yellow-400 text-black font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs">1</div></div><div class="text-center w-full px-2"><div class="font-bold text-sm truncate w-full">${f['im:name'].label}</div><div class="text-[10px] opacity-60 truncate w-full">${f['im:artist'].label}</div></div></a>
                             <div class="flex flex-col gap-2 w-full px-4">${subItemsHTML}</div>
                         `;
+                        const target = document.getElementById(`p-content-${i}`);
+                        if(target) {
+                            target.innerHTML = contentHTML;
+                            target.className = 'w-full'; // レイアウトクラスをリセット
+                        }
+                    } else {
+                        const target = document.getElementById(`p-content-${i}`);
+                        if(target) target.innerHTML = '<div class="text-center opacity-30 text-sm mt-10">No podcasts found</div>';
                     }
-                } catch(e) {}
-
-                const slide = document.createElement('div');
-                slide.className = 'w-full h-full flex-shrink-0 snap-center relative pt-10 pb-4 flex flex-col items-center justify-start overflow-y-auto no-scrollbar';
-                slide.id = `p-slide-${i}`;
-                slide.innerHTML = `<div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${g.name}</div>${contentHTML}`;
-                container.appendChild(slide);
-
-                const dot = document.createElement('div');
-                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${i===0 ? 'bg-white opacity-100 scale-125' : 'bg-white/40 hover:bg-white/60'}`;
-                dotsContainer.appendChild(dot);
-            }
-            initGenericSliderObserver('p-slider-container', 'p-slider-dots');
+                } catch(e) {
+                    const target = document.getElementById(`p-content-${i}`);
+                    if(target) target.innerHTML = '<div class="text-center opacity-30 text-sm mt-10">Failed to load</div>';
+                }
+            });
         }
 
         // --- Apple Music Logic (Enhanced OGP Scraping) ---
@@ -1518,13 +1640,13 @@
             }
         }
 
-        async function fetchAppleMusicRanking(genreId) {
+        async function fetchAppleMusicRanking(genreId, limit=4) {
             try {
-                let url = 'https://itunes.apple.com/jp/rss/topsongs/limit=4/json';
-                if(genreId) url = `https://itunes.apple.com/jp/rss/topsongs/limit=4/genre=${genreId}/json`;
+                let url = `https://itunes.apple.com/jp/rss/topsongs/limit=${limit}/json`;
+                if(genreId) url = `https://itunes.apple.com/jp/rss/topsongs/limit=${limit}/genre=${genreId}/json`;
                 const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
                 const data = await res.json();
-                return data.feed.entry;
+                return data.feed?.entry || [];
             } catch(e) { return []; }
         }
 
@@ -1532,106 +1654,11 @@
             const container = document.getElementById('m-slider-container');
             const dotsContainer = document.getElementById('m-slider-dots');
             if(!container || !dotsContainer) return;
-            container.innerHTML = ''; dotsContainer.innerHTML = '';
-
-            // --- Slide 0: Custom (Existing Logic) ---
-            const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
-            let customSlideContent = '';
-            for(const i of items) {
-                // Skip if no link and no keyword
-                if(!i.k && !i.l) continue;
-                
-                let trackData = null; // { title, artist, img, link }
-
-                // 1. URLがある場合、OGP取得を試みる (music.htmlのロジックを適用)
-                if (i.l && i.l.includes('music.apple.com')) {
-                    trackData = await fetchOGP(i.l);
-                }
-
-                // 2. OGP取得失敗、またはURLがない場合 -> iTunes Search API (既存ロジック)
-                if (!trackData) {
-                    try {
-                        let id = null;
-                        // Try extract ID from link
-                        if (i.l) {
-                             try {
-                                const urlObj = new URL(i.l);
-                                id = urlObj.searchParams.get('i');
-                                if(!id) {
-                                    const matches = urlObj.pathname.match(/\/(?:album|playlist|track)(?:\/[^\/]+)?\/(\d+)/);
-                                    if(matches) id = matches[1];
-                                }
-                             } catch(e) {}
-                        }
-
-                        let data = null;
-                        // Lookup by ID
-                        if (id) {
-                             const lookupUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/lookup?id=${id}&country=JP`);
-                             const r = await fetch(lookupUrl);
-                             const j = await r.json();
-                             if(j.resultCount > 0) data = j;
-                        }
-                        
-                        // Search by Keyword if lookup failed
-                        if(!data && i.k) {
-                             const searchUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&entity=song&limit=1`);
-                             const r = await fetch(searchUrl);
-                             data = await r.json();
-                        }
-
-                        if(data && data.resultCount > 0) {
-                            const t = data.results[0];
-                            trackData = {
-                                title: t.trackName || t.collectionName,
-                                artist: t.artistName,
-                                img: t.artworkUrl100.replace('100x100bb', '600x600bb'),
-                                link: i.l || t.trackViewUrl
-                            };
-                        }
-                    } catch(e) {
-                        console.error("API Search failed", e);
-                    }
-                }
-
-                // Render Item
-                if(trackData) {
-                    const div = document.createElement('a');
-                    div.href = trackData.link;
-                    div.target = '_blank';
-                    div.className = 'music-item group flex flex-col gap-2 w-full no-underline'; 
-                    customSlideContent += `
-                    <a href="${trackData.link}" target="_blank" class="music-item group flex flex-col gap-2 w-full no-underline">
-                        <div class="relative w-full aspect-square overflow-hidden rounded-xl shadow-lg bg-black/20">
-                            <img src="${trackData.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                <i class="fas fa-play text-white opacity-0 group-hover:opacity-100 transition-opacity text-2xl drop-shadow-lg"></i>
-                            </div>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                            <div class="text-xs font-bold truncate text-white leading-tight">${trackData.title}</div>
-                            <div class="text-[10px] opacity-70 truncate text-white/90 leading-tight">${trackData.artist}</div>
-                        </div></a>
-                    `;
-                } else if (i.l) {
-                     // Link only fallback (Icon)
-                     customSlideContent += `<a href="${i.l}" target="_blank" class="bg-white/10 rounded-2xl flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition aspect-square text-white/50 hover:text-white"><i class="fas fa-link text-2xl"></i><span class="text-[10px] opacity-60">Link</span></a>`;
-                }
-            }
             
-            // Add Slide 0
-            const slide0 = document.createElement('div');
-            slide0.className = 'w-full h-full flex-shrink-0 snap-center relative pt-16 pb-6 px-6 flex flex-col items-center justify-center';
-            slide0.id = 'm-slide-0';
-            slide0.innerHTML = `
-                <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
-                <div class="absolute top-6 right-6 z-10 opacity-30"><i class="fas fa-music text-3xl"></i></div>
-                <div class="grid grid-cols-2 gap-4 w-full">${customSlideContent || '<div class="col-span-2 text-center opacity-30 text-xs">No items set</div>'}</div>
-            `;
-            container.appendChild(slide0);
-            dotsContainer.innerHTML += `<div class="w-2 h-2 rounded-full bg-white opacity-100 scale-125 transition-all duration-300"></div>`;
+            // 1. Reset & Render Skeleton immediately (枠組みを即座に作成)
+            container.innerHTML = ''; 
+            dotsContainer.innerHTML = '';
 
-            // --- Ranking Slides ---
             const rankings = [
                 { name: 'TOP SONGS', id: null },
                 { name: 'J-POP', id: '27' },
@@ -1639,24 +1666,169 @@
                 { name: 'ROCK', id: '21' }
             ];
 
-            for(let i=0; i<rankings.length; i++) {
-                const r = rankings[i];
-                const entries = await fetchAppleMusicRanking(r.id);
-                let gridHTML = '';
-                entries.forEach(e => {
-                    const img = e['im:image'][2].label.replace('170x170bb', '300x300bb');
-                    gridHTML += `<a href="${e.link.attributes.href}" target="_blank" class="group flex flex-col gap-1 w-full no-underline"><div class="relative w-full aspect-square overflow-hidden rounded-lg shadow-md bg-black/20"><img src="${img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"></div><div class="text-[9px] font-bold truncate text-white leading-tight mt-1">${e['im:name'].label}</div></a>`;
-                });
+            // --- Slide 0: Custom (Existing Logic) ---
+            const slide0 = document.createElement('div');
+            slide0.className = 'w-full h-full flex-shrink-0 snap-center relative pt-16 pb-6 px-6 flex flex-col items-center justify-center';
+            slide0.id = 'm-slide-0';
+            slide0.innerHTML = `
+                <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
+                <div class="absolute top-6 right-6 z-10 opacity-30"><i class="fas fa-music text-3xl"></i></div>
+                <div class="grid grid-cols-2 gap-4 w-full h-full" id="m-content-0">
+                    <div class="col-span-2 flex items-center justify-center opacity-30 text-xs animate-pulse">Loading...</div>
+                </div>
+            `;
+            container.appendChild(slide0);
+            dotsContainer.innerHTML += `<div class="w-2 h-2 rounded-full bg-white opacity-100 scale-125 transition-all duration-300"></div>`;
 
+            // --- Ranking Slides (Skeleton) ---
+            rankings.forEach((r, i) => {
                 const slide = document.createElement('div');
                 slide.className = 'w-full h-full flex-shrink-0 snap-center relative pt-16 pb-6 px-6 flex flex-col items-center justify-center';
                 slide.id = `m-slide-${i+1}`;
-                slide.innerHTML = `<div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${r.name}</div><div class="grid grid-cols-2 gap-4 w-full">${gridHTML}</div>`;
+                slide.innerHTML = `
+                    <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${r.name}</div>
+                    <div class="grid grid-cols-2 grid-rows-2 gap-3 w-full h-full" id="m-content-${i+1}">
+                        <div class="col-span-2 row-span-1 bg-white/5 rounded-xl animate-pulse"></div>
+                        <div class="col-span-1 row-span-1 bg-white/5 rounded-xl animate-pulse"></div>
+                        <div class="col-span-1 row-span-1 bg-white/5 rounded-xl animate-pulse"></div>
+                    </div>
+                `;
                 container.appendChild(slide);
                 dotsContainer.innerHTML += `<div class="w-2 h-2 rounded-full bg-white/40 hover:bg-white/60 transition-all duration-300"></div>`;
-            }
+            });
 
+            // Init Observer immediately (スライド操作を可能にする)
             initGenericSliderObserver('m-slider-container', 'm-slider-dots');
+
+            // 2. Fetch Data in Background (後からデータを流し込む)
+
+            // --- Fetch Custom Slide ---
+            (async () => {
+                const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
+                let customHTML = '';
+                for(const i of items) {
+                    if(!i.k && !i.l) continue;
+                    let trackData = null;
+                    if (i.l && i.l.includes('music.apple.com')) { trackData = await fetchOGP(i.l); }
+                    if (!trackData) {
+                        try {
+                            let id = null;
+                            if (i.l) {
+                                 try {
+                                    const urlObj = new URL(i.l);
+                                    id = urlObj.searchParams.get('i');
+                                    if(!id) {
+                                        const matches = urlObj.pathname.match(/\/(?:album|playlist|track)(?:\/[^\/]+)?\/(\d+)/);
+                                        if(matches) id = matches[1];
+                                    }
+                                 } catch(e) {}
+                            }
+                            let data = null;
+                            if (id) {
+                                 const lookupUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/lookup?id=${id}&country=JP`);
+                                 const r = await fetch(lookupUrl);
+                                 const j = await r.json();
+                                 if(j.resultCount > 0) data = j;
+                            }
+                            if(!data && i.k) {
+                                 const searchUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&entity=song&limit=1`);
+                                 const r = await fetch(searchUrl);
+                                 data = await r.json();
+                            }
+                            if(data && data.resultCount > 0) {
+                                const t = data.results[0];
+                                trackData = {
+                                    title: t.trackName || t.collectionName,
+                                    artist: t.artistName,
+                                    img: t.artworkUrl100.replace('100x100bb', '600x600bb'),
+                                    link: i.l || t.trackViewUrl
+                                };
+                            }
+                        } catch(e) {}
+                    }
+
+                    if(trackData) {
+                        customHTML += `
+                        <a href="${trackData.link}" target="_blank" class="music-item group flex flex-col gap-2 w-full no-underline h-full">
+                            <div class="relative w-full aspect-square overflow-hidden rounded-xl shadow-lg bg-black/20">
+                                <img src="${trackData.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                    <i class="fas fa-play text-white opacity-0 group-hover:opacity-100 transition-opacity text-2xl drop-shadow-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex flex-col min-w-0">
+                                <div class="text-xs font-bold truncate text-white leading-tight">${trackData.title}</div>
+                                <div class="text-[10px] opacity-70 truncate text-white/90 leading-tight">${trackData.artist}</div>
+                            </div></a>
+                        `;
+                    } else if (i.l) {
+                         customHTML += `<a href="${i.l}" target="_blank" class="bg-white/10 rounded-2xl flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition w-full aspect-square text-white/50 hover:text-white"><i class="fas fa-link text-2xl"></i><span class="text-[10px] opacity-60">Link</span></a>`;
+                    }
+                }
+                const target = document.getElementById('m-content-0');
+                if(target) {
+                    target.innerHTML = customHTML || '<div class="col-span-2 flex items-center justify-center opacity-30 text-xs">No items set</div>';
+                    target.className = 'grid grid-cols-2 gap-4 w-full'; 
+                }
+            })();
+
+            // --- Fetch Rankings ---
+            rankings.forEach(async (r, i) => {
+                const entries = await fetchAppleMusicRanking(r.id, 3); // 3曲取得 (1位大 + 2位3位小)
+                let gridHTML = '';
+                if(entries && entries.length > 0) {
+                    entries.slice(0, 3).forEach((e, idx) => {
+                        const img = e['im:image'][2].label.replace('170x170bb', '600x600bb');
+                        const isFirst = idx === 0;
+                        
+                        // 1位は横長、2,3位は正方形
+                        const containerClass = isFirst 
+                            ? 'col-span-2 row-span-1 flex flex-row gap-3 items-center bg-white/5 rounded-xl p-2 group hover:bg-white/10 transition' 
+                            : 'col-span-1 row-span-1 flex flex-col gap-2 group';
+                        
+                        const imgClass = isFirst
+                            ? 'w-20 h-20 rounded-lg shadow-md object-cover flex-shrink-0 group-hover:scale-105 transition-transform duration-500'
+                            : 'w-full aspect-square rounded-lg shadow-md object-cover group-hover:scale-105 transition-transform duration-500';
+                        
+                        const textContainerClass = isFirst ? 'flex flex-col min-w-0 justify-center h-full' : 'flex flex-col min-w-0';
+                        const titleClass = isFirst ? 'text-sm font-bold truncate text-white leading-tight' : 'text-[10px] font-bold truncate text-white leading-tight';
+                        const artistClass = isFirst ? 'text-xs opacity-70 truncate text-white/90 leading-tight mt-1' : 'text-[9px] opacity-70 truncate text-white/90 leading-tight mt-0.5';
+                        const rankBadge = `<div class="absolute top-1 left-1 w-5 h-5 rounded-full ${idx===0?'bg-yellow-400 text-black':'bg-black/50 text-white'} flex items-center justify-center text-[10px] font-bold z-10">${idx+1}</div>`;
+
+                        if(isFirst) {
+                             gridHTML += `
+                                <a href="${e.link.attributes.href}" target="_blank" class="${containerClass} no-underline relative overflow-hidden">
+                                    <div class="relative flex-shrink-0 overflow-hidden rounded-lg">
+                                        <img src="${img}" class="${imgClass}">
+                                        ${rankBadge}
+                                    </div>
+                                    <div class="${textContainerClass}">
+                                        <div class="${titleClass}">${e['im:name'].label}</div>
+                                        <div class="${artistClass}">${e['im:artist'].label}</div>
+                                    </div>
+                                </a>
+                            `;
+                        } else {
+                            gridHTML += `
+                                <a href="${e.link.attributes.href}" target="_blank" class="${containerClass} no-underline relative">
+                                    <div class="relative w-full aspect-square overflow-hidden rounded-lg bg-black/20">
+                                        <img src="${img}" class="${imgClass}">
+                                        ${rankBadge}
+                                    </div>
+                                    <div class="${textContainerClass}">
+                                        <div class="${titleClass}">${e['im:name'].label}</div>
+                                        <div class="${artistClass}">${e['im:artist'].label}</div>
+                                    </div>
+                                </a>
+                            `;
+                        }
+                    });
+                } else {
+                    gridHTML = '<div class="col-span-2 row-span-2 flex items-center justify-center opacity-30 text-xs">Failed to load</div>';
+                }
+                const target = document.getElementById(`m-content-${i+1}`);
+                if(target) target.innerHTML = gridHTML;
+            });
         }
         
         let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
@@ -1791,6 +1963,9 @@
             setVal('n-key', store.key); setVal('n-db', store.db); setVal('n-prop', store.prop);
             setVal('n-stat', store.statProp); setVal('n-done-val', store.doneVal); setVal('n-not-val', store.notVal);
             setVal('n-user-prop', store.userProp); setVal('n-user-id', store.userId);
+            setVal('n-p1-name', store.p1_name); setVal('n-p1-type', store.p1_type);
+            setVal('n-p2-name', store.p2_name); setVal('n-p2-type', store.p2_type);
+            setVal('n-p3-name', store.p3_name); setVal('n-p3-type', store.p3_type);
             setVal('w-lat', store.lat); setVal('w-lon', store.lon); setVal('q-area', store.quakeArea);
             setVal('t-duration', store.timerDuration); setVal('g-cal', store.icalUrl);
             setVal('sub1-label', store.sub1_name); setVal('sub1-lat', store.sub1_lat); setVal('sub1-lon', store.sub1_lon);
@@ -1913,6 +2088,9 @@
             store.pType = document.getElementById('n-stat')?.dataset.ptype || 'status';
             store.userProp = getVal('n-user-prop');
             store.userId = getVal('n-user-id');
+            store.p1_name = getVal('n-p1-name'); store.p1_type = getVal('n-p1-type');
+            store.p2_name = getVal('n-p2-name'); store.p2_type = getVal('n-p2-type');
+            store.p3_name = getVal('n-p3-name'); store.p3_type = getVal('n-p3-type');
             store.lat = getVal('w-lat');
             store.lon = getVal('w-lon');
             store.quakeArea = getVal('q-area');
@@ -1940,6 +2118,9 @@
             localStorage.setItem('n_key', store.key); localStorage.setItem('n_db', store.db); localStorage.setItem('n_prop', store.prop); localStorage.setItem('n_stat', store.statProp);
             localStorage.setItem('n_done_val', store.doneVal); localStorage.setItem('n_not_val', store.notVal); localStorage.setItem('n_p_type', store.pType);
             localStorage.setItem('n_user_prop', store.userProp); localStorage.setItem('n_user_id', store.userId);
+            localStorage.setItem('n_p1_name', store.p1_name); localStorage.setItem('n_p1_type', store.p1_type);
+            localStorage.setItem('n_p2_name', store.p2_name); localStorage.setItem('n_p2_type', store.p2_type);
+            localStorage.setItem('n_p3_name', store.p3_name); localStorage.setItem('n_p3_type', store.p3_type);
             localStorage.setItem('w_lat', store.lat); localStorage.setItem('w_lon', store.lon); localStorage.setItem('q_area', store.quakeArea);
             localStorage.setItem('timer_duration', store.timerDuration); localStorage.setItem('ical_url', store.icalUrl);
             localStorage.setItem('sub1_name', store.sub1_name); localStorage.setItem('sub1_lat', store.sub1_lat); localStorage.setItem('sub1_lon', store.sub1_lon);
