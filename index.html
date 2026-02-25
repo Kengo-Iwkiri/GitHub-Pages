@@ -1,2353 +1,1840 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Standby Console</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Leaflet (Map) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- ical.js for Calendar Parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.5.0/ical.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikSight — 動画を開くだけ。インサイトを自動で取れ。</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <style>
-        /* --- Base Setup --- */
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-            color: white;
-            user-select: none;
-            -webkit-touch-callout: none;
-        }
-
-        /* --- Background System --- */
-        #bg-container {
-            position: fixed; inset: 0; z-index: 0;
-            pointer-events: none;
-            background: #000;
-        }
-
         :root {
-            --bg-blur: 60px; /* Default blur amount */
+            --red: #FF2D55;
+            --cyan: #00F0FF;
+            --dark: #060608;
+            --card: #0f0f11;
+            --border: rgba(255, 255, 255, 0.07);
+            --text: #E8E8E8;
+            --muted: rgba(255, 255, 255, 0.36);
         }
 
-        .bg-layer {
-            position: absolute; inset: -20px;
-            background-size: cover;
-            background-position: center;
-            opacity: 0;
-            transition: opacity 3s ease-in-out, filter 0.5s ease; 
-            filter: blur(var(--bg-blur)) saturate(1.2) brightness(0.85);
-            transform: scale(1.1);
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .bg-layer.active { opacity: 1; }
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 72px;
+        }
 
-        /* Default Images */
-        .theme-dawn { background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2560&auto=format&fit=crop'); }
-        .theme-morning { background-image: url('https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=2560&auto=format&fit=crop'); }
-        .theme-day { background-image: url('https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?q=80&w=2560&auto=format&fit=crop'); }
-        .theme-sunset { background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2560&auto=format&fit=crop'); }
-        .theme-evening { background-image: url('https://images.unsplash.com/photo-1505322022379-7c3353ee6291?q=80&w=2560&auto=format&fit=crop'); }
-        .theme-night { background-image: url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2560&auto=format&fit=crop'); }
-        
-        .theme-alert { background: #450a0a; filter: none; }
-        .theme-alert.active { animation: pulseAlert 2s infinite ease-in-out; z-index: 5; }
-        @keyframes pulseAlert { 0% { opacity: 0.6; } 50% { opacity: 0.9; } 100% { opacity: 0.6; } }
+        body {
+            background: var(--dark);
+            color: var(--text);
+            font-family: 'Noto Sans JP', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
 
-        /* --- Main Content --- */
-        main {
-            position: relative; z-index: 10;
-            height: 100%;
-            display: flex; flex-direction: column;
+        /* ── CANVAS ── */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
             pointer-events: none;
         }
-        main * { pointer-events: auto; }
 
-        /* --- Earthquake Overlay --- */
-        #quake-overlay {
-            position: fixed; inset: 0; z-index: 10000;
-            background: #1a0505;
-            display: none;
-            flex-direction: column;
-            animation: fadeInAlert 0.3s ease-out;
+        /* ── NOISE OVERLAY ── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.028;
+            mix-blend-mode: overlay;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 40px;
+            height: 68px;
+            background: rgba(6, 6, 8, 0);
+            backdrop-filter: blur(0px);
+            border-bottom: 1px solid transparent;
+            transition: background 0.5s, backdrop-filter 0.5s, border-color 0.5s;
+        }
+
+        nav.scrolled {
+            background: rgba(6, 6, 8, 0.94);
+            backdrop-filter: blur(20px);
+            border-color: var(--border);
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 3px;
+            color: #fff;
+            text-decoration: none;
+            position: relative;
+        }
+
+        .logo em {
+            color: var(--red);
+            font-style: normal;
+        }
+
+        .logo::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            color: var(--cyan);
+            opacity: 0;
+            clip-path: inset(0 0 100% 0);
+            animation: glitch-logo 6s 2s infinite;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 3px;
+        }
+
+        @keyframes glitch-logo {
+
+            0%,
+            94%,
+            100% {
+                opacity: 0;
+                clip-path: inset(0 0 100% 0);
+                transform: none;
+            }
+
+            95% {
+                opacity: 0.6;
+                clip-path: inset(30% 0 40% 0);
+                transform: translateX(-3px);
+            }
+
+            96% {
+                opacity: 0.6;
+                clip-path: inset(60% 0 10% 0);
+                transform: translateX(3px);
+            }
+
+            97% {
+                opacity: 0;
+            }
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            text-decoration: none;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--red);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            background: var(--red) !important;
+            color: #fff !important;
+            padding: 9px 20px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 12px !important;
+            transition: transform 0.2s, box-shadow 0.2s !important;
             overflow: hidden;
         }
-        #quake-overlay.visible { display: flex; }
-        @keyframes fadeInAlert { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
-        #alert-map-container {
-            position: absolute; inset: 0; opacity: 1.0;
-            filter: grayscale(100%) contrast(1.1) brightness(1.2) sepia(1) hue-rotate(-50deg) saturate(3);
-            pointer-events: none;
-        }
-        #quake-vignette {
-            position: absolute; inset: 0;
-            background: radial-gradient(circle, transparent 40%, rgba(50,0,0,0.4) 90%, #000 100%);
-            z-index: 1; pointer-events: auto;
-        }
-        #quake-scanlines {
-            position: absolute; inset: 0;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
-            background-size: 100% 4px;
-            z-index: 2; pointer-events: none; opacity: 0.3;
-        }
-        #quake-content {
-            position: relative; z-index: 10; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: space-between;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.8); pointer-events: none;
-        }
-        .quake-scale-box {
-            border: 2px solid #ef4444; color: #ef4444; background: rgba(0,0,0,0.6);
-            padding: 8px 30px; border-radius: 99px;
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.4), inset 0 0 20px rgba(239, 68, 68, 0.1);
-            backdrop-filter: blur(10px); font-weight: 900; letter-spacing: 0.2em; display: inline-block;
+
+        .nav-cta::after {
+            content: '' !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            width: 0;
+            height: 100%;
+            position: absolute;
+            left: -10%;
+            top: 0;
+            transform: skewX(-20deg);
+            transition: width 0.3s !important;
         }
 
-        /* --- Settings Drawer --- */
-        #settings-overlay {
-            position: fixed; inset: 0; z-index: 9998;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        .nav-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(255, 45, 85, 0.5);
         }
-        #settings-overlay.visible { opacity: 1; pointer-events: auto; }
 
-        #settings-drawer {
-            position: fixed; top: 0; left: 0; bottom: 0; z-index: 9999;
-            width: 500px; max-width: 90vw;
-            background: rgba(20, 20, 20, 0.9);
-            border-right: 1px solid rgba(255,255,255,0.15);
-            backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px);
-            transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
             display: flex;
-        }
-        #settings-drawer.open { transform: translateX(0); }
-
-        .settings-sidebar {
-            width: 140px; background: rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.1);
-            padding: 20px 10px; display: flex; flex-direction: column; gap: 8px;
-        }
-        .settings-content { flex: 1; padding: 30px; overflow-y: auto; }
-
-        .tab-btn {
-            text-align: left; padding: 12px 16px; border-radius: 12px;
-            font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); transition: all 0.2s;
-        }
-        .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .tab-btn.active { background: rgba(255,255,255,0.1); color: white; }
-        .tab-icon { margin-right: 8px; width: 16px; text-align: center; }
-        .tab-panel { display: none; animation: fadeIn 0.3s ease; }
-        .tab-panel.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- UI Components --- */
-        .glass {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 32px;
-            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            flex-direction: column;
+            justify-content: center;
+            padding: 130px 40px 80px;
+            position: relative;
+            z-index: 2;
+            max-width: 1100px;
+            margin: 0 auto;
         }
 
-        .task-checkbox {
-            appearance: none; width: 24px; height: 24px;
-            border: 2px solid rgba(255,255,255,0.6); border-radius: 50%;
-            display: grid; place-content: center; cursor: pointer;
-        }
-        .task-checkbox::before {
-            content: ""; width: 14px; height: 14px; border-radius: 50%;
-            transform: scale(0); transition: 0.2s; background: white;
-        }
-        .task-checkbox:checked { background: white; border-color: white; }
-        .task-checkbox:checked::before { transform: scale(1); background: black; }
-
-        .snap-container { scroll-snap-type: y mandatory; overflow-y: auto; height: 100%; scroll-behavior: smooth; }
-        .snap-item { scroll-snap-align: start; scroll-snap-stop: always; height: 100%; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        ::-webkit-scrollbar { display: none; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-
-        .leaflet-container { background: #111; font-family: sans-serif; }
-        .leaflet-control-attribution { display: none; }
-        #quake-map { pointer-events: none; }
-
-        /* Timer Circle */
-        .timer-svg { transform: rotate(-90deg); }
-        .timer-circle-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 6; }
-        .timer-circle-progress {
-            fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round;
-            stroke-dasharray: 880; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear;
-        }
-        
-        /* Podcast/Music Styles */
-        .podcast-hero-img { width: 180px; height: 180px; border-radius: 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); object-fit: cover; }
-        .podcast-small-img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; min-width: 48px; }
-        
-        /* Calendar Styles */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; width: 100%; text-align: center; }
-        .cal-day { font-size: 11px; padding: 4px; border-radius: 6px; color: rgba(255,255,255,0.9); transition: all 0.2s; }
-        .cal-day.past { color: rgba(255,255,255,0.3); }
-        .cal-day.today { background: white; color: black; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .cal-day.future { background: transparent; }
-        .cal-header { font-size: 9px; color: rgba(255,255,255,0.4); font-weight: bold; margin-bottom: 2px; }
-        .event-item { position: relative; padding-left: 12px; margin-bottom: 8px; color: rgba(255,255,255,0.9); }
-        .event-item::before { content: ''; position: absolute; left: 0; top: 6px; width: 4px; height: 4px; border-radius: 50%; }
-        .event-item-today::before { background: #60a5fa; box-shadow: 0 0 8px rgba(96, 165, 250, 0.8); }
-        .event-item-future::before { background: rgba(255, 255, 255, 0.3); }
-
-        /* iOS Toggle Switch */
-        .hidden-toggle { display: none; }
-        .toggle-label {
-            width: 44px; height: 26px; background: #555; border-radius: 999px;
-            position: relative; cursor: pointer; transition: background 0.3s;
-        }
-        .toggle-label::after {
-            content: ''; position: absolute; top: 2px; left: 2px;
-            width: 22px; height: 22px; background: white; border-radius: 50%;
-            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .hidden-toggle:checked + .toggle-label { background: #34C759; }
-        .hidden-toggle:checked + .toggle-label::after { transform: translateX(18px); }
-
-        /* Tutorial Hint */
-        #tutorial-hint { pointer-events: none; }
-        #tutorial-hint.visible { opacity: 1; }
-        .hint-content { animation: hintSlide 2s infinite; }
-        @keyframes hintSlide { 
-            0% { transform: translateX(0); opacity: 0.5; } 
-            50% { transform: translateX(10px); opacity: 1; } 
-            100% { transform: translateX(0); opacity: 0.5; } 
-        }
-
-        /* Timer Popup */
-        #timer-popup.visible { opacity: 1; pointer-events: auto; }
-        #timer-popup.visible #timer-popup-content { transform: scale(1); }
-
-        /* ========================================= */
-        /* --- Weather Background Effects (Ported) --- */
-        /* ========================================= */
-        
-        /* Weather Gradient Layer (Inside Card) - Ported colors */
-        #w-weather-gradient {
-            position: absolute; inset: 0; z-index: 0;
-            transition: background 1s ease;
-            /* 色の透明度をさらに下げて (0.2 - 0.4)、極限まで透け感を出す */
-        }
-        #w-weather-gradient.sunny { background: linear-gradient(to bottom, rgba(0, 150, 255, 0.25) 0%, rgba(100, 255, 218, 0.2) 100%); }
-        #w-weather-gradient.rainy { background: linear-gradient(to bottom, rgba(32, 58, 67, 0.2) 0%, rgba(44, 83, 100, 0.2) 100%); }
-        #w-weather-gradient.cloudy { background: linear-gradient(to bottom, rgba(120, 120, 120, 0.3) 0%, rgba(60, 60, 60, 0.3) 100%); }
-        #w-weather-gradient.snowy { background: linear-gradient(to bottom, rgba(131, 164, 212, 0.15) 0%, rgba(182, 251, 255, 0.15) 100%); }
-
-        /* Effects Container */
-        #w-bg-effects {
-            position: absolute; inset: 0; z-index: 1; 
-            pointer-events: none; overflow: hidden;
-            border-radius: 32px; /* カードに合わせる */
-        }
-
-        /* Sunny Effects - 強化版 */
-        .sun-ray {
-            position: absolute;
-            top: -100px;
-            right: -100px;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
-            border-radius: 50%;
-            filter: blur(0px);
-            animation: sun-pulse 4s infinite alternate;
-            z-index: 0;
-        }
-        /* 追加: 強い光のグレア（回転する光の筋） */
-        .sun-glare {
-            position: absolute;
-            top: -200px;
-            right: -200px;
-            width: 600px;
-            height: 600px;
-            background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.1) 20deg, transparent 40deg, rgba(255,255,255,0.1) 60deg, transparent 80deg);
-            border-radius: 50%;
-            z-index: 0;
-            opacity: 0.6;
-        }
-        @keyframes sun-pulse {
-            0% { transform: scale(1); opacity: 0.6; }
-            100% { transform: scale(1.1); opacity: 0.8; }
-        }
-        @keyframes sun-rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Rain Effects */
-        .raindrop {
-            position: absolute;
-            background-color: rgba(255, 255, 255, 0.5);
-            width: 1px;
-            height: 10px;
-            top: -20px;
-            animation: fall linear infinite;
-        }
-        @keyframes fall {
-            to { transform: translateY(600px); } /* カードの高さ分落下 */
-        }
-
-        /* Snow Effects */
-        .snowflake {
-            position: absolute;
-            color: #fff;
-            top: -20px;
-            animation: fall-snow linear infinite;
-        }
-        @keyframes fall-snow {
-            0% { transform: translateY(-20px) translateX(0); opacity: 0.8; }
-            100% { transform: translateY(600px) translateX(20px); opacity: 0; }
-        }
-
-        /* --- 改良版: ガラスに付く水滴のエフェクト --- */
-        .glass-droplet {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.1); /* より透明に */
-            /* 重要: 水滴の向こう側をぼかすことでレンズ効果を出す */
-            backdrop-filter: blur(3px); 
-            -webkit-backdrop-filter: blur(3px);
-            
-            border-radius: 50%; /* JSでランダムに変更するがベースは丸 */
-            
-            /* シャドウを調整して、くっきりしたハイライトと立体感を出す */
-            box-shadow: 
-                inset 2px 2px 5px rgba(255, 255, 255, 0.8), /* 強いハイライト */
-                inset -2px -2px 5px rgba(0, 0, 0, 0.1),   /* 内側の影 */
-                1px 1px 2px rgba(0, 0, 0, 0.3);           /* 外側のドロップシャドウ */
-            
-            z-index: 2; 
-            
-            pointer-events: none;
+        /* ── HERO STAGGER ── */
+        .h-eyebrow {
             opacity: 0;
-            animation: droplet-appear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; /* 弾むような出現 */
+            transform: translateX(-24px);
+            animation: fromLeft 0.8s 0.15s cubic-bezier(.22, 1, .36, 1) forwards;
         }
 
-        /* 水滴にキラッと光る点を入れる */
-        .glass-droplet::after {
+        .h-line1 {
+            opacity: 0;
+            transform: translateY(50px);
+            clip-path: inset(0 0 100% 0);
+            animation: textReveal 0.9s 0.35s cubic-bezier(.22, 1, .36, 1) forwards;
+            display: block;
+        }
+
+        .h-line2 {
+            opacity: 0;
+            transform: translateY(50px);
+            clip-path: inset(0 0 100% 0);
+            animation: textReveal 0.9s 0.52s cubic-bezier(.22, 1, .36, 1) forwards;
+            display: block;
+        }
+
+        .h-line3 {
+            opacity: 0;
+            transform: translateY(50px);
+            clip-path: inset(0 0 100% 0);
+            animation: textReveal 0.9s 0.69s cubic-bezier(.22, 1, .36, 1) forwards;
+            display: block;
+        }
+
+        .h-sub {
+            opacity: 0;
+            transform: translateY(22px);
+            animation: fromBottom 0.8s 1.0s ease forwards;
+        }
+
+        .h-actions {
+            opacity: 0;
+            transform: translateY(22px);
+            animation: fromBottom 0.8s 1.15s ease forwards;
+        }
+
+        .h-price {
+            opacity: 0;
+            transform: translateY(22px);
+            animation: fromBottom 0.8s 1.3s ease forwards;
+        }
+
+        @keyframes fromLeft {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes textReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                clip-path: inset(-10% 0 -10% 0);
+            }
+        }
+
+        @keyframes fromBottom {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-eyebrow {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: var(--red);
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hero-eyebrow::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 1px;
+            background: var(--red);
+            flex-shrink: 0;
+        }
+
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(60px, 10vw, 124px);
+            line-height: 1.1;
+            letter-spacing: 0.02em;
+            color: #fff;
+            margin-bottom: 28px;
+            white-space: nowrap;
+        }
+
+        .hero h1 .accent {
+            color: var(--red);
+            position: relative;
+        }
+
+        /* グリッチ on accent */
+        .hero h1 .accent::before,
+        .hero h1 .accent::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            animation: glitch-text 4s 3s infinite;
+        }
+
+        .hero h1 .accent::before {
+            color: var(--cyan);
+            clip-path: inset(0 0 70% 0);
+            transform: translateX(-4px);
+            animation-delay: 3s;
+        }
+
+        .hero h1 .accent::after {
+            color: #fff;
+            clip-path: inset(55% 0 20% 0);
+            transform: translateX(4px);
+            animation-delay: 3.05s;
+        }
+
+        @keyframes glitch-text {
+
+            0%,
+            88%,
+            100% {
+                opacity: 0;
+                transform: translateX(0);
+            }
+
+            89% {
+                opacity: 0.8;
+                transform: translateX(-5px);
+            }
+
+            90% {
+                opacity: 0.8;
+                transform: translateX(5px);
+            }
+
+            91% {
+                opacity: 0;
+            }
+        }
+
+        .hero h1 .outline {
+            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.22);
+            color: transparent;
+        }
+
+        .hero-sub {
+            font-size: 15px;
+            color: var(--muted);
+            max-width: 500px;
+            line-height: 1.85;
+            margin-bottom: 44px;
+        }
+
+        .hero-sub strong {
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 500;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 44px;
+        }
+
+        /* ── MAGNETIC BUTTONS ── */
+        .btn-red {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--red);
+            color: #fff;
+            padding: 15px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.3s;
+            box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.4);
+        }
+
+        .btn-red .btn-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s;
+        }
+
+        .btn-red::before {
             content: '';
             position: absolute;
-            top: 15%;
-            left: 15%;
-            width: 30%;
-            height: 30%;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
-            opacity: 0.8;
+            inset: 0;
+            background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.25) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        @keyframes droplet-appear {
-            from { transform: scale(0); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .btn-red:hover::before {
+            opacity: 1;
         }
 
-        /* 水滴が垂れるアニメーション - 改良版 */
-        .glass-droplet.drip {
-            animation: drip-fall 1.5s ease-in forwards; 
-        }
-        @keyframes drip-fall {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            20% { transform: translateY(10px) scale(1.1, 0.9); opacity: 1; }
-            80% { opacity: 1; } /* ギリギリまで透明度を保つ */
-            100% { transform: translateY(400px) scale(0.9, 1.1); opacity: 0; } /* 最後スッと消える */
+        .btn-red:hover {
+            box-shadow: 0 8px 48px rgba(255, 45, 85, 0.55);
         }
 
-        /* Cloud Effects (Updated) */
-        .cloud {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.6); /* 濃くして雲っぽさを出す */
-            border-radius: 50px; /* 横長の丸 */
-            animation: drift 20s linear infinite;
-            filter: blur(8px); /* ぼかしを少し弱めて形を見せる */
-            z-index: 1; /* 背景レイヤー内: 水滴より奥 */
+        .btn-outline-cyan {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            color: var(--cyan);
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            border: 1.5px solid rgba(0, 240, 255, 0.4);
+            transition: box-shadow 0.3s, background 0.3s;
         }
-        /* モコモコ感を出すための擬似要素 */
-        .cloud::after, .cloud::before {
+
+        .btn-outline-cyan .btn-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s;
+        }
+
+        .btn-outline-cyan::before {
             content: '';
             position: absolute;
-            background: inherit;
-            border-radius: 50%;
-        }
-        .cloud::after {
-            width: 50%;
-            height: 100%;
-            top: -40%;
-            left: 15%;
-        }
-        .cloud::before {
-            width: 40%;
-            height: 100%;
-            top: -30%;
-            left: 45%;
-        }
-        @keyframes drift {
-            from { left: -250px; } /* 雲の最大幅より大きい値で画面外からスタート */
-            to { left: 100%; }   /* 画面の右端まで移動して完全に消える */
+            inset: 0;
+            background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0, 240, 255, 0.15) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
-        /* Weather Card Specific Overrides - UI改善版 */
-        #widget-weather-card {
-            /* 天気ウィジェット自体の背景とブラーは削除し、親コンテナのスタイルが透けて見えるようにする */
-            background: transparent !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            border: none !important;
-            box-shadow: none !important;
+        .btn-outline-cyan:hover::before {
+            opacity: 1;
+        }
+
+        .btn-outline-cyan:hover {
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.3);
+        }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            text-decoration: none;
+            font-family: 'Space Mono', monospace;
+            transition: color 0.2s;
+        }
+
+        .btn-ghost:hover {
+            color: #fff;
+        }
+
+        .price-tag {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .price-big {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 50px;
+            color: #fff;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .price-note {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .badge-cyan {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.28);
+            color: var(--cyan);
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            padding: 4px 9px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+            animation: badgePulse 3s infinite;
+        }
+
+        @keyframes badgePulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(0, 240, 255, 0);
+            }
+        }
+
+        /* ── PULSE DOT ── */
+        .pulse-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--red);
+            margin-right: 4px;
+            animation: pdot 2s infinite;
+        }
+
+        @keyframes pdot {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.6);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(255, 45, 85, 0);
+            }
+        }
+
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity .8s cubic-bezier(.22, 1, .36, 1), transform .8s cubic-bezier(.22, 1, .36, 1);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-48px);
+            transition: opacity .8s cubic-bezier(.22, 1, .36, 1), transform .8s cubic-bezier(.22, 1, .36, 1);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(48px);
+            transition: opacity .8s cubic-bezier(.22, 1, .36, 1), transform .8s cubic-bezier(.22, 1, .36, 1);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity .7s ease, transform .7s cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        .reveal.on,
+        .reveal-left.on,
+        .reveal-right.on,
+        .reveal-scale.on {
+            opacity: 1;
+            transform: none;
+        }
+
+        .d1 {
+            transition-delay: .1s;
+        }
+
+        .d2 {
+            transition-delay: .2s;
+        }
+
+        .d3 {
+            transition-delay: .3s;
+        }
+
+        .d4 {
+            transition-delay: .4s;
+        }
+
+        .d5 {
+            transition-delay: .5s;
+        }
+
+        /* ── SECTIONS ── */
+        .section-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 96px 40px;
+            border-top: 1px solid var(--border);
+            position: relative;
+            z-index: 2;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 4px;
+            color: var(--red);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-label::before {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 1px;
+            background: var(--red);
+            flex-shrink: 0;
+        }
+
+        .section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(34px, 5vw, 58px);
+            letter-spacing: 2px;
+            color: #fff;
+            line-height: 1.0;
+            margin-bottom: 14px;
+        }
+
+        .section-body {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.85;
+            max-width: 540px;
+        }
+
+        /* ── PROBLEM ── */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            margin-top: 56px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .problem-card {
+            padding: 32px 28px;
+            background: var(--card);
+            position: relative;
+            transition: background 0.35s;
+        }
+
+        .problem-card:not(.span2):hover {
+            background: #161618;
+        }
+
+        .problem-card.span2 {
+            grid-column: span 2;
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.07) 0%, rgba(0, 240, 255, 0.04) 100%);
+            border-top: 1px solid rgba(255, 45, 85, 0.18);
+        }
+
+        /* shimmer on hover */
+        .problem-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.04) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .problem-card:hover::after {
+            transform: translateX(100%);
+        }
+
+        .p-icon {
+            font-size: 28px;
+            margin-bottom: 14px;
+            transition: transform 0.4s cubic-bezier(.34, 1.56, .64, 1);
+            display: inline-block;
+        }
+
+        .problem-card:hover .p-icon {
+            transform: scale(1.2) rotate(-8deg);
+        }
+
+        .p-tag {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            font-family: 'Space Mono', monospace;
+            font-size: 8px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255, 45, 85, 0.1);
+            color: var(--red);
+            border: 1px solid rgba(255, 45, 85, 0.18);
+            letter-spacing: 1px;
+        }
+
+        .problem-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .problem-card p {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.75;
+        }
+
+        .solution-hl {
+            background: linear-gradient(90deg, var(--red), #FF7A9A);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── HOW ── */
+        .steps-row {
+            display: flex;
+            margin-top: 56px;
+            position: relative;
+        }
+
+        .steps-row::before {
+            content: '';
+            position: absolute;
+            top: 27px;
+            left: 27px;
+            right: 27px;
+            height: 1px;
+            background: linear-gradient(90deg, var(--red), var(--cyan));
+            opacity: 0.2;
+        }
+
+        .step-line {
+            position: absolute;
+            top: 27px;
+            left: 27px;
+            height: 1px;
+            width: 0;
+            background: linear-gradient(90deg, var(--red), var(--cyan));
+            transition: width 1.4s 0.2s cubic-bezier(.22, 1, .36, 1);
+            z-index: 1;
+        }
+
+        .steps-row.on .step-line {
+            width: calc(100% - 54px);
+        }
+
+        .step {
+            flex: 1;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .step-circle {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: var(--dark);
+            border: 2px solid var(--red);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            color: var(--red);
+            position: relative;
+            z-index: 2;
+            transition: transform 0.35s cubic-bezier(.34, 1.56, .64, 1), box-shadow 0.35s;
+        }
+
+        .step:hover .step-circle {
+            transform: scale(1.15) rotate(10deg);
+            box-shadow: 0 0 28px rgba(255, 45, 85, 0.5);
+        }
+
+        .step h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.75;
+        }
+
+        /* ── VS ── */
+        .vs-wrap {
+            margin-top: 56px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .vs-head {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .vhc {
+            padding: 16px 22px;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--muted);
+        }
+
+        .vhc.red {
+            background: rgba(255, 45, 85, 0.07);
+            color: var(--red);
+            border-left: 1px solid rgba(255, 45, 85, 0.18);
+            border-right: 1px solid rgba(255, 45, 85, 0.18);
+        }
+
+        .vs-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        .vs-row:last-child {
+            border-bottom: none;
+        }
+
+        .vs-row:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* 行ごとにスライドイン */
+        .vs-row {
+            opacity: 0;
+            transform: translateX(-16px);
+            transition: opacity 0.5s, transform 0.5s, background 0.2s;
+        }
+
+        .vs-row.on {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .vc {
+            padding: 15px 22px;
+            font-size: 13px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+        }
+
+        .vc.feat {
+            color: var(--text);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .vc.red-col {
+            background: rgba(255, 45, 85, 0.04);
+            border-left: 1px solid rgba(255, 45, 85, 0.12);
+            border-right: 1px solid rgba(255, 45, 85, 0.12);
+            justify-content: center;
+        }
+
+        .vc.mid {
+            justify-content: center;
+        }
+
+        .c-ok {
+            color: #30D158;
+            font-size: 13px;
+        }
+
+        .c-ng {
+            color: #FF453A;
+            font-size: 13px;
+        }
+
+        .c-tri {
+            color: #FF9F0A;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ── SETUP ── */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 56px;
+        }
+
+        .setup-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 20px;
+            transition: border-color 0.3s, transform 0.35s cubic-bezier(.22, 1, .36, 1), box-shadow 0.35s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .setup-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.06), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .setup-card:hover {
+            border-color: rgba(255, 45, 85, 0.4);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .setup-card:hover::before {
+            opacity: 1;
+        }
+
+        .setup-n {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 44px;
+            color: rgba(255, 45, 85, 0.18);
+            line-height: 1;
+            margin-bottom: 10px;
+            transition: color 0.3s, transform 0.3s;
+        }
+
+        .setup-card:hover .setup-n {
+            color: rgba(255, 45, 85, 0.5);
+            transform: scale(1.05);
+        }
+
+        .setup-card h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 7px;
+        }
+
+        .setup-card p {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        /* ── PRICING ── */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-top: 44px;
+        }
+
+        .pc {
+            background: var(--card);
+            border-radius: 18px;
+            padding: 36px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.4s cubic-bezier(.22, 1, .36, 1), box-shadow 0.4s;
+        }
+
+        .pc:hover {
+            transform: translateY(-8px) scale(1.01);
+        }
+
+        .pc.red-pc {
+            border: 1px solid rgba(255, 45, 85, 0.35);
+        }
+
+        .pc.red-pc:hover {
+            box-shadow: 0 24px 64px rgba(255, 45, 85, 0.2);
+        }
+
+        .pc.red-pc::after {
+            content: '';
+            position: absolute;
+            top: -70px;
+            right: -70px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 45, 85, 0.1), transparent 70%);
+            pointer-events: none;
+            transition: transform 0.5s;
+        }
+
+        .pc.red-pc:hover::after {
+            transform: scale(1.3);
+        }
+
+        .pc.cyan-pc {
+            border: 1px solid rgba(0, 240, 255, 0.22);
+        }
+
+        .pc.cyan-pc:hover {
+            box-shadow: 0 24px 64px rgba(0, 240, 255, 0.12);
+        }
+
+        .pc.cyan-pc::after {
+            content: '';
+            position: absolute;
+            top: -70px;
+            right: -70px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.08), transparent 70%);
+            pointer-events: none;
+            transition: transform 0.5s;
+        }
+
+        .pc.cyan-pc:hover::after {
+            transform: scale(1.3);
+        }
+
+        .plan-tag {
+            display: inline-block;
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            letter-spacing: 2px;
+            margin-bottom: 18px;
+            width: fit-content;
+        }
+
+        .plan-tag.red {
+            background: rgba(255, 45, 85, 0.12);
+            color: var(--red);
+            border: 1px solid rgba(255, 45, 85, 0.25);
+        }
+
+        .plan-tag.cyan {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--cyan);
+            border: 1px solid rgba(0, 240, 255, 0.28);
+        }
+
+        .plan-name {
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .plan-desc {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.65;
+            margin-bottom: 22px;
+        }
+
+        .plan-price-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 68px;
+            line-height: 1;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+
+        .plan-price-sub {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .plan-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            margin-bottom: 28px;
+            flex: 1;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .plan-features li::before {
+            content: '✓';
+            color: var(--red);
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .plan-features li strong {
+            color: var(--text);
+        }
+
+        .custom-box {
+            padding: 14px 16px;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.14);
+            border-radius: 9px;
+            margin-bottom: 26px;
+        }
+
+        .custom-box-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            color: var(--cyan);
+            letter-spacing: 2px;
+            margin-bottom: 9px;
+        }
+
+        .custom-box ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .custom-box ul li {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.45);
+            padding-left: 14px;
+            position: relative;
+            line-height: 1.55;
+        }
+
+        .custom-box ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--cyan);
+            font-size: 10px;
+        }
+
+        /* ── FAQ ── */
+        .faq-list {
+            margin-top: 56px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .faq-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 24px 28px;
+            cursor: pointer;
+            transition: border-color 0.3s, background 0.3s, transform 0.2s;
+        }
+
+        .faq-item:hover {
+            border-color: rgba(255, 45, 85, 0.3);
+            background: #141416;
+            transform: translateX(4px);
+        }
+
+        .faq-q {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            user-select: none;
+        }
+
+        .faq-icon {
+            color: var(--red);
+            font-size: 22px;
+            font-weight: 300;
+            flex-shrink: 0;
+            transition: transform 0.4s cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        .faq-a {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.85;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.45s cubic-bezier(.22, 1, .36, 1), margin-top 0.3s, opacity 0.35s;
+            opacity: 0;
+        }
+
+        .faq-item.open .faq-a {
+            max-height: 200px;
+            margin-top: 14px;
+            opacity: 1;
+        }
+
+        .faq-item.open .faq-icon {
+            transform: rotate(45deg);
+        }
+
+        /* ── CTA ── */
+        .cta-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px 100px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, rgba(255, 45, 85, 0.09) 0%, rgba(0, 240, 255, 0.04) 100%);
+            border: 1px solid rgba(255, 45, 85, 0.2);
+            border-radius: 20px;
+            padding: 72px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-bg-text {
+            position: absolute;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(80px, 15vw, 180px);
+            color: rgba(255, 255, 255, 0.018);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            letter-spacing: 10px;
+            pointer-events: none;
+            white-space: nowrap;
+            animation: slowDrift 10s ease-in-out infinite;
+        }
+
+        @keyframes slowDrift {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                transform: translate(-50%, -52%) scale(1.03);
+            }
+        }
+
+        .cta-box>*:not(.cta-bg-text) {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-box h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(38px, 6vw, 68px);
+            letter-spacing: 2px;
+            color: #fff;
+            margin-bottom: 14px;
+            line-height: 1.05;
+        }
+
+        .cta-box p {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 36px;
+            line-height: 1.75;
+        }
+
+        .cta-btns {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            border-top: 1px solid var(--border);
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 2;
+        }
+
+        footer p {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        footer a {
+            color: var(--muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: #fff;
+        }
+
+
+
+        /* ── RESPONSIVE ── */
+        @media (max-width:760px) {
+            nav {
+                padding: 14px 20px;
+            }
+
+            .nav-links {
+                gap: 16px;
+            }
+
+            .hero,
+            .section-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .hero h1 {
+                white-space: normal;
+            }
+
+            .problem-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .problem-card.span2 {
+                grid-column: span 1;
+            }
+
+            .steps-row {
+                flex-direction: column;
+                gap: 28px;
+            }
+
+            .step-line,
+            .steps-row::before {
+                display: none;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .setup-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .cta-wrap {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
-<body class="p-6 box-border text-white">
 
-    <!-- 背景レイヤー -->
-    <div id="bg-container">
-        <div id="bg-dawn" class="bg-layer theme-dawn"></div>
-        <div id="bg-morning" class="bg-layer theme-morning"></div>
-        <div id="bg-day" class="bg-layer theme-day active"></div>
-        <div id="bg-sunset" class="bg-layer theme-sunset"></div>
-        <div id="bg-evening" class="bg-layer theme-evening"></div>
-        <div id="bg-night" class="bg-layer theme-night"></div>
-        <div id="bg-alert" class="bg-layer theme-alert"></div>
-    </div>
+<body>
 
-    <!-- 初回チュートリアルヒント (左端) -->
-    <div id="tutorial-hint" class="fixed inset-y-0 left-0 w-24 bg-gradient-to-r from-white/10 to-transparent z-[9000] flex items-center pl-4 opacity-0 transition-opacity duration-500">
-        <div class="flex flex-col items-center gap-2 hint-content">
-            <i class="fas fa-chevron-right text-2xl opacity-80"></i>
-            <span class="text-[10px] font-bold tracking-widest uppercase opacity-60" style="writing-mode: vertical-rl; text-orientation: mixed;">Settings</span>
+
+
+
+    <canvas id="bg-canvas"></canvas>
+
+    <nav id="nav">
+        <a href="#top" class="logo" data-text="TikSight">Tik<em>Sight</em></a>
+        <div class="nav-links">
+            <a href="#how">使い方</a>
+            <a href="#vs">比較</a>
+            <a href="#pricing">料金</a>
+            <a href="#pricing" class="nav-cta">今すぐ購入</a>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <div class="hero" id="top">
+        <div class="hero-eyebrow h-eyebrow">
+            <span class="pulse-dot"></span>TikTok Chrome拡張ツール
+        </div>
+        <h1>
+            <span class="h-line1">動画を開くだけ。</span>
+            <span class="h-line2">インサイトを</span>
+            <span class="h-line3"><span class="accent" data-text="自動で">自動で</span><span class="outline">取れ。</span></span>
+        </h1>
+        <p class="hero-sub h-sub">
+            公式APIは非公開。競合ツールは<strong>BANリスクが高い</strong>。<br>
+            TikSightは動画を開くだけで、余計なリクエストを一切送らずに<br>インサイトデータをCSVへ自動書き出しします。
+        </p>
+        <div class="hero-actions h-actions">
+            <a href="#pricing" class="btn-red"><span class="btn-inner">プランを見る →</span></a>
+            <a href="#how" class="btn-ghost">使い方を見る ↓</a>
+        </div>
+        <div class="price-tag h-price">
+            <span class="price-big">¥30,000〜</span>
+            <span class="price-note">買い切り</span>
+            <span class="badge-cyan">月額なし</span>
         </div>
     </div>
 
-    <!-- タイマー完了ポップアップ -->
-    <div id="timer-popup" class="fixed inset-0 z-[10001] bg-black/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="glass p-8 flex flex-col items-center gap-6 max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300" id="timer-popup-content">
-            <div class="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center animate-pulse">
-                <i class="fas fa-bell text-4xl text-yellow-300"></i>
+    <!-- PROBLEM -->
+    <section class="section-wrap">
+        <div class="section-label reveal">Problem</div>
+        <h2 class="section-title reveal d1">TikTokの分析、<br>今のままでいいですか？</h2>
+        <p class="section-body reveal d2">TikTokは公式インサイトAPIを外部に開放していません。既存ツールはどれも「外からリクエストを投げる」設計で、アカウントが危険にさらされます。</p>
+        <div class="problem-grid">
+            <div class="problem-card reveal d1">
+                <div class="p-tag">競合の問題</div>
+                <div class="p-icon">🤖</div>
+                <h3>外部からリクエストを投げる</h3>
+                <p>TikTokのAPIに「外から」余計なリクエストを送る設計のため、異常アクセスとして検知されやすい。</p>
             </div>
-            <div class="text-center">
-                <h2 class="text-2xl font-bold tracking-widest mb-2">TIME'S UP</h2>
-                <p class="text-sm opacity-60">集中時間が終了しました。<br>休憩を取りましょう。</p>
+            <div class="problem-card reveal d2">
+                <div class="p-tag">競合の問題</div>
+                <div class="p-icon">🌐</div>
+                <h3>外部APIサーバーを経由する</h3>
+                <p>データが外部サーバーを通るため、怪しい通信パターンとしてフラグが立つケースがある。</p>
             </div>
-            <button onclick="closeTimerPopup()" class="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition tracking-widest text-xs">OK</button>
+            <div class="problem-card reveal d3">
+                <div class="p-tag">競合の問題</div>
+                <div class="p-icon">💸</div>
+                <h3>月額費用がずっとかかる</h3>
+                <p>月額制は使い続けるほどコストが膨らむ。代理店には重くのしかかる固定費。</p>
+            </div>
+            <div class="problem-card span2 reveal d4">
+                <div class="p-icon">🛡️</div>
+                <h3><span class="solution-hl">TikSightは違う。</span><br>「傍受方式」で余計なリクエストをゼロに。</h3>
+                <p style="margin-top:10px;font-size:13px;">
+                    TikTokが自分のサーバーへ送るリクエストをブラウザ内で横から見るだけ。外部に何も送らないため、TikTok側からは「普通に動画を見ているユーザー」と区別がつきません。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW -->
+    <section class="section-wrap" id="how">
+        <div class="section-label reveal">How it works</div>
+        <h2 class="section-title reveal d1">使い方は<br>3ステップ</h2>
+        <div class="steps-row reveal">
+            <div class="step-line"></div>
+            <div class="step">
+                <div class="step-circle">1</div>
+                <h3>ファイルを受け取る</h3>
+                <p>購入後、ZIPファイルとセットアップ動画（約3分）が届きます。</p>
+            </div>
+            <div class="step">
+                <div class="step-circle">2</div>
+                <h3>Chromeに読み込む</h3>
+                <p>デベロッパーモードをオンにして、フォルダをドロップするだけ。5分で完了。</p>
+            </div>
+            <div class="step">
+                <div class="step-circle">3</div>
+                <h3>動画を開くだけ</h3>
+                <p>TikTokで動画を開くと自動でインサイトを取得。CSVに書き出されます。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- VS -->
+    <section class="section-wrap" id="vs">
+        <div class="section-label reveal">Comparison</div>
+        <h2 class="section-title reveal d1">競合ツールと<br>比べてみる</h2>
+        <div class="vs-wrap reveal d2">
+            <div class="vs-head">
+                <div class="vhc">機能・リスク項目</div>
+                <div class="vhc red">TikSight</div>
+                <div class="vhc" style="text-align:center;">競合ツール</div>
+            </div>
+            <div class="vs-row">
+                <div class="vc feat">余計なリクエストを外部に送る</div>
+                <div class="vc red-col"><span class="c-ok">✓ ゼロ（傍受方式）</span></div>
+                <div class="vc mid"><span class="c-ng">✗ 送る</span></div>
+            </div>
+            <div class="vs-row">
+                <div class="vc feat">外部APIサーバーの使用</div>
+                <div class="vc red-col"><span class="c-ok">✓ なし</span></div>
+                <div class="vc mid"><span class="c-ng">✗ あり</span></div>
+            </div>
+            <div class="vs-row">
+                <div class="vc feat">BANリスク（競合比）</div>
+                <div class="vc red-col"><span class="c-ok">✓ 大幅に低い</span></div>
+                <div class="vc mid"><span class="c-ng">✗ 高い</span></div>
+            </div>
+            <div class="vs-row">
+                <div class="vc feat">動画を開くだけで自動取得</div>
+                <div class="vc red-col"><span class="c-ok">✓ 対応</span></div>
+                <div class="vc mid"><span class="c-tri">△ 手動操作が必要</span></div>
+            </div>
+            <div class="vs-row">
+                <div class="vc feat">CSVエクスポート</div>
+                <div class="vc red-col"><span class="c-ok">✓ 対応</span></div>
+                <div class="vc mid"><span class="c-tri">△ プランによる</span></div>
+            </div>
+            <div class="vs-row">
+                <div class="vc feat">月額費用</div>
+                <div class="vc red-col"><span class="c-ok">✓ なし（買い切り）</span></div>
+                <div class="vc mid"><span class="c-ng">✗ 毎月発生</span></div>
+            </div>
+            <div class="vs-row">
+                <div class="vc feat">ブラウザ完結（データが外に出ない）</div>
+                <div class="vc red-col"><span class="c-ok">✓ 完全ローカル</span></div>
+                <div class="vc mid"><span class="c-ng">✗ サーバー経由</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SETUP -->
+    <section class="section-wrap">
+        <div class="section-label reveal">Setup</div>
+        <h2 class="section-title reveal d1">導入は<br>5分で完了</h2>
+        <p class="section-body reveal d2">セットアップ動画付きでお届けします。PCが苦手な方でもご安心ください。</p>
+        <div class="setup-grid">
+            <div class="setup-card reveal-scale d1">
+                <div class="setup-n">01</div>
+                <h3>購入・ファイル受け取り</h3>
+                <p>ZIPファイルとセットアップ動画（約3分）をお送りします。</p>
+            </div>
+            <div class="setup-card reveal-scale d2">
+                <div class="setup-n">02</div>
+                <h3>Chromeの設定</h3>
+                <p>デベロッパーモードをオンにします（動画で案内）。</p>
+            </div>
+            <div class="setup-card reveal-scale d3">
+                <div class="setup-n">03</div>
+                <h3>フォルダをドロップ</h3>
+                <p>解凍したフォルダをChromeにドラッグ&amp;ドロップするだけ。</p>
+            </div>
+            <div class="setup-card reveal-scale d4">
+                <div class="setup-n">04</div>
+                <h3>TikTokを開いて使う</h3>
+                <p>動画を開くと自動でインサイトを取得。CSVが出力されます。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="section-wrap" id="pricing">
+        <div class="section-label reveal">Pricing</div>
+        <h2 class="section-title reveal d1">2つのプラン</h2>
+        <p class="section-body reveal d2">どちらも買い切り。月額費用は一切かかりません。</p>
+        <div class="pricing-grid">
+            <div class="pc red-pc reveal-left">
+                <div class="plan-tag red">STANDARD</div>
+                <div class="plan-name">スタンダードプラン</div>
+                <div class="plan-desc">すぐに使いたい方向け。動画を開くだけでインサイトをCSVに自動保存。</div>
+                <div class="plan-price-num" style="color:#fff;">¥30,000</div>
+                <div class="plan-price-sub">税込 · 買い切り · 月額なし</div>
+                <ul class="plan-features">
+                    <li><strong>TikSight本体ファイル</strong>（ZIPパッケージ）</li>
+                    <li><strong>セットアップ動画</strong>（約3分）</li>
+                    <li><strong>FAQ・操作マニュアル</strong></li>
+                    <li><strong>初回セットアップサポート</strong>（画面共有対応）</li>
+                    <li><strong>アップデートファイル提供</strong>（無償・不定期）</li>
+                    <li>CSV自動出力</li>
+                </ul>
+                <a href="#contact" class="btn-red" style="justify-content:center;"><span class="btn-inner">¥30,000 で購入する
+                        →</span></a>
+            </div>
+            <div class="pc cyan-pc reveal-right">
+                <div class="plan-tag cyan">CUSTOM</div>
+                <div class="plan-name">カスタムプラン</div>
+                <div class="plan-desc">御社の運用フローに合わせて出力先・形式をカスタマイズ。</div>
+                <div class="plan-price-num" style="color:var(--cyan);">¥40,000</div>
+                <div class="plan-price-sub">税込 · 買い切り · 月額なし</div>
+                <ul class="plan-features">
+                    <li>スタンダードの<strong>全機能を含む</strong></li>
+                    <li><strong>カスタム要件ヒアリング</strong>（オンライン30分）</li>
+                    <li><strong>専用カスタマイズ開発・納品</strong></li>
+                    <li><strong>カスタム版のアップデート対応</strong></li>
+                </ul>
+                <div class="custom-box">
+                    <div class="custom-box-title">カスタマイズ例</div>
+                    <ul>
+                        <li>Googleスプレッドシートへ自動転記</li>
+                        <li>取得データの列・形式を変更</li>
+                        <li>複数アカウントの一括管理</li>
+                        <li>Slack・社内ツールへの通知連携</li>
+                    </ul>
+                </div>
+                <a href="#contact" class="btn-outline-cyan" style="justify-content:center;"><span
+                        class="btn-inner">相談する（無料） →</span></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section-wrap">
+        <div class="section-label reveal">FAQ</div>
+        <h2 class="section-title reveal d1">よくある<br>質問</h2>
+        <div class="faq-list">
+            <div class="faq-item reveal d1">
+                <div class="faq-q">本当にBANリスクは低いですか？<span class="faq-icon">+</span></div>
+                <div class="faq-a">
+                    「ゼロ」とは言えませんが、競合ツールと比べて大幅に低減できます。TikSightは「傍受方式」——TikTokが自分のサーバーに送るリクエストをブラウザ内で横から見るだけです。外部に何も送らないため、TikTok側からは普通に動画を見ているユーザーと区別がつきません。競合ツールのように「外から余計なリクエストを投げる」設計とは根本的に異なります。
+                </div>
+            </div>
+            <div class="faq-item reveal d2">
+                <div class="faq-q">PCが苦手でも使えますか？<span class="faq-icon">+</span></div>
+                <div class="faq-a">はい。購入後にセットアップ動画（約3分）をお送りします。また、ご希望の方にはオンライン画面共有での初回セットアップサポートも対応しています。</div>
+            </div>
+            <div class="faq-item reveal d3">
+                <div class="faq-q">どんなデータが取れますか？<span class="faq-icon">+</span></div>
+                <div class="faq-a">
+                    TikTokのインサイト画面で表示されるデータ（再生数、いいね数、シェア数、コメント数、フォロワー推移など）をCSV形式で出力できます。対応データは今後も随時追加予定です。</div>
+            </div>
+            <div class="faq-item reveal d1">
+                <div class="faq-q">カスタムプランでできることを教えてください。<span class="faq-icon">+</span></div>
+                <div class="faq-a">
+                    Googleスプレッドシートへの自動転記、取得データの列や形式の変更、複数アカウントの一括管理、Slackや社内ツールへの通知連携などに対応しています。まずはご相談ください（相談無料）。</div>
+            </div>
+            <div class="faq-item reveal d2">
+                <div class="faq-q">TikTokがアップデートされたら使えなくなりますか？<span class="faq-icon">+</span></div>
+                <div class="faq-a">TikTok側の仕様変更により動作に影響が出る可能性はあります。その場合、対応したアップデートファイルを無償でお送りします。</div>
+            </div>
+            <div class="faq-item reveal d3">
+                <div class="faq-q">返金対応はありますか？<span class="faq-icon">+</span></div>
+                <div class="faq-a">ファイルの性質上、原則として購入後の返金はお受けしていません。ご不明点は購入前にお気軽にお問い合わせください。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="cta-wrap reveal" id="contact">
+        <div class="cta-box">
+            <div class="cta-bg-text">TIKSIGHT</div>
+            <h2>動画を開くだけ。<br>それだけでいい。</h2>
+            <p>競合より安全に、手間なく、TikTokインサイトを収集し続けてください。</p>
+            <div class="cta-btns">
+                <a href="#pricing" class="btn-red"><span class="btn-inner">¥30,000 スタンダードを購入 →</span></a>
+                <a href="#pricing" class="btn-outline-cyan"><span class="btn-inner">カスタムを相談する →</span></a>
+            </div>
+            <p style="margin-top:18px;font-size:11px;color:var(--muted);">ご購入・お問い合わせはXのDMまたはメールにてどうぞ</p>
         </div>
     </div>
 
-    <!-- コンテンツ -->
-    <main class="max-w-7xl mx-auto w-full gap-6">
-        <!-- 時計エリア -->
-        <div class="h-[40%] flex items-center justify-center px-4">
-            <div class="text-center">
-                <div id="time-disp" class="text-[140px] md:text-[200px] font-medium leading-none tracking-widest drop-shadow-lg">--:--</div>
-                <div id="date-disp" class="text-2xl font-medium tracking-[0.3em] uppercase opacity-70 drop-shadow-md">LOADING...</div>
-            </div>
-        </div>
-
-        <!-- ウィジェットエリア -->
-        <div class="h-[60%] grid grid-cols-1 md:grid-cols-2 gap-6 pb-4" id="main-grid">
-            <!-- Notion Tasks -->
-            <div id="widget-notion-card" class="glass flex flex-col p-8 relative overflow-hidden transition-all duration-500">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xs font-bold tracking-widest uppercase opacity-50">TASKS</h2>
-                    <div id="api-status" class="w-2 h-2 rounded-full bg-white/20"></div>
-                </div>
-                <div id="task-list" class="flex-1 overflow-y-auto space-y-3">
-                    <p class="text-center opacity-40 mt-10 text-sm tracking-widest">SETUP REQUIRED</p>
-                </div>
-            </div>
-
-            <!-- Multi Widget -->
-            <div class="glass relative overflow-hidden transition-all duration-500" id="multi-widget-container">
-                <div class="snap-container">
-                    
-                    <!-- 1. Weather (Modified) -->
-                    <!-- p-5からp-4に変更し、端まで使いやすくする -->
-                    <div id="widget-weather-card" class="snap-item px-0 py-0 w-full flex flex-col justify-between h-full relative overflow-hidden">
-                        
-                        <div id="w-weather-gradient" class="sunny transition-all duration-1000"></div>
-                        <div id="w-bg-effects"></div>
-
-                        <!-- Slider Container -->
-                        <div id="w-slider-container" class="w-full h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar relative z-10">
-                            <!-- Slides will be injected here -->
-                        </div>
-
-                        <!-- Dots -->
-                        <div id="w-slider-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20"></div>
-                    </div>
-                    
-                    <!-- 2. Earthquake Map -->
-                    <div id="quake-widget-card" class="snap-item p-0 w-full relative overflow-hidden group hidden">
-                        <div id="quake-map" class="w-full h-full rounded-[32px] overflow-hidden opacity-60 transition-opacity group-hover:opacity-100"></div>
-                        <div class="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none z-[500]">
-                            <div class="flex justify-between items-start">
-                                <div class="flex flex-col gap-2">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></div>
-                                        <span class="text-[10px] font-bold opacity-90 tracking-widest bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-white/10">LATEST QUAKE</span>
-                                    </div>
-                                    <div id="q-widget-est-container" class="hidden transition-all duration-500">
-                                        <span class="text-[10px] font-bold text-yellow-300 bg-black/40 px-2 py-1 rounded backdrop-blur-md border border-yellow-500/30 flex items-center gap-1 w-fit">
-                                            <i class="fas fa-map-marker-alt text-[8px] opacity-70"></i>
-                                            Your Area: <span id="q-widget-est-val">--</span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div id="q-widget-time" class="text-sm font-mono opacity-80 font-bold drop-shadow-md">--:--</div>
-                            </div>
-                            <div class="flex flex-col gap-1">
-                                <div class="flex items-baseline gap-3 drop-shadow-lg">
-                                    <span class="text-sm font-bold opacity-70">震度</span>
-                                    <span id="q-widget-scale" class="text-6xl font-black leading-none text-red-400">--</span>
-                                </div>
-                                <div id="q-widget-loc" class="text-xl font-bold leading-tight tracking-wide drop-shadow-md line-clamp-2">Loading...</div>
-                                <div class="text-xs font-mono opacity-60 mt-1" id="q-widget-mag">M-.--</div>
-                            </div>
-                        </div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none rounded-[32px]"></div>
-                    </div>
-
-                    <!-- 3. Calendar & Events -->
-                    <div id="widget-calendar-card" class="snap-item p-6 w-full flex flex-row items-stretch gap-6">
-                        <div class="w-5/12 flex flex-col justify-center">
-                            <div class="flex justify-between items-end mb-3 px-1">
-                                <div id="cal-title" class="text-sm font-bold tracking-widest uppercase opacity-90">JAN</div>
-                                <div id="cal-year" class="text-[10px] opacity-50 font-mono">2026</div>
-                            </div>
-                            <div class="calendar-grid mb-1">
-                                <div class="cal-header">S</div><div class="cal-header">M</div><div class="cal-header">T</div><div class="cal-header">W</div><div class="cal-header">T</div><div class="cal-header">F</div><div class="cal-header">S</div>
-                            </div>
-                            <div id="calendar-body" class="calendar-grid"></div>
-                        </div>
-                        <div class="w-7/12 h-full border-l border-white/10 pl-6 flex flex-col">
-                            <div class="text-[10px] font-bold opacity-40 tracking-widest mb-1 uppercase">SCHEDULE</div>
-                            <div id="gcal-list" class="flex-1 overflow-y-auto no-scrollbar flex flex-col gap-1">
-                                <div class="text-xs opacity-30 mt-2">Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 4. Focus Timer -->
-                    <div id="widget-timer-card" class="snap-item p-4 w-full flex flex-col items-center justify-center gap-2">
-                        <div class="relative w-[280px] h-[280px] flex items-center justify-center">
-                            <svg class="timer-svg absolute inset-0 w-full h-full" viewBox="0 0 300 300">
-                                <circle class="timer-circle-bg" cx="150" cy="150" r="140"></circle>
-                                <circle id="timer-progress-ring" class="timer-circle-progress" cx="150" cy="150" r="140"></circle>
-                            </svg>
-                            <div class="flex flex-col items-center justify-center z-10">
-                                <div id="timer-display" class="text-6xl font-mono font-thin mb-4 tabular-nums">25:00</div>
-                                <div class="flex gap-4">
-                                    <button onclick="toggleTimer()" id="timer-btn" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition backdrop-blur-md"><i id="timer-icon" class="fas fa-play text-lg ml-1"></i></button>
-                                    <button onclick="resetTimer()" class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition backdrop-blur-md"><i class="fas fa-redo text-lg"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-xs font-bold opacity-50 tracking-widest mt-2">FOCUS TIMER</div>
-                    </div>
-                    
-                    <!-- 5. Quick Memo -->
-                    <div id="widget-memo-card" class="snap-item p-8 w-full">
-                        <div class="w-full h-full flex flex-col">
-                            <div class="text-xs font-bold opacity-50 tracking-widest mb-3 text-left">QUICK MEMO</div>
-                            <textarea id="quick-memo" class="flex-1 w-full bg-transparent border-none text-2xl resize-none focus:outline-none placeholder-white/20 font-medium leading-relaxed" placeholder="Type anything..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- 6. Podcast -->
-                    <div id="widget-podcast-card" class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-purple-900 to-indigo-900">
-                        <!-- Slider Container -->
-                        <div id="p-slider-container" class="w-full h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar relative z-10">
-                            <!-- Slides will be injected here -->
-                        </div>
-                        <!-- Dots -->
-                        <div id="p-slider-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20"></div>
-                    </div>
-
-                    <!-- 7. Apple Music -->
-                    <div id="widget-music-card" class="snap-item p-0 w-full relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-600">
-                        <!-- Slider Container -->
-                        <div id="m-slider-container" class="w-full h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar relative z-10">
-                            <!-- Slides will be injected here -->
-                        </div>
-                        <!-- Dots -->
-                        <div id="m-slider-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20"></div>
-                    </div>
-                </div>
-                <!-- Indicator (7 dots) -->
-                <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-none opacity-50">
-                    <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div><div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- 地震アラートオーバーレイ -->
-    <div id="quake-overlay">
-        <div id="alert-map-container" class="w-full h-full absolute inset-0"></div>
-        <div id="quake-vignette" onclick="closeQuakeAlert()"></div>
-        <div id="quake-scanlines"></div>
-        <div id="quake-content">
-            <div class="w-full flex justify-center pt-16 pointer-events-none">
-                <div class="quake-scale-box">
-                    <h1 class="text-2xl font-black uppercase tracking-widest">緊急地震速報</h1>
-                </div>
-            </div>
-            <div class="w-full flex flex-col items-center pb-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
-                <div class="flex justify-center items-start gap-16 mb-4 w-full">
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm opacity-60 font-bold mb-1 tracking-widest">最大震度</span>
-                        <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
-                            <span class="text-2xl opacity-70 font-bold">震度</span>
-                            <span class="text-[120px] font-bold leading-none text-red-500 drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" id="q-scale">3</span>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm opacity-60 font-bold mb-1 tracking-widest text-yellow-200">あなたの地域</span>
-                        <div class="flex items-baseline gap-2 drop-shadow-[0_0_20px_rgba(0,0,0,1)]">
-                            <span class="text-2xl opacity-70 font-bold text-yellow-400">震度</span>
-                            <span class="text-[120px] font-bold leading-none text-yellow-400 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]" id="q-est-scale">--</span>
-                        </div>
-                        <div id="q-area-name" class="text-xs font-bold text-yellow-200/70 tracking-wider mt-[-10px]"></div>
-                    </div>
-                </div>
-                <div class="text-4xl font-bold tracking-widest uppercase text-white drop-shadow-[0_4px_10px_rgba(0,0,0,1)] mb-4 text-center px-4" id="q-loc">TOKYO BAY</div>
-                <div class="flex gap-6 opacity-90 text-xl font-mono text-red-200 bg-red-900/30 px-6 py-2 rounded-full border border-red-500/30 backdrop-blur-md">
-                    <span id="q-time">12:34</span>
-                    <span class="w-px bg-white/30 h-6"></span>
-                    <span id="q-mag">M4.5</span>
-                </div>
-                <p class="mt-8 text-[10px] font-bold opacity-50 tracking-[0.3em] uppercase animate-pulse">画面をタップして閉じる</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 設定オーバーレイ -->
-    <div id="settings-overlay" onclick="closeSettings()"></div>
-
-    <!-- 設定ドロワー -->
-    <div id="settings-drawer">
-        <div class="settings-sidebar">
-            <div class="text-[10px] font-bold opacity-30 px-4 mb-2 tracking-widest">設定メニュー</div>
-            <button class="tab-btn active" onclick="switchTab('bg')"><i class="fas fa-image tab-icon"></i>背景</button>
-            <button class="tab-btn" onclick="switchTab('notion')"><i class="fas fa-list tab-icon"></i>Notion</button>
-            <button class="tab-btn" onclick="switchTab('weather')"><i class="fas fa-cloud tab-icon"></i>天気</button>
-            <button class="tab-btn" onclick="switchTab('quake')"><i class="fas fa-exclamation-triangle tab-icon"></i>地震</button>
-            <button class="tab-btn" onclick="switchTab('calendar')"><i class="fas fa-calendar-alt tab-icon"></i>カレンダー</button>
-            <button class="tab-btn" onclick="switchTab('timer')"><i class="fas fa-stopwatch tab-icon"></i>タイマー</button>
-            <button class="tab-btn" onclick="switchTab('memo')"><i class="fas fa-pen tab-icon"></i>Memo</button>
-            <button class="tab-btn" onclick="switchTab('music')"><i class="fas fa-music tab-icon"></i>MUSIC</button>
-            <button class="tab-btn" onclick="switchTab('podcast')"><i class="fas fa-podcast tab-icon"></i>Podcast</button>
-            <div class="flex-1"></div>
-            <button onclick="saveConfig()" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs tracking-widest mt-4">保存</button>
-        </div>
-
-        <div class="settings-content">
-            <!-- 背景設定 -->
-            <div id="tab-bg" class="tab-panel active">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">背景テーマ</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">ぼかし効果</span>
-                        <input type="checkbox" id="bg-blur-toggle" class="hidden-toggle" onchange="updateBgBlur()">
-                        <label for="bg-blur-toggle" class="toggle-label"></label>
-                    </div>
-                </div>
-                <p class="text-xs opacity-50 mb-4">時間帯に合わせて自動で切り替わる背景画像を設定できます。</p>
-                <div class="space-y-4">
-                     <label class="text-[10px] font-bold opacity-50 uppercase block tracking-widest">カスタム背景画像URL</label>
-                    <div class="grid grid-cols-1 gap-3">
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">夜明け (DAWN)</span><input type="text" id="bg-url-dawn" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">朝 (MORNING)</span><input type="text" id="bg-url-morning" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">昼 (DAY)</span><input type="text" id="bg-url-day" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">夕方 (SUNSET)</span><input type="text" id="bg-url-sunset" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">日没後 (EVENING)</span><input type="text" id="bg-url-evening" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">夜 (NIGHT)</span><input type="text" id="bg-url-night" class="bg-white/10 border-0 rounded p-2 text-xs text-white w-full"></div>
-                    </div>
-                     <div class="grid grid-cols-1 gap-2 mt-4">
-                         <button onclick="testQuake()" class="bg-red-900/40 py-4 rounded-xl text-left px-4 text-xs font-bold text-red-300">地震アラートテスト</button>
-                     </div>
-                </div>
-            </div>
-            
-            <!-- Notion設定 -->
-            <div id="tab-notion" class="tab-panel">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">Notion連携</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-notion" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-notion" class="toggle-label"></label>
-                    </div>
-                </div>
-                <p class="text-xs opacity-50 mb-4">Notion　API 連携</p>
-                <div class="space-y-4">
-                    <input type="password" id="n-key" placeholder="インテグレーションキー (API Key)" class="bg-white/10 rounded p-3 w-full text-xs text-white">
-                    <input type="text" id="n-db" placeholder="データベースID" class="bg-white/10 rounded p-3 w-full text-xs text-white">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">日付プロパティ名</span><input type="text" id="n-prop" placeholder="例: Date" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                        <div><span class="text-[9px] font-bold opacity-40 block mb-1">ステータスプロパティ名</span><input type="text" id="n-stat" placeholder="例: Status" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="setPropType('status')" id="btn-type-status" class="bg-white/10 rounded p-2 text-xs flex-1">ステータス形式</button>
-                        <button onclick="setPropType('select')" id="btn-type-select" class="bg-white/5 rounded p-2 text-xs flex-1 opacity-50">セレクト形式</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                         <div><span class="text-[9px] font-bold opacity-40 block mb-1">完了の値</span><input type="text" id="n-done-val" placeholder="例: Done" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                         <div><span class="text-[9px] font-bold opacity-40 block mb-1">未完了の値</span><input type="text" id="n-not-val" placeholder="例: Not started" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    </div>
-                    
-                    <div class="border-t border-white/10 my-4 pt-4">
-                        <p class="text-xs opacity-50 mb-2">フィルター</p>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div><span class="text-[9px] font-bold opacity-40 block mb-1">担当者プロパティ名</span><input type="text" id="n-user-prop" placeholder="例: Assignee" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                            <div><span class="text-[9px] font-bold opacity-40 block mb-1">ユーザーID</span><input type="text" id="n-user-id" placeholder="ユーザーID (UUID)" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="border-t border-white/10 my-4 pt-4">
-                        <p class="text-xs opacity-50 mb-2">表示プロパティ (最大3つ)</p>
-                        <div class="space-y-3">
-                            <div class="grid grid-cols-3 gap-2">
-                                <input type="text" id="n-p1-name" placeholder="プロパティ名 1" class="col-span-2 bg-white/10 rounded p-2 text-xs w-full text-white placeholder-white/30 focus:outline-none focus:bg-white/20 transition-colors">
-                                <div class="relative col-span-1">
-                                    <select id="n-p1-type" class="appearance-none bg-white/10 rounded p-2 text-xs w-full text-white focus:outline-none focus:bg-white/20 transition-colors cursor-pointer pr-6">
-                                        <option value="text" class="bg-[#222] text-white">Text</option>
-                                        <option value="select" class="bg-[#222] text-white">Select</option>
-                                        <option value="date" class="bg-[#222] text-white">Date</option>
-                                        <option value="person" class="bg-[#222] text-white">Person</option>
-                                        <option value="checkbox" class="bg-[#222] text-white">Checkbox</option>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
-                                        <i class="fas fa-chevron-down text-[8px]"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <input type="text" id="n-p2-name" placeholder="プロパティ名 2" class="col-span-2 bg-white/10 rounded p-2 text-xs w-full text-white placeholder-white/30 focus:outline-none focus:bg-white/20 transition-colors">
-                                <div class="relative col-span-1">
-                                    <select id="n-p2-type" class="appearance-none bg-white/10 rounded p-2 text-xs w-full text-white focus:outline-none focus:bg-white/20 transition-colors cursor-pointer pr-6">
-                                        <option value="text" class="bg-[#222] text-white">Text</option>
-                                        <option value="select" class="bg-[#222] text-white">Select</option>
-                                        <option value="date" class="bg-[#222] text-white">Date</option>
-                                        <option value="person" class="bg-[#222] text-white">Person</option>
-                                        <option value="checkbox" class="bg-[#222] text-white">Checkbox</option>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
-                                        <i class="fas fa-chevron-down text-[8px]"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                                <input type="text" id="n-p3-name" placeholder="プロパティ名 3" class="col-span-2 bg-white/10 rounded p-2 text-xs w-full text-white placeholder-white/30 focus:outline-none focus:bg-white/20 transition-colors">
-                                <div class="relative col-span-1">
-                                    <select id="n-p3-type" class="appearance-none bg-white/10 rounded p-2 text-xs w-full text-white focus:outline-none focus:bg-white/20 transition-colors cursor-pointer pr-6">
-                                        <option value="text" class="bg-[#222] text-white">Text</option>
-                                        <option value="select" class="bg-[#222] text-white">Select</option>
-                                        <option value="date" class="bg-[#222] text-white">Date</option>
-                                        <option value="person" class="bg-[#222] text-white">Person</option>
-                                        <option value="checkbox" class="bg-[#222] text-white">Checkbox</option>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white/50">
-                                        <i class="fas fa-chevron-down text-[8px]"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Weather Tab -->
-            <div id="tab-weather" class="tab-panel">
-                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">天気予報</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-weather" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-weather" class="toggle-label"></label>
-                    </div>
-                </div>
-                <p class="text-xs opacity-50 mb-4">現在地と表示したい3つの都市の座標を設定します。</p>
-                <div class="space-y-4">
-                    <div>
-                        <span class="text-[9px] font-bold opacity-40 block mb-1">現在地の座標 (メイン表示)</span>
-                        <div class="grid grid-cols-2 gap-2"><input type="text" id="w-lat" placeholder="緯度 (Lat)" class="bg-white/10 rounded p-2 text-xs"><input type="text" id="w-lon" placeholder="経度 (Lon)" class="bg-white/10 rounded p-2 text-xs"></div>
-                    </div>
-                    
-                    <div class="space-y-2">
-                         <span class="text-[9px] font-bold opacity-40 block mb-1">サブ都市 1</span>
-                         <input type="text" id="sub1-label" placeholder="都市名 (例: NYC)" class="bg-white/10 rounded p-2 text-xs w-full">
-                         <div class="grid grid-cols-2 gap-2"><input type="text" id="sub1-lat" placeholder="緯度" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub1-lon" placeholder="経度" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    </div>
-                    <div class="space-y-2">
-                         <span class="text-[9px] font-bold opacity-40 block mb-1">サブ都市 2</span>
-                         <input type="text" id="sub2-label" placeholder="都市名 (例: LON)" class="bg-white/10 rounded p-2 text-xs w-full">
-                         <div class="grid grid-cols-2 gap-2"><input type="text" id="sub2-lat" placeholder="緯度" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub2-lon" placeholder="経度" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    </div>
-                    <div class="space-y-2">
-                         <span class="text-[9px] font-bold opacity-40 block mb-1">サブ都市 3</span>
-                         <input type="text" id="sub3-label" placeholder="都市名 (例: PAR)" class="bg-white/10 rounded p-2 text-xs w-full">
-                         <div class="grid grid-cols-2 gap-2"><input type="text" id="sub3-lat" placeholder="緯度" class="bg-white/10 rounded p-2 text-xs w-full"><input type="text" id="sub3-lon" placeholder="経度" class="bg-white/10 rounded p-2 text-xs w-full"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quake Tab -->
-            <div id="tab-quake" class="tab-panel">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">地震速報アラート</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-quake" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-quake" class="toggle-label"></label>
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <span class="text-[9px] font-bold opacity-40 block mb-1">通知対象エリア</span>
-                        <input type="text" id="q-area" placeholder="例: 東京都" class="bg-white/10 rounded p-2 text-xs w-full text-white">
-                    </div>
-                    <p class="text-xs opacity-50">緊急地震速報を受信した際に、設定した地域（都道府県名など）の予想震度を表示します。</p>
-                    <p class="text-xs opacity-50 mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded">
-                        <i class="fas fa-exclamation-triangle mr-1 text-yellow-500"></i> 注意: 地域名は正確に入力してください。<br>
-                        <a href="https://github.com/p2pquake/epsp-specifications/blob/master/epsp-area.csv" target="_blank" class="underline hover:text-white text-yellow-200">地域名一覧はこちら</a>を確認してください。
-                    </p>
-                </div>
-            </div>
-
-            <!-- Calendar Tab -->
-            <div id="tab-calendar" class="tab-panel">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">カレンダー</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-calendar" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-calendar" class="toggle-label"></label>
-                    </div>
-                </div>
-                <p class="text-xs opacity-50 mb-4">Googleカレンダーなどの公開URL(.ics)を設定します。</p>
-                <input type="text" id="g-cal" placeholder="iCal形式のURL" class="bg-white/10 rounded p-3 w-full text-xs text-white">
-            </div>
-            <!-- Timer Tab -->
-            <div id="tab-timer" class="tab-panel">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">集中タイマー</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-timer" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-timer" class="toggle-label"></label>
-                    </div>
-                </div>
-                 <p class="text-xs opacity-50 mb-4">ポモドーロタイマーのデフォルト時間を設定します。</p>
-                <input type="number" id="t-duration" placeholder="集中時間 (分)" class="bg-white/10 rounded p-3 w-full text-xs text-white">
-            </div>
-            <!-- Memo Tab -->
-            <div id="tab-memo" class="tab-panel">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">クイックメモ</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-memo" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-memo" class="toggle-label"></label>
-                    </div>
-                </div>
-                <p class="text-xs opacity-50">クイックメモはブラウザに保存されます。</p>
-            </div>
-            <!-- Music Tab -->
-            <div id="tab-music" class="tab-panel">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">Apple Music</h3>
-                    <div class="flex items-center gap-2">
-                         <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-music" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-music" class="toggle-label"></label>
-                    </div>
-                </div>
-                <p class="text-xs opacity-50 mb-4">キーワードで検索するか、アルバム/プレイリストのURLを直接指定します。</p>
-                <div class="space-y-4">
-                    <div class="p-3 bg-white/5 rounded-xl">
-                        <span class="text-[10px] font-bold opacity-60 block mb-2">スロット 1</span>
-                        <input type="text" id="m1-keyword" placeholder="検索キーワード" class="bg-white/10 rounded p-2 text-xs w-full mb-2 text-white">
-                        <input type="text" id="m1-link" placeholder="Apple Music リンク" class="bg-white/10 rounded p-2 text-xs w-full text-white">
-                    </div>
-                    <div class="p-3 bg-white/5 rounded-xl">
-                        <span class="text-[10px] font-bold opacity-60 block mb-2">スロット 2</span>
-                        <input type="text" id="m2-keyword" placeholder="検索キーワード" class="bg-white/10 rounded p-2 text-xs w-full mb-2 text-white">
-                        <input type="text" id="m2-link" placeholder="Apple Music リンク" class="bg-white/10 rounded p-2 text-xs w-full text-white">
-                    </div>
-                </div>
-            </div>
-            <!-- Podcast Tab -->
-            <div id="tab-podcast" class="tab-panel">
-                <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                    <h3 class="text-lg font-bold tracking-widest">Apple Podcast</h3>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold opacity-50">表示</span>
-                        <input type="checkbox" id="show-podcast" class="hidden-toggle" onchange="updateWidgetVisibility()">
-                        <label for="show-podcast" class="toggle-label"></label>
-                    </div>
-                </div>
-                <p class="text-xs opacity-50">日本の人気Podcastランキングを表示します。</p>
-            </div>
-        </div>
-    </div>
+    <footer>
+        <a href="#top" class="logo" style="font-size:20px;" data-text="TikSight">Tik<em>Sight</em></a>
+        <p>© 2025 TikSight. All rights reserved.</p>
+        <p>お問い合わせ：XのDMまたはメールにて</p>
+    </footer>
 
     <script>
-        const store = {
-            key: localStorage.getItem('n_key') || '',
-            db: localStorage.getItem('n_db') || '',
-            prop: localStorage.getItem('n_prop') || 'Date',
-            statProp: localStorage.getItem('n_stat') || 'Status',
-            doneVal: localStorage.getItem('n_done_val') || 'Done',
-            notVal: localStorage.getItem('n_not_val') || 'Not started',
-            pType: localStorage.getItem('n_p_type') || 'status',
-            userProp: localStorage.getItem('n_user_prop') || '',
-            userId: localStorage.getItem('n_user_id') || '',
-            p1_name: localStorage.getItem('n_p1_name') || '',
-            p1_type: localStorage.getItem('n_p1_type') || 'text',
-            p2_name: localStorage.getItem('n_p2_name') || '',
-            p2_type: localStorage.getItem('n_p2_type') || 'text',
-            p3_name: localStorage.getItem('n_p3_name') || '',
-            p3_type: localStorage.getItem('n_p3_type') || 'text',
-            lat: localStorage.getItem('w_lat') || '',
-            lon: localStorage.getItem('w_lon') || '',
-            quakeArea: localStorage.getItem('q_area') || '',
-            memo: localStorage.getItem('quick_memo') || '',
-            timerDuration: localStorage.getItem('timer_duration') || '25',
-            sub1_name: localStorage.getItem('sub1_name') || 'NYC',
-            sub1_lat: localStorage.getItem('sub1_lat') || '40.7128',
-            sub1_lon: localStorage.getItem('sub1_lon') || '-74.0060',
-            sub2_name: localStorage.getItem('sub2_name') || 'LON',
-            sub2_lat: localStorage.getItem('sub2_lat') || '51.5074',
-            sub2_lon: localStorage.getItem('sub2_lon') || '-0.1278',
-            sub3_name: localStorage.getItem('sub3_name') || 'PAR',
-            sub3_lat: localStorage.getItem('sub3_lat') || '48.8566',
-            sub3_lon: localStorage.getItem('sub3_lon') || '2.3522',
-            icalUrl: localStorage.getItem('ical_url') || '',
-            bg_dawn: localStorage.getItem('bg_url_dawn') || '',
-            bg_morning: localStorage.getItem('bg_url_morning') || '',
-            bg_day: localStorage.getItem('bg_url_day') || '',
-            bg_sunset: localStorage.getItem('bg_url_sunset') || '',
-            bg_evening: localStorage.getItem('bg_url_evening') || '',
-            bg_night: localStorage.getItem('bg_url_night') || '',
-            m1_key: localStorage.getItem('m1_key') || '',
-            m1_link: localStorage.getItem('m1_link') || '',
-            m2_key: localStorage.getItem('m2_key') || '',
-            m2_link: localStorage.getItem('m2_link') || '',
-            // Visibility Settings (Default: true)
-            show_notion: localStorage.getItem('show_notion') !== 'false',
-            show_weather: localStorage.getItem('show_weather') !== 'false',
-            show_quake: localStorage.getItem('show_quake') !== 'false',
-            show_calendar: localStorage.getItem('show_calendar') !== 'false',
-            show_timer: localStorage.getItem('show_timer') !== 'false',
-            show_memo: localStorage.getItem('show_memo') !== 'false',
-            show_music: localStorage.getItem('show_music') !== 'false',
-            show_podcast: localStorage.getItem('show_podcast') !== 'false',
-            bg_blur: localStorage.getItem('bg_blur') !== 'false'
-        };
 
-        // グローバル変数
-        let lastQuakeId = null;
-        let currentMode = 'day';
-        let weatherLat = 35.6895;
-        let weatherLon = 139.6917;
-        let mapInstance = null;
-        let alertMapInstance = null;
-        let widgetWeatherIntervals = [];
-        let currentLocationName = "TOKYO"; // Default
 
-        // --- Helper: SVG Icons ---
-        function getWeatherIcon(code, isNight) {
-            let icon = 'fa-question';
-            if (code === 0) icon = isNight ? 'fa-moon' : 'fa-sun';
-            else if (code === 1 || code === 2) icon = isNight ? 'fa-cloud-moon' : 'fa-cloud-sun';
-            else if (code === 3) icon = 'fa-cloud';
-            else if (code >= 45 && code <= 48) icon = 'fa-smog';
-            else if (code >= 51 && code <= 67) icon = 'fa-cloud-rain';
-            else if (code >= 71 && code <= 77) icon = 'fa-snowflake';
-            else if (code >= 80 && code <= 82) icon = 'fa-cloud-showers-heavy';
-            else if (code >= 85 && code <= 86) icon = 'fa-snowflake';
-            else if (code >= 95) icon = 'fa-bolt';
+        /* ── パーティクル + 背景BLOB ── */
+        (function () {
+            const cv = document.getElementById('bg-canvas');
+            const cx = cv.getContext('2d');
+            let W, H;
+            function resize() { W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+            resize(); window.addEventListener('resize', resize);
 
-            return `<i class="fas ${icon} text-[80px] text-white drop-shadow-lg filter drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"></i>`;
-        }
-        function getSmallIcon(code) {
-            let icon = 'fa-question';
-            if (code === 0) icon = 'fa-sun';
-            else if (code === 1 || code === 2) icon = 'fa-cloud-sun';
-            else if (code === 3) icon = 'fa-cloud';
-            else if (code >= 45 && code <= 48) icon = 'fa-smog';
-            else if (code >= 51 && code <= 67) icon = 'fa-cloud-rain';
-            else if (code >= 71 && code <= 86) icon = 'fa-snowflake';
-            else if (code >= 95) icon = 'fa-bolt';
-            
-            return `<i class="fas ${icon} text-lg text-white/90"></i>`;
-        }
-        function getWeatherDesc(code) { return code === 0 ? "快晴" : code === 1 ? "晴れ" : code <= 3 ? "曇り" : "雨/雪"; }
-
-        // --- Core Logic ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
-            
-            // ID Mapping based on manual order
-            const map = {
-                'bg': 0, 'notion': 1, 'weather': 2, 'quake': 3, 
-                'calendar': 4, 'timer': 5, 'memo': 6, 'music': 7, 'podcast': 8
-            };
-            const btns = document.querySelectorAll('.tab-btn');
-            if (btns[map[tabId]]) btns[map[tabId]].classList.add('active');
-
-            const panel = document.getElementById(`tab-${tabId}`);
-            if (panel) panel.classList.add('active');
-
-            // 修正: 地震タブを開いた時に地図サイズを再計算
-            // Leafletはdisplay:noneの状態から復帰するとサイズが狂うため
-            if(tabId === 'quake' && alertMapInstance) {
-                setTimeout(() => { alertMapInstance.invalidateSize(); }, 350); 
-            }
-        }
-
-        function applyBg(mode) {
-            if (mode === currentMode) return; currentMode = mode;
-            document.querySelectorAll('.bg-layer').forEach(el => el.classList.remove('active'));
-            const target = document.getElementById(`bg-${mode}`);
-            if(target) {
-                const customUrl = store[`bg_${mode}`];
-                if (customUrl) target.style.backgroundImage = `url('${customUrl}')`;
-                target.classList.add('active');
-            }
-        }
-        
-        function testBg(mode) { currentMode = ''; applyBg(mode); }
-
-        async function updateBackgroundBySun() {
-             try {
-                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&daily=sunrise,sunset&timezone=auto`;
-                 const res = await fetch(url); const data = await res.json();
-                 const sunrise = new Date(data.daily.sunrise[0]); const sunset = new Date(data.daily.sunset[0]); const now = new Date();
-                 const getMins = (d) => d.getHours() * 60 + d.getMinutes();
-                 const nm = getMins(now), sm = getMins(sunrise), ssm = getMins(sunset);
-                 let mode = 'night';
-                 if (nm < sm - 60) mode = 'night'; else if (nm < sm) mode = 'dawn'; else if (nm < 660) mode = 'morning';
-                 else if (nm < ssm - 60) mode = 'day'; else if (nm < ssm + 30) mode = 'sunset'; else if (nm < 1320) mode = 'evening'; else mode = 'night';
-                 const d = document.getElementById('settings-drawer'), q = document.getElementById('quake-overlay');
-                 if (!d.classList.contains('open') && !q.classList.contains('visible')) applyBg(mode);
-             } catch(e) {}
-        }
-
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('time-disp').textContent = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
-            document.getElementById('date-disp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-        }
-
-        // --- Calendar Logic ---
-        function renderCalendar() {
-            const now = new Date(); const year = now.getFullYear(); const month = now.getMonth(); const todayDate = now.getDate();
-            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-            document.getElementById('cal-title').textContent = monthNames[month]; document.getElementById('cal-year').textContent = year;
-            const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const container = document.getElementById('calendar-body'); container.innerHTML = '';
-            for(let i=0; i<firstDay; i++) container.appendChild(document.createElement('div'));
-            for(let d=1; d<=daysInMonth; d++) {
-                const el = document.createElement('div'); el.className = 'cal-day'; el.textContent = d;
-                if(d < todayDate) el.classList.add('past'); else if(d === todayDate) el.classList.add('today'); else el.classList.add('future');
-                container.appendChild(el);
-            }
-        }
-
-        async function fetchGoogleCalendar() {
-            const url = store.icalUrl; const listEl = document.getElementById('gcal-list');
-            if(!url) { listEl.innerHTML = '<div class="text-xs opacity-30 mt-4">Please set iCal URL</div>'; return; }
-            try {
-                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-                if(!res.ok) throw new Error();
-                const text = await res.text();
-                const jcal = ICAL.parse(text); const comp = new ICAL.Component(jcal);
-                const vevents = comp.getAllSubcomponents('vevent');
-                const now = new Date(); const events = [];
-                vevents.forEach(vevent => {
-                    const event = new ICAL.Event(vevent); const start = event.startDate.toJSDate();
-                    if (start >= now) events.push({ summary: event.summary, start: start });
-                });
-                events.sort((a, b) => a.start - b.start);
-                listEl.innerHTML = '';
-                if(events.length > 0) {
-                    const todayEvents = events.filter(e => e.start.getDate() === now.getDate());
-                    const futureEvents = events.filter(e => e.start.getDate() !== now.getDate());
-                    if (todayEvents.length > 0) {
-                        listEl.innerHTML += '<div class="text-[9px] font-bold opacity-60 tracking-widest mb-1 mt-1 uppercase text-blue-300">TODAY</div>';
-                        todayEvents.forEach(e => listEl.innerHTML += `<div class="event-item event-item-today"><div class="text-sm font-bold truncate text-white">${e.summary}</div><div class="text-[10px] opacity-70 font-mono">${e.start.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</div></div>`);
-                    }
-                    if (futureEvents.length > 0) {
-                        listEl.innerHTML += '<div class="text-[9px] font-bold opacity-40 tracking-widest mb-1 mt-2 uppercase">UPCOMING</div>';
-                        futureEvents.slice(0, 5 - todayEvents.length).forEach(e => listEl.innerHTML += `<div class="event-item event-item-future"><div class="text-sm font-medium truncate opacity-80">${e.summary}</div><div class="text-[10px] opacity-40 font-mono">${e.start.toLocaleDateString('en-US', {month:'short', day:'numeric'})} ${e.start.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</div></div>`);
-                    }
-                } else { listEl.innerHTML = '<div class="text-xs opacity-50 mt-4">No upcoming events</div>'; }
-            } catch(e) { listEl.innerHTML = '<div class="text-xs opacity-50 text-red-300 mt-4">Calendar Error</div>'; }
-        }
-
-        async function fetchNotion() {
-            if(!store.key || !store.db) return;
-            try {
-                const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://api.notion.com/v1/databases/${store.db}/query`)}`, {
-                    method: 'POST', headers: { 'Authorization': `Bearer ${store.key}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filter: { property: store.prop, date: { equals: new Date().toISOString().split('T')[0] } }, sorts: [{ property: store.prop, direction: "ascending" }] })
-                });
-                const data = await res.json(); renderTasks(data.results);
-                document.getElementById('api-status').className = 'w-2 h-2 rounded-full bg-green-500';
-            } catch(e) { document.getElementById('api-status').className = 'w-2 h-2 rounded-full bg-red-500'; }
-        }
-
-        function getNotionPropValue(prop) {
-            if (!prop) return null;
-            const type = prop.type;
-            if (type === 'rich_text' || type === 'title') {
-                return prop[type].map(t => t.plain_text).join('');
-            } else if (type === 'select') {
-                return prop.select ? prop.select.name : null;
-            } else if (type === 'multi_select') {
-                return prop.multi_select.map(s => s.name).join(', ');
-            } else if (type === 'date') {
-                if (!prop.date) return null;
-                return prop.date.start;
-            } else if (type === 'people') {
-                return prop.people.map(p => p.name).join(', ');
-            } else if (type === 'checkbox') {
-                return prop.checkbox ? '☑' : '☐';
-            } else if (type === 'number') {
-                return prop.number;
-            } else if (type === 'status') {
-                return prop.status ? prop.status.name : null;
-            }
-            return null;
-        }
-
-        function renderTasks(tasks) {
-            const list = document.getElementById('task-list');
-            let filtered = tasks;
-            if (store.userProp && store.userId) {
-                filtered = tasks.filter(t => {
-                    const u = t.properties[store.userProp]; if (!u) return false;
-                    let v = ""; 
-                    // 修正: ユーザー名での判定を削除し、ID(UUID)のみで絞り込むように変更
-                    if(u.type==='people') {
-                        return u.people.some(p => p.id && p.id.includes(store.userId));
-                    }
-                    if(u.type==='select') v=u.select?.name||""; 
-                    if(u.type==='rich_text') v=u.rich_text[0]?.plain_text||"";
-                    return v.includes(store.userId);
-                });
-            }
-            if(!filtered || filtered.length === 0) { list.innerHTML = `<div class="mt-10 text-center opacity-40 text-sm tracking-widest">NO TASKS TODAY</div>`; return; }
-            
-            list.innerHTML = '';
-            filtered.forEach(t => {
-                const title = Object.values(t.properties).find(p => p.type === 'title')?.title[0]?.plain_text || "Untitled";
-                const s = t.properties[store.statProp]; let sName = s?.status?.name || s?.select?.name || "";
-                const isDone = sName === store.doneVal;
-                
-                const div = document.createElement('div');
-                div.className = `flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group ${isDone?'opacity-30':''}`;
-                
-                // Additional Properties
-                let propsHTML = '';
-                const propsConfig = [
-                    {n: store.p1_name, t: store.p1_type},
-                    {n: store.p2_name, t: store.p2_type},
-                    {n: store.p3_name, t: store.p3_type}
-                ];
-                
-                propsConfig.forEach(cfg => {
-                    if(cfg.n && t.properties[cfg.n]) {
-                        const val = getNotionPropValue(t.properties[cfg.n]);
-                        if(val) {
-                            let displayVal = val;
-                            // Simple styling based on type or just generic badge
-                            propsHTML += `<span class="bg-white/10 px-2 py-0.5 rounded text-[10px] opacity-70 truncate max-w-[150px]">${displayVal}</span>`;
-                        }
-                    }
-                });
-
-                div.innerHTML = `<input type="checkbox" class="task-checkbox flex-shrink-0 mt-1" ${isDone?'checked':''} onchange="toggleTask('${t.id}', this.checked)"><div class="flex-1 min-w-0"><div class="text-lg leading-snug ${isDone?'line-through':''} task-title font-medium"></div><div class="flex flex-wrap gap-2 mt-1.5">${propsHTML}</div></div>`;
-                
-                div.querySelector('.task-title').textContent = title;
-                list.appendChild(div);
-            });
-        }
-
-        async function toggleTask(id, checked) {
-            const newVal = checked ? store.doneVal : store.notVal;
-            let props = {}; if (store.pType === 'select') props[store.statProp] = { select: { name: newVal } }; else props[store.statProp] = { status: { name: newVal } };
-            await fetch(`https://corsproxy.io/?${encodeURIComponent(`https://api.notion.com/v1/pages/${id}`)}`, {
-                method: 'PATCH', headers: { 'Authorization': `Bearer ${store.key}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ properties: props })
-            });
-        }
-
-        // --- Weather Widget Background Effects (Ported) ---
-        function clearWidgetWeatherIntervals() {
-            widgetWeatherIntervals.forEach(i => clearInterval(i));
-            widgetWeatherIntervals = [];
-        }
-
-        function updateWidgetWeatherEffects(weatherCode) {
-            // Determine weather type
-            let type = 'cloudy'; // Default
-            if (weatherCode === 0 || weatherCode === 1) type = 'sunny';
-            else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(weatherCode)) type = 'rainy';
-            else if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) type = 'snowy';
-            else type = 'cloudy'; // 2, 3, 45, 48
-
-            const bg = document.getElementById('w-weather-gradient');
-            if(bg) bg.className = type;
-
-            createWidgetBackgroundEffects(type);
-        }
-
-        function createWidgetBackgroundEffects(type) {
-            const container = document.getElementById('w-bg-effects');
-            if(!container) return;
-            container.innerHTML = '';
-            clearWidgetWeatherIntervals();
-
-            if (type === 'sunny') {
-                // 1. メインの太陽光
-                const ray = document.createElement('div');
-                ray.className = 'sun-ray';
-                container.appendChild(ray);
-
-                // 2. 回転する光の筋
-                const glare = document.createElement('div');
-                glare.className = 'sun-glare';
-                container.appendChild(glare);
-            } 
-            else if (type === 'rainy') {
-                // 1. 降る雨 (背景側)
-                const amount = 50; 
-                for (let i = 0; i < amount; i++) {
-                    const drop = document.createElement('div');
-                    drop.className = 'raindrop';
-                    drop.style.left = Math.random() * 100 + '%'; 
-                    drop.style.animationDuration = Math.random() * 0.5 + 0.5 + 's';
-                    drop.style.animationDelay = Math.random() * 2 + 's';
-                    container.appendChild(drop);
-                }
-
-                // 2. ガラスに付く水滴 (手前側) - 改良版
-                const createDroplet = () => {
-                    // 画面がいっぱいになりすぎないように制限
-                    if(container.querySelectorAll('.glass-droplet').length > 25) return;
-
-                    const droplet = document.createElement('div');
-                    droplet.className = 'glass-droplet';
-                    
-                    // ランダムなサイズ (少し大きめに調整: 6px - 14px)
-                    const size = Math.random() * 8 + 6;
-                    droplet.style.width = size + 'px';
-                    droplet.style.height = size + 'px';
-                    
-                    // 形を少し歪ませて自然な水滴にする
-                    const r1 = Math.floor(Math.random() * 40 + 30);
-                    const r2 = Math.floor(Math.random() * 40 + 30);
-                    const r3 = Math.floor(Math.random() * 40 + 30);
-                    const r4 = Math.floor(Math.random() * 40 + 30);
-                    droplet.style.borderRadius = `${r1}% ${100-r1}% ${r3}% ${100-r3}% / ${r2}% ${r4}% ${100-r4}% ${100-r2}%`;
-                    
-                    // ランダムな配置
-                    droplet.style.left = Math.random() * 95 + '%';
-                    droplet.style.top = Math.random() * 90 + '%';
-                    
-                    container.appendChild(droplet);
-
-                    // 確率で垂れるアニメーションを付与
-                    if (Math.random() > 0.7) { 
-                        setTimeout(() => {
-                            droplet.classList.add('drip');
-                        }, Math.random() * 1000 + 500);
-                        
-                        setTimeout(() => {
-                            droplet.remove();
-                        }, 2500); // dripアニメーション(1.5s) + 余裕
-                    } else {
-                        // 垂れないやつは「乾いて」消える
-                        // 少しランダムな寿命を持たせる
-                        setTimeout(() => {
-                            // JSでTransitionを設定してゆっくり消す
-                            droplet.style.transition = 'opacity 2s ease, transform 2s ease';
-                            droplet.style.opacity = 0;
-                            droplet.style.transform = 'scale(0.5)'; // 小さくなりながら
-                            
-                            setTimeout(() => droplet.remove(), 2000);
-                        }, 3000 + Math.random() * 2000);
-                    }
-                };
-
-                // 最初に少し作っておく
-                for(let i=0; i<12; i++) createDroplet();
-
-                // ポツポツと増やす
-                const rainInterval = setInterval(createDroplet, 300);
-                widgetWeatherIntervals.push(rainInterval);
-            }
-            else if (type === 'snowy') {
-                const createSnowflake = () => {
-                    const flake = document.createElement('div');
-                    flake.className = 'snowflake';
-                    const size = Math.random() * 5 + 2;
-                    flake.style.width = size + 'px';
-                    flake.style.height = size + 'px';
-                    flake.style.background = 'white';
-                    flake.style.borderRadius = '50%';
-                    flake.style.left = Math.random() * 100 + '%';
-                    flake.style.opacity = Math.random();
-                    flake.style.animationDuration = Math.random() * 3 + 3 + 's';
-                    flake.style.filter = 'blur(1px)';
-                    container.appendChild(flake);
-                    setTimeout(() => flake.remove(), 6000);
-                };
-                const snowInterval = setInterval(createSnowflake, 150);
-                widgetWeatherIntervals.push(snowInterval);
-            }
-            else if (type === 'cloudy') {
-                // 雲の数を増やし、サイズや位置をランダムにして立体感を出す
-                const cloudCount = 8;
-                
-                for (let i = 0; i < cloudCount; i++) {
-                    const cloud = document.createElement('div');
-                    cloud.className = 'cloud';
-                    
-                    // サイズをバラバラに
-                    const width = Math.random() * 120 + 100;
-                    const height = width * 0.4; // 縦横比を維持
-                    
-                    cloud.style.width = width + 'px';
-                    cloud.style.height = height + 'px';
-                    
-                    // 高さをランダムに配置
-                    cloud.style.top = Math.random() * 60 + 10 + '%';
-                    
-                    const duration = Math.random() * 15 + 15;
-                    cloud.style.animationDuration = duration + 's';
-                    cloud.style.animationDelay = (Math.random() * -30) + 's';
-                    
-                    cloud.style.opacity = Math.random() * 0.4 + 0.4;
-
-                    container.appendChild(cloud);
-                }
-            }
-        }
-
-        // --- Weather Widget Slider Logic ---
-        let slideObserver = null;
-        function initSlideObserver() {
-            if(slideObserver) slideObserver.disconnect();
-            
-            const container = document.getElementById('w-slider-container');
-            if(!container) return;
-            const slides = container.querySelectorAll('div[id^="w-slide-"]');
-            
-            slideObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if(entry.isIntersecting) {
-                        const index = parseInt(entry.target.id.split('-')[2]);
-                        updateActiveDot(index);
-                        
-                        // 背景更新
-                        const code = parseInt(entry.target.dataset.weatherCode);
-                        updateWidgetWeatherEffects(code);
-                    }
-                });
-            }, { root: container, threshold: 0.5 });
-            
-            slides.forEach(s => slideObserver.observe(s));
-        }
-
-        function updateActiveDot(index) {
-            const dots = document.getElementById('w-slider-dots').children;
-            for(let i=0; i<dots.length; i++) {
-                if(i === index) {
-                    dots[i].className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white opacity-100 scale-125';
-                } else {
-                    dots[i].className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white/40 hover:bg-white/60';
-                }
-            }
-        }
-
-        function renderWeatherSlides(results) {
-            const container = document.getElementById('w-slider-container');
-            const dotsContainer = document.getElementById('w-slider-dots');
-            if(!container || !dotsContainer) return;
-
-            container.innerHTML = '';
-            dotsContainer.innerHTML = '';
-
-            results.forEach((item, index) => {
-                const d = item.data;
-                const current = d.current;
-                const daily = d.daily;
-                const hourly = d.hourly;
-                
-                // Hourly data processing
-                const now = new Date();
-                const currentHourStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:00`;
-                const hIdx = hourly.time.indexOf(currentHourStr);
-                let hourlyHTML = '';
-                
-                if(hIdx !== -1) {
-                    for(let i=1; i<=6; i++) {
-                        const idx = hIdx + i;
-                        if(hourly.time[idx]) {
-                            const time = hourly.time[idx].split('T')[1];
-                            const temp = Math.round(hourly.temperature_2m[idx]);
-                            const icon = getSmallIcon(hourly.weather_code[idx]);
-                            
-                            // 配置調整: 左端は左寄せ、右端は右寄せ、中間は中央寄せ
-                            let alignClass = 'items-center';
-                            if (i === 1) alignClass = 'items-start pl-2';
-                            else if (i === 6) alignClass = 'items-end pr-2';
-
-                            hourlyHTML += `
-                                <div class="flex flex-col ${alignClass} justify-center gap-1 w-1/6 ${i>1 ? 'border-l border-white/10' : ''}">
-                                    <span class="text-[10px] opacity-80 font-bold tracking-wider drop-shadow-md">${time}</span>
-                                    <div class="w-7 h-7 flex items-center justify-center opacity-90">${icon}</div>
-                                    <span class="text-base font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">${temp}°</span>
-                                </div>
-                            `;
-                        }
-                    }
-                }
-
-                const slide = document.createElement('div');
-                slide.className = 'w-full h-full flex-shrink-0 snap-center px-8 py-5 flex flex-col justify-between relative z-10';
-                slide.dataset.weatherCode = current.weather_code;
-                slide.id = `w-slide-${index}`;
-
-                slide.innerHTML = `
-                    <div class="grid grid-rows-2 h-full w-full">
-                        <div class="flex justify-between items-start w-full pt-2">
-                            <div class="flex flex-col items-start justify-start z-20">
-                                <div id="w-location-${index}" class="text-lg font-bold tracking-[0.2em] uppercase opacity-90 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] truncate max-w-[180px] text-left pl-2">${item.name}</div>
-                                <div class="text-[110px] font-thin tracking-tighter leading-[0.9] drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] -ml-2 mt-1">${Math.round(current.temperature_2m)}°</div>
-                            </div>
-                            <div class="flex flex-col items-end justify-start z-20">
-                                <div class="w-24 h-24 flex items-center justify-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] -mr-2">
-                                    ${getWeatherIcon(current.weather_code, current.is_day===0)}
-                                </div>
-                                <div class="text-right mt-1 pr-2">
-                                    <div class="text-xl font-bold opacity-90 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">${getWeatherDesc(current.weather_code)}</div>
-                                    <div class="flex gap-3 text-sm font-medium opacity-90 mt-1 justify-end tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                                        <span>H:<span>${Math.round(daily.temperature_2m_max[0])}</span>°</span>
-                                        <span>L:<span>${Math.round(daily.temperature_2m_min[0])}</span>°</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="flex flex-col justify-center">
-                            <div class="w-full pt-4 mb-2">
-                                <div class="flex justify-between items-center h-full px-0">
-                                    ${hourlyHTML}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(slide);
-
-                const dot = document.createElement('div');
-                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${index===0 ? 'bg-white opacity-100 scale-125' : 'bg-white/40 hover:bg-white/60'}`;
-                dot.id = `w-dot-${index}`;
-                dotsContainer.appendChild(dot);
-            });
-
-            initSlideObserver();
-        }
-
-        async function fetchWeather() {
-            const locations = [
-                { name: currentLocationName, lat: weatherLat, lon: weatherLon, id: '0' },
-                { name: store.sub1_name, lat: store.sub1_lat, lon: store.sub1_lon, id: '1' },
-                { name: store.sub2_name, lat: store.sub2_lat, lon: store.sub2_lon, id: '2' },
-                { name: store.sub3_name, lat: store.sub3_lat, lon: store.sub3_lon, id: '3' }
-            ].filter(l => l.lat && l.lon && l.name);
-
-            const promises = locations.map(async (loc) => {
-                try {
-                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,weather_code,is_day&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m,weather_code&timezone=auto`;
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    return { ...loc, data };
-                } catch(e) { return null; }
-            });
-
-            const results = (await Promise.all(promises)).filter(r => r && r.data);
-            renderWeatherSlides(results);
-        }
-
-        // --- Generic Slider Logic ---
-        function initGenericSliderObserver(containerId, dotsId) {
-            const container = document.getElementById(containerId);
-            if(!container) return;
-            const slides = container.querySelectorAll('.snap-center');
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if(entry.isIntersecting) {
-                        const parts = entry.target.id.split('-');
-                        const index = parseInt(parts[parts.length-1]);
-                        updateGenericDots(dotsId, index);
-                    }
-                });
-            }, { root: container, threshold: 0.5 });
-            
-            slides.forEach(s => observer.observe(s));
-        }
-
-        function updateGenericDots(dotsId, index) {
-            const dotsContainer = document.getElementById(dotsId);
-            if(!dotsContainer) return;
-            const dots = dotsContainer.children;
-            for(let i=0; i<dots.length; i++) {
-                if(i === index) {
-                    dots[i].className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white opacity-100 scale-125';
-                } else {
-                    dots[i].className = 'w-2 h-2 rounded-full transition-all duration-300 bg-white/40 hover:bg-white/60';
-                }
-            }
-        }
-
-        async function fetchPodcasts() {
-            const genres = [
-                { name: 'TOP PODCASTS', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/json' },
-                { name: 'NEWS', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/genre=1489/json' },
-                { name: 'COMEDY', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/genre=1303/json' },
-                { name: 'BUSINESS', url: 'https://itunes.apple.com/jp/rss/toppodcasts/limit=4/genre=1321/json' }
+            // blobs
+            const blobs = [
+                { x: W * 0.82, y: H * 0.3, r: 260, vx: 0.18, vy: 0.12, color: 'rgba(255,45,85,' },
+                { x: W * 0.1, y: H * 0.7, r: 200, vx: -0.14, vy: -0.1, color: 'rgba(0,240,255,' },
+                { x: W * 0.5, y: H * 0.15, r: 180, vx: 0.08, vy: 0.15, color: 'rgba(255,45,85,' },
             ];
 
-            const container = document.getElementById('p-slider-container');
-            const dotsContainer = document.getElementById('p-slider-dots');
-            if(!container || !dotsContainer) return;
-            
-            container.innerHTML = '';
-            dotsContainer.innerHTML = '';
-
-            // 1. Render Skeletons (枠組みを先に表示)
-            genres.forEach((g, i) => {
-                const slide = document.createElement('div');
-                slide.className = 'w-full h-full flex-shrink-0 snap-center relative pt-10 pb-4 flex flex-col items-center justify-start overflow-y-auto no-scrollbar';
-                slide.id = `p-slide-${i}`;
-                slide.innerHTML = `
-                    <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${g.name}</div>
-                    <div id="p-content-${i}" class="w-full mt-2 flex flex-col items-center gap-4 px-4">
-                        <div class="w-32 h-32 bg-white/5 rounded-xl animate-pulse shrink-0 mt-4"></div>
-                        <div class="w-full h-10 bg-white/5 rounded-lg animate-pulse"></div>
-                        <div class="w-full h-10 bg-white/5 rounded-lg animate-pulse"></div>
-                        <div class="w-full h-10 bg-white/5 rounded-lg animate-pulse"></div>
-                    </div>
-                `;
-                container.appendChild(slide);
-
-                const dot = document.createElement('div');
-                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${i === 0 ? 'bg-white opacity-100 scale-125' : 'bg-white/40 hover:bg-white/60'}`;
-                dotsContainer.appendChild(dot);
+            // particles
+            const pts = [];
+            for (let i = 0; i < 60; i++) pts.push({
+                x: Math.random() * 1920, y: Math.random() * 1080,
+                vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25,
+                r: Math.random() * 1.4 + 0.3,
+                red: Math.random() > .55
             });
 
-            initGenericSliderObserver('p-slider-container', 'p-slider-dots');
+            let t = 0;
+            function draw() {
+                t += 0.005;
+                cx.clearRect(0, 0, W, H);
 
-            // 2. Fetch Data (後からデータを流し込む)
-            genres.forEach(async (g, i) => {
-                try {
-                    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(g.url));
-                    const data = await res.json();
-                    const e = data.feed?.entry || [];
-                    
-                    if(e.length > 0) {
-                        const f = e[0];
-                        let subItemsHTML = '';
-                        e.slice(1, 4).forEach((item, idx) => {
-                            subItemsHTML += `<a href="${item.link.attributes.href}" target="_blank" class="flex items-center bg-white/10 rounded-lg p-2 gap-2 w-full hover:bg-white/20 transition"><div class="relative flex-shrink-0"><img src="${item['im:image'][0].label}" class="podcast-small-img"><div class="absolute -top-1 -left-1 bg-white/20 backdrop-blur-md text-white font-bold rounded-full w-4 h-4 flex items-center justify-center text-[8px]">${idx+2}</div></div><div class="flex-1 min-w-0"><div class="font-bold text-[10px] truncate">${item['im:name'].label}</div><div class="text-[8px] opacity-60 truncate">${item['im:artist'].label}</div></div></a>`;
+                // blobs
+                blobs.forEach(b => {
+                    b.x += b.vx; b.y += b.vy;
+                    if (b.x < -b.r || b.x > W + b.r) b.vx *= -1;
+                    if (b.y < -b.r || b.y > H + b.r) b.vy *= -1;
+                    const g = cx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+                    g.addColorStop(0, b.color + '0.06)');
+                    g.addColorStop(1, b.color + '0)');
+                    cx.beginPath(); cx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                    cx.fillStyle = g; cx.fill();
+                });
+
+                // particles
+                pts.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0 || p.x > W) p.vx *= -1;
+                    if (p.y < 0 || p.y > H) p.vy *= -1;
+                    cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    cx.fillStyle = p.red ? 'rgba(255,45,85,0.5)' : 'rgba(0,240,255,0.4)';
+                    cx.fill();
+                });
+
+                // connections
+                for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+                    const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d = Math.hypot(dx, dy);
+                    if (d < 130) {
+                        cx.beginPath(); cx.moveTo(pts[i].x, pts[i].y); cx.lineTo(pts[j].x, pts[j].y);
+                        cx.strokeStyle = `rgba(255,255,255,${(1 - d / 130) * 0.06})`; cx.lineWidth = .5; cx.stroke();
+                    }
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
+
+        /* ── ナビスクロール ── */
+        window.addEventListener('scroll', () => {
+            document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+        });
+
+        /* ── スムーズスクロール ── */
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                const id = this.getAttribute('href').slice(1);
+                if (!id) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                const el = document.getElementById(id);
+                if (el) { const h = document.querySelector('nav').offsetHeight; window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - h, behavior: 'smooth' }); }
+            });
+        });
+
+        /* ── FAQ ── */
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.querySelector('.faq-q').addEventListener('click', () => item.classList.toggle('open'));
+        });
+
+        /* ── マグネットボタン ── */
+        document.querySelectorAll('.btn-red,.btn-outline-cyan').forEach(btn => {
+            btn.addEventListener('mousemove', e => {
+                const r = btn.getBoundingClientRect();
+                const x = ((e.clientX - r.left) / r.width) * 100;
+                const y = ((e.clientY - r.top) / r.height) * 100;
+                btn.style.setProperty('--mx', x + '%');
+                btn.style.setProperty('--my', y + '%');
+                const inner = btn.querySelector('.btn-inner');
+                if (inner) {
+                    const dx = (e.clientX - r.left - r.width / 2) * 0.12;
+                    const dy = (e.clientY - r.top - r.height / 2) * 0.12;
+                    inner.style.transform = `translate(${dx}px,${dy}px)`;
+                }
+            });
+            btn.addEventListener('mouseleave', e => {
+                const inner = btn.querySelector('.btn-inner');
+                if (inner) inner.style.transform = 'translate(0,0)';
+            });
+        });
+
+        /* ── スクロールリビール ── */
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('on');
+                    // VS行を順次リビール
+                    if (e.target.classList.contains('vs-wrap')) {
+                        e.target.querySelectorAll('.vs-row').forEach((r, i) => {
+                            setTimeout(() => r.classList.add('on'), i * 80);
                         });
-
-                        const contentHTML = `
-                            <a href="${f.link.attributes.href}" target="_blank" class="flex flex-col items-center justify-center w-full mb-3 group"><div class="relative mb-2"><img src="${f['im:image'][2].label}" class="podcast-hero-img group-hover:scale-105 transition-transform"><div class="absolute -top-2 -right-2 bg-yellow-400 text-black font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs">1</div></div><div class="text-center w-full px-2"><div class="font-bold text-sm truncate w-full">${f['im:name'].label}</div><div class="text-[10px] opacity-60 truncate w-full">${f['im:artist'].label}</div></div></a>
-                            <div class="flex flex-col gap-2 w-full px-4">${subItemsHTML}</div>
-                        `;
-                        const target = document.getElementById(`p-content-${i}`);
-                        if(target) {
-                            target.innerHTML = contentHTML;
-                            target.className = 'w-full'; // レイアウトクラスをリセット
-                        }
-                    } else {
-                        const target = document.getElementById(`p-content-${i}`);
-                        if(target) target.innerHTML = '<div class="text-center opacity-30 text-sm mt-10">No podcasts found</div>';
                     }
-                } catch(e) {
-                    const target = document.getElementById(`p-content-${i}`);
-                    if(target) target.innerHTML = '<div class="text-center opacity-30 text-sm mt-10">Failed to load</div>';
-                }
-            });
-        }
-
-        // --- Apple Music Logic (Enhanced OGP Scraping) ---
-        // Helper to get high-res image from Apple Music OGP URL
-        const enhanceImageUrl = (originalUrl) => {
-            try {
-                if (!originalUrl) return null;
-                // Replace resolution (e.g., 1200x630bb) with 4000x4000
-                return originalUrl.replace(/\/(\d+)x(\d+)([^/]*)\./, '/4000x4000$3.');
-            } catch (e) {
-                return originalUrl;
-            }
-        };
-
-        // OGP取得用のヘルパー関数 (music.htmlのロジックを移植)
-        async function fetchOGP(url) {
-            try {
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-                const response = await fetch(proxyUrl);
-                if (!response.ok) return null;
-                const htmlText = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
-
-                const ogImage = doc.querySelector('meta[property="og:image"]')?.content ||
-                                doc.querySelector('meta[name="twitter:image"]')?.content ||
-                                doc.querySelector('link[rel="image_src"]')?.href;
-                
-                if (!ogImage) return null;
-
-                const ogTitle = doc.querySelector('meta[property="og:title"]')?.content || 'Apple Music';
-                const ogDescription = doc.querySelector('meta[property="og:description"]')?.content || '';
-
-                // 修正: 重複していたreplaceを削除
-                const cleanTitle = ogTitle.replace(/ on Apple Music$/, '');
-
-                return {
-                    title: cleanTitle,
-                    artist: ogDescription, // descriptionをアーティスト/詳細として使用
-                    img: enhanceImageUrl(ogImage),
-                    link: url
-                };
-            } catch (e) {
-                console.error("OGP Fetch Error:", e);
-                return null;
-            }
-        }
-
-        async function fetchAppleMusicRanking(genreId, limit=4) {
-            try {
-                let url = `https://itunes.apple.com/jp/rss/topsongs/limit=${limit}/json`;
-                if(genreId) url = `https://itunes.apple.com/jp/rss/topsongs/limit=${limit}/genre=${genreId}/json`;
-                const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-                const data = await res.json();
-                return data.feed?.entry || [];
-            } catch(e) { return []; }
-        }
-
-        async function fetchMusic() {
-            const container = document.getElementById('m-slider-container');
-            const dotsContainer = document.getElementById('m-slider-dots');
-            if(!container || !dotsContainer) return;
-            
-            // 1. Reset & Render Skeleton immediately (枠組みを即座に作成)
-            container.innerHTML = ''; 
-            dotsContainer.innerHTML = '';
-
-            const rankings = [
-                { name: 'TOP SONGS', id: null },
-                { name: 'J-POP', id: '27' },
-                { name: 'ANIME', id: '29' },
-                { name: 'ROCK', id: '21' }
-            ];
-
-            // --- Slide 0: Custom (Existing Logic) ---
-            const slide0 = document.createElement('div');
-            slide0.className = 'w-full h-full flex-shrink-0 snap-center relative pt-16 pb-6 px-6 flex flex-col items-center justify-center';
-            slide0.id = 'm-slide-0';
-            slide0.innerHTML = `
-                <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">APPLE MUSIC</div>
-                <div class="absolute top-6 right-6 z-10 opacity-30"><i class="fas fa-music text-3xl"></i></div>
-                <div class="grid grid-cols-2 gap-4 w-full h-full" id="m-content-0">
-                    <div class="col-span-2 flex items-center justify-center opacity-30 text-xs animate-pulse">Loading...</div>
-                </div>
-            `;
-            container.appendChild(slide0);
-            dotsContainer.innerHTML += `<div class="w-2 h-2 rounded-full bg-white opacity-100 scale-125 transition-all duration-300"></div>`;
-
-            // --- Ranking Slides (Skeleton) ---
-            rankings.forEach((r, i) => {
-                const slide = document.createElement('div');
-                slide.className = 'w-full h-full flex-shrink-0 snap-center relative pt-16 pb-6 px-6 flex flex-col items-center justify-center';
-                slide.id = `m-slide-${i+1}`;
-                slide.innerHTML = `
-                    <div class="absolute top-6 left-6 z-10 text-[10px] font-bold opacity-60 tracking-[0.2em]">${r.name}</div>
-                    <div class="grid grid-cols-2 grid-rows-2 gap-3 w-full h-full" id="m-content-${i+1}">
-                        <div class="col-span-2 row-span-1 bg-white/5 rounded-xl animate-pulse"></div>
-                        <div class="col-span-1 row-span-1 bg-white/5 rounded-xl animate-pulse"></div>
-                        <div class="col-span-1 row-span-1 bg-white/5 rounded-xl animate-pulse"></div>
-                    </div>
-                `;
-                container.appendChild(slide);
-                dotsContainer.innerHTML += `<div class="w-2 h-2 rounded-full bg-white/40 hover:bg-white/60 transition-all duration-300"></div>`;
-            });
-
-            // Init Observer immediately (スライド操作を可能にする)
-            initGenericSliderObserver('m-slider-container', 'm-slider-dots');
-
-            // 2. Fetch Data in Background (後からデータを流し込む)
-
-            // --- Fetch Custom Slide ---
-            (async () => {
-                const items = [{k:store.m1_key, l:store.m1_link}, {k:store.m2_key, l:store.m2_link}];
-                let customHTML = '';
-                for(const i of items) {
-                    if(!i.k && !i.l) continue;
-                    let trackData = null;
-                    if (i.l && i.l.includes('music.apple.com')) { trackData = await fetchOGP(i.l); }
-                    if (!trackData) {
-                        try {
-                            let id = null;
-                            if (i.l) {
-                                 try {
-                                    const urlObj = new URL(i.l);
-                                    id = urlObj.searchParams.get('i');
-                                    if(!id) {
-                                        const matches = urlObj.pathname.match(/\/(?:album|playlist|track)(?:\/[^\/]+)?\/(\d+)/);
-                                        if(matches) id = matches[1];
-                                    }
-                                 } catch(e) {}
-                            }
-                            let data = null;
-                            if (id) {
-                                 const lookupUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/lookup?id=${id}&country=JP`);
-                                 const r = await fetch(lookupUrl);
-                                 const j = await r.json();
-                                 if(j.resultCount > 0) data = j;
-                            }
-                            if(!data && i.k) {
-                                 const searchUrl = 'https://corsproxy.io/?' + encodeURIComponent(`https://itunes.apple.com/search?term=${i.k}&country=JP&media=music&entity=song&limit=1`);
-                                 const r = await fetch(searchUrl);
-                                 data = await r.json();
-                            }
-                            if(data && data.resultCount > 0) {
-                                const t = data.results[0];
-                                trackData = {
-                                    title: t.trackName || t.collectionName,
-                                    artist: t.artistName,
-                                    img: t.artworkUrl100.replace('100x100bb', '600x600bb'),
-                                    link: i.l || t.trackViewUrl
-                                };
-                            }
-                        } catch(e) {}
-                    }
-
-                    if(trackData) {
-                        customHTML += `
-                        <a href="${trackData.link}" target="_blank" class="music-item group flex flex-col gap-2 w-full no-underline h-full">
-                            <div class="relative w-full aspect-square overflow-hidden rounded-xl shadow-lg bg-black/20">
-                                <img src="${trackData.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                    <i class="fas fa-play text-white opacity-0 group-hover:opacity-100 transition-opacity text-2xl drop-shadow-lg"></i>
-                                </div>
-                            </div>
-                            <div class="flex flex-col min-w-0">
-                                <div class="text-xs font-bold truncate text-white leading-tight">${trackData.title}</div>
-                                <div class="text-[10px] opacity-70 truncate text-white/90 leading-tight">${trackData.artist}</div>
-                            </div></a>
-                        `;
-                    } else if (i.l) {
-                         customHTML += `<a href="${i.l}" target="_blank" class="bg-white/10 rounded-2xl flex items-center justify-center flex-col gap-2 hover:bg-white/20 transition w-full aspect-square text-white/50 hover:text-white"><i class="fas fa-link text-2xl"></i><span class="text-[10px] opacity-60">Link</span></a>`;
+                    // ステップラインをアニメ
+                    if (e.target.classList.contains('steps-row')) {
+                        e.target.classList.add('on');
                     }
                 }
-                const target = document.getElementById('m-content-0');
-                if(target) {
-                    target.innerHTML = customHTML || '<div class="col-span-2 flex items-center justify-center opacity-30 text-xs">No items set</div>';
-                    target.className = 'grid grid-cols-2 gap-4 w-full'; 
-                }
-            })();
-
-            // --- Fetch Rankings ---
-            rankings.forEach(async (r, i) => {
-                const entries = await fetchAppleMusicRanking(r.id, 3); // 3曲取得 (1位大 + 2位3位小)
-                let gridHTML = '';
-                if(entries && entries.length > 0) {
-                    entries.slice(0, 3).forEach((e, idx) => {
-                        const img = e['im:image'][2].label.replace('170x170bb', '600x600bb');
-                        const isFirst = idx === 0;
-                        
-                        // 1位は横長、2,3位は正方形
-                        const containerClass = isFirst 
-                            ? 'col-span-2 row-span-1 flex flex-row gap-3 items-center bg-white/5 rounded-xl p-2 group hover:bg-white/10 transition' 
-                            : 'col-span-1 row-span-1 flex flex-col gap-2 group';
-                        
-                        const imgClass = isFirst
-                            ? 'w-20 h-20 rounded-lg shadow-md object-cover flex-shrink-0 group-hover:scale-105 transition-transform duration-500'
-                            : 'w-full aspect-square rounded-lg shadow-md object-cover group-hover:scale-105 transition-transform duration-500';
-                        
-                        const textContainerClass = isFirst ? 'flex flex-col min-w-0 justify-center h-full' : 'flex flex-col min-w-0';
-                        const titleClass = isFirst ? 'text-sm font-bold truncate text-white leading-tight' : 'text-[10px] font-bold truncate text-white leading-tight';
-                        const artistClass = isFirst ? 'text-xs opacity-70 truncate text-white/90 leading-tight mt-1' : 'text-[9px] opacity-70 truncate text-white/90 leading-tight mt-0.5';
-                        const rankBadge = `<div class="absolute top-1 left-1 w-5 h-5 rounded-full ${idx===0?'bg-yellow-400 text-black':'bg-black/50 text-white'} flex items-center justify-center text-[10px] font-bold z-10">${idx+1}</div>`;
-
-                        if(isFirst) {
-                             gridHTML += `
-                                <a href="${e.link.attributes.href}" target="_blank" class="${containerClass} no-underline relative overflow-hidden">
-                                    <div class="relative flex-shrink-0 overflow-hidden rounded-lg">
-                                        <img src="${img}" class="${imgClass}">
-                                        ${rankBadge}
-                                    </div>
-                                    <div class="${textContainerClass}">
-                                        <div class="${titleClass}">${e['im:name'].label}</div>
-                                        <div class="${artistClass}">${e['im:artist'].label}</div>
-                                    </div>
-                                </a>
-                            `;
-                        } else {
-                            gridHTML += `
-                                <a href="${e.link.attributes.href}" target="_blank" class="${containerClass} no-underline relative">
-                                    <div class="relative w-full aspect-square overflow-hidden rounded-lg bg-black/20">
-                                        <img src="${img}" class="${imgClass}">
-                                        ${rankBadge}
-                                    </div>
-                                    <div class="${textContainerClass}">
-                                        <div class="${titleClass}">${e['im:name'].label}</div>
-                                        <div class="${artistClass}">${e['im:artist'].label}</div>
-                                    </div>
-                                </a>
-                            `;
-                        }
-                    });
-                } else {
-                    gridHTML = '<div class="col-span-2 row-span-2 flex items-center justify-center opacity-30 text-xs">Failed to load</div>';
-                }
-                const target = document.getElementById(`m-content-${i+1}`);
-                if(target) target.innerHTML = gridHTML;
             });
-        }
-        
-        let timerInterval; let timerSeconds = parseInt(store.timerDuration)*60; let timerRunning = false; let totalTime = timerSeconds;
-        
-        function showTimerPopup() {
-            const el = document.getElementById('timer-popup');
-            if(el) el.classList.add('visible');
-        }
-        function closeTimerPopup() {
-            const el = document.getElementById('timer-popup');
-            if(el) el.classList.remove('visible');
-            resetTimer(); 
-        }
-
-        function toggleTimer() {
-            if(timerRunning) { clearInterval(timerInterval); timerRunning = false; document.getElementById('timer-icon').className='fas fa-play text-lg ml-1'; }
-            else {
-                if(timerSeconds<=0) resetTimer();
-                timerInterval = setInterval(() => { 
-                    timerSeconds--; 
-                    updateTimerDisplay(); 
-                    if(timerSeconds<=0) { 
-                        clearInterval(timerInterval); 
-                        timerRunning=false; 
-                        showTimerPopup(); // Use popup instead of alert
-                    } 
-                }, 1000);
-                timerRunning = true; document.getElementById('timer-icon').className='fas fa-pause text-lg';
-            }
-        }
-        function resetTimer() { clearInterval(timerInterval); timerRunning=false; totalTime=parseInt(store.timerDuration)*60; timerSeconds=totalTime; updateTimerDisplay(); document.getElementById('timer-icon').className='fas fa-play text-lg ml-1'; }
-        function updateTimerDisplay() {
-            const m=Math.floor(timerSeconds/60).toString().padStart(2,'0'); const s=(timerSeconds%60).toString().padStart(2,'0');
-            document.getElementById('timer-display').textContent=`${m}:${s}`;
-            const c=document.getElementById('timer-progress-ring'); const off=(2*Math.PI*140) - (timerSeconds/totalTime)*(2*Math.PI*140); c.style.strokeDashoffset=off;
-        }
-
-        // Quake & Settings Logic
-        function initWidgetMap() {
-            if(mapInstance) return;
-            mapInstance = L.map('quake-map', { zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false, boxZoom:false, tap:false, keyboard:false }).setView([36, 138], 3.8);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(mapInstance);
-        }
-        
-        function initAlertMap() {
-            if(alertMapInstance) return;
-            alertMapInstance = L.map('alert-map-container', { zoomControl:false, attributionControl:false, zoomAnimation:false, fadeAnimation:false, zoomSnap:0.1 }).setView([36, 138], 5.5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 10 }).addTo(alertMapInstance);
-        }
-
-        function updateAlertMap(q) {
-            initAlertMap();
-            const lat = q.earthquake.hypocenter.latitude;
-            const lng = q.earthquake.hypocenter.longitude;
-            alertMapInstance.setView([lat, lng], 6);
-            
-            alertMapInstance.eachLayer((layer) => {
-                if(layer instanceof L.Circle || layer instanceof L.CircleMarker) { alertMapInstance.removeLayer(layer); }
-            });
-
-            const qTime = new Date(q.time).getTime();
-            const now = new Date().getTime();
-            const elapsedSec = Math.max(0, (now - qTime) / 1000);
-            const pRadius = 6000 * elapsedSec;
-            const sRadius = 3500 * elapsedSec;
-
-            L.circle([lat, lng], { color: '#4facfe', fillColor: 'transparent', weight: 2, radius: pRadius }).addTo(alertMapInstance);
-            L.circle([lat, lng], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.3, weight: 4, radius: sRadius }).addTo(alertMapInstance);
-            L.circleMarker([lat, lng], { radius: 10, color: 'white', fillColor: '#f00', fillOpacity: 1 }).addTo(alertMapInstance);
-            
-            // 地図の表示崩れ対策
-            setTimeout(() => { alertMapInstance.invalidateSize(); }, 100);
-        }
-
-        function closeQuakeAlert() { document.getElementById('quake-overlay').classList.remove('visible'); }
-        
-        function testQuake() { 
-            closeSettings(); 
-            const q = { earthquake: { maxScale: 50, hypocenter: { name: 'Test Quake (Tokyo)', magnitude: 7.0, latitude: 35.6895, longitude: 139.6917 } }, time: new Date().toString(), points: [] };
-            
-            // Force show widget
-            document.getElementById('quake-widget-card').classList.remove('hidden');
-            updateQuakeMap(q);
-
-            document.getElementById('q-scale').textContent = '5+';
-            document.getElementById('q-loc').textContent = 'TEST TOKYO BAY';
-            document.getElementById('q-time').textContent = '12:34';
-            document.getElementById('q-mag').textContent = 'M7.0';
-            document.getElementById('q-est-scale').textContent = '5-';
-            document.getElementById('q-area-name').textContent = 'Test Area';
-            document.getElementById('quake-overlay').classList.add('visible'); 
-            updateAlertMap(q);
-        }
-
-        const memoEl = document.getElementById('quick-memo');
-        memoEl.value = store.memo;
-        memoEl.addEventListener('input', () => { localStorage.setItem('quick_memo', memoEl.value); });
-        
-        // Settings Helpers
-        function setVal(id, val) {
-            const el = document.getElementById(id);
-            if(el) {
-                el.value = val || '';
-            }
-        }
-        function setCheck(id, val) {
-            const el = document.getElementById(id);
-            if(el) {
-                el.checked = val;
-            }
-        }
-        
-        function getVal(id) {
-            const el = document.getElementById(id);
-            return el ? el.value.trim() : '';
-        }
-        function getCheck(id) {
-            const el = document.getElementById(id);
-            return el ? el.checked : true;
-        }
-
-        // Settings Logic (Improved)
-        function openSettings() {
-            // Tutorial Done
-            localStorage.setItem('tutorial_done', 'true');
-            const hint = document.getElementById('tutorial-hint');
-            if(hint) {
-                hint.classList.remove('visible');
-                setTimeout(() => hint.remove(), 1000);
-            }
-
-            setVal('n-key', store.key); setVal('n-db', store.db); setVal('n-prop', store.prop);
-            setVal('n-stat', store.statProp); setVal('n-done-val', store.doneVal); setVal('n-not-val', store.notVal);
-            setVal('n-user-prop', store.userProp); setVal('n-user-id', store.userId);
-            setVal('n-p1-name', store.p1_name); setVal('n-p1-type', store.p1_type);
-            setVal('n-p2-name', store.p2_name); setVal('n-p2-type', store.p2_type);
-            setVal('n-p3-name', store.p3_name); setVal('n-p3-type', store.p3_type);
-            setVal('w-lat', store.lat); setVal('w-lon', store.lon); setVal('q-area', store.quakeArea);
-            setVal('t-duration', store.timerDuration); setVal('g-cal', store.icalUrl);
-            setVal('sub1-label', store.sub1_name); setVal('sub1-lat', store.sub1_lat); setVal('sub1-lon', store.sub1_lon);
-            setVal('sub2-label', store.sub2_name); setVal('sub2-lat', store.sub2_lat); setVal('sub2-lon', store.sub2_lon);
-            setVal('sub3-label', store.sub3_name); setVal('sub3-lat', store.sub3_lat); setVal('sub3-lon', store.sub3_lon);
-            setVal('bg-url-dawn', store.bg_dawn); setVal('bg-url-morning', store.bg_morning); setVal('bg-url-day', store.bg_day);
-            setVal('bg-url-sunset', store.bg_sunset); setVal('bg-url-evening', store.bg_evening); setVal('bg-url-night', store.bg_night);
-            setVal('m1-keyword', store.m1_key); setVal('m1-link', store.m1_link);
-            setVal('m2-keyword', store.m2_key); setVal('m2-link', store.m2_link);
-            
-            // Set Toggles
-            setCheck('show-notion', store.show_notion);
-            setCheck('show-weather', store.show_weather);
-            setCheck('show-quake', store.show_quake);
-            setCheck('show-calendar', store.show_calendar);
-            setCheck('show-timer', store.show_timer);
-            setCheck('show-memo', store.show_memo);
-            setCheck('show-music', store.show_music);
-            setCheck('show-podcast', store.show_podcast);
-            setCheck('bg-blur-toggle', store.bg_blur);
-
-            setPropType(store.pType); 
-            
-            const overlay = document.getElementById('settings-overlay');
-            const drawer = document.getElementById('settings-drawer');
-            if(overlay) overlay.classList.add('visible'); 
-            if(drawer) drawer.classList.add('open');
-        }
-        function closeSettings() { 
-            const drawer = document.getElementById('settings-drawer');
-            const overlay = document.getElementById('settings-overlay');
-            if(drawer) drawer.classList.remove('open'); 
-            if(overlay) overlay.classList.remove('visible'); 
-            currentMode=''; updateClock(); 
-        }
-        function setPropType(type) {
-            const btnStatus = document.getElementById('btn-type-status');
-            const btnSelect = document.getElementById('btn-type-select');
-            const nStat = document.getElementById('n-stat');
-            
-            if(btnStatus) {
-                btnStatus.classList.toggle('bg-white/10', type === 'status');
-                btnStatus.classList.toggle('opacity-50', type !== 'status');
-            }
-            if(btnSelect) {
-                btnSelect.classList.toggle('bg-white/10', type === 'select');
-                btnSelect.classList.toggle('opacity-50', type !== 'select');
-            }
-            if(nStat) nStat.dataset.ptype = type; 
-        }
-
-        // Widget Visibility Control
-        function updateWidgetVisibility() {
-            const showNotion = document.getElementById('show-notion').checked;
-            const showWeather = document.getElementById('show-weather').checked;
-            const showQuake = document.getElementById('show-quake').checked;
-            const showCalendar = document.getElementById('show-calendar').checked;
-            const showTimer = document.getElementById('show-timer').checked;
-            const showMemo = document.getElementById('show-memo').checked;
-            const showMusic = document.getElementById('show-music').checked;
-            const showPodcast = document.getElementById('show-podcast').checked;
-
-            // Apply to DOM
-            const toggleEl = (id, show) => {
-                const el = document.getElementById(id);
-                if(el) {
-                    if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
-                }
-            };
-
-            // Notion special handling
-            const notionCard = document.getElementById('widget-notion-card');
-            const mainGrid = document.getElementById('main-grid');
-            const multiWidget = document.getElementById('multi-widget-container');
-
-            if (showNotion) {
-                if(notionCard) notionCard.classList.remove('hidden');
-                if(mainGrid) {
-                    mainGrid.classList.remove('grid-cols-1');
-                    mainGrid.classList.add('md:grid-cols-2');
-                }
-                if(multiWidget) multiWidget.classList.remove('max-w-xl', 'mx-auto');
-            } else {
-                if(notionCard) notionCard.classList.add('hidden');
-                if(mainGrid) {
-                    mainGrid.classList.remove('md:grid-cols-2');
-                    mainGrid.classList.add('grid-cols-1');
-                }
-                if(multiWidget) multiWidget.classList.add('max-w-xl', 'mx-auto');
-            }
-
-            toggleEl('widget-weather-card', store.show_weather);
-            if(!store.show_quake) toggleEl('quake-widget-card', false);
-            
-            // 修正: 地震ウィジェットが表示になった時も地図をリサイズ
-            if(showQuake && mapInstance) {
-                setTimeout(() => { mapInstance.invalidateSize(); }, 100);
-            }
-
-            toggleEl('widget-calendar-card', showCalendar);
-            toggleEl('widget-timer-card', showTimer);
-            toggleEl('widget-memo-card', showMemo);
-            toggleEl('widget-music-card', showMusic);
-            toggleEl('widget-podcast-card', showPodcast);
-        }
-
-        function updateBgBlur() {
-            const isBlur = document.getElementById('bg-blur-toggle').checked;
-            const val = isBlur ? '60px' : '0px';
-            document.documentElement.style.setProperty('--bg-blur', val);
-        }
-
-        function saveConfig() {
-            store.key = getVal('n-key');
-            store.db = getVal('n-db');
-            store.prop = getVal('n-prop');
-            store.statProp = getVal('n-stat');
-            store.doneVal = getVal('n-done-val') || 'Done';
-            store.notVal = getVal('n-not-val') || 'Not started';
-            store.pType = document.getElementById('n-stat')?.dataset.ptype || 'status';
-            store.userProp = getVal('n-user-prop');
-            store.userId = getVal('n-user-id');
-            store.p1_name = getVal('n-p1-name'); store.p1_type = getVal('n-p1-type');
-            store.p2_name = getVal('n-p2-name'); store.p2_type = getVal('n-p2-type');
-            store.p3_name = getVal('n-p3-name'); store.p3_type = getVal('n-p3-type');
-            store.lat = getVal('w-lat');
-            store.lon = getVal('w-lon');
-            store.quakeArea = getVal('q-area');
-            store.timerDuration = getVal('t-duration');
-            store.icalUrl = getVal('g-cal');
-            
-            store.sub1_name = getVal('sub1-label'); store.sub1_lat = getVal('sub1-lat'); store.sub1_lon = getVal('sub1-lon');
-            store.sub2_name = getVal('sub2-label'); store.sub2_lat = getVal('sub2-lat'); store.sub2_lon = getVal('sub2-lon');
-            store.sub3_name = getVal('sub3-label'); store.sub3_lat = getVal('sub3-lat'); store.sub3_lon = getVal('sub3-lon');
-            store.bg_dawn = getVal('bg-url-dawn'); store.bg_morning = getVal('bg-url-morning'); store.bg_day = getVal('bg-url-day');
-            store.bg_sunset = getVal('bg-url-sunset'); store.bg_evening = getVal('bg-url-evening'); store.bg_night = getVal('bg-url-night');
-            store.m1_key = getVal('m1-keyword'); store.m1_link = getVal('m1-link'); store.m2_key = getVal('m2-keyword'); store.m2_link = getVal('m2-link');
-            
-            // Save Toggles
-            store.show_notion = getCheck('show-notion');
-            store.show_weather = getCheck('show-weather');
-            store.show_quake = getCheck('show-quake');
-            store.show_calendar = getCheck('show-calendar');
-            store.show_timer = getCheck('show-timer');
-            store.show_memo = getCheck('show-memo');
-            store.show_music = getCheck('show-music');
-            store.show_podcast = getCheck('show-podcast');
-            store.bg_blur = getCheck('bg-blur-toggle');
-
-            localStorage.setItem('n_key', store.key); localStorage.setItem('n_db', store.db); localStorage.setItem('n_prop', store.prop); localStorage.setItem('n_stat', store.statProp);
-            localStorage.setItem('n_done_val', store.doneVal); localStorage.setItem('n_not_val', store.notVal); localStorage.setItem('n_p_type', store.pType);
-            localStorage.setItem('n_user_prop', store.userProp); localStorage.setItem('n_user_id', store.userId);
-            localStorage.setItem('n_p1_name', store.p1_name); localStorage.setItem('n_p1_type', store.p1_type);
-            localStorage.setItem('n_p2_name', store.p2_name); localStorage.setItem('n_p2_type', store.p2_type);
-            localStorage.setItem('n_p3_name', store.p3_name); localStorage.setItem('n_p3_type', store.p3_type);
-            localStorage.setItem('w_lat', store.lat); localStorage.setItem('w_lon', store.lon); localStorage.setItem('q_area', store.quakeArea);
-            localStorage.setItem('timer_duration', store.timerDuration); localStorage.setItem('ical_url', store.icalUrl);
-            localStorage.setItem('sub1_name', store.sub1_name); localStorage.setItem('sub1_lat', store.sub1_lat); localStorage.setItem('sub1_lon', store.sub1_lon);
-            localStorage.setItem('sub2_name', store.sub2_name); localStorage.setItem('sub2_lat', store.sub2_lat); localStorage.setItem('sub2_lon', store.sub2_lon);
-            localStorage.setItem('sub3_name', store.sub3_name); localStorage.setItem('sub3_lat', store.sub3_lat); localStorage.setItem('sub3_lon', store.sub3_lon);
-            localStorage.setItem('bg_url_dawn', store.bg_dawn); localStorage.setItem('bg_url_morning', store.bg_morning); localStorage.setItem('bg_url_day', store.bg_day);
-            localStorage.setItem('bg_url_sunset', store.bg_sunset); localStorage.setItem('bg_url_evening', store.bg_evening); localStorage.setItem('bg_url_night', store.bg_night);
-            localStorage.setItem('m1_key', store.m1_key); localStorage.setItem('m1_link', store.m1_link); localStorage.setItem('m2_key', store.m2_key); localStorage.setItem('m2_link', store.m2_link);
-            
-            // Save Visibility & Blur
-            localStorage.setItem('show_notion', store.show_notion);
-            localStorage.setItem('show_weather', store.show_weather);
-            localStorage.setItem('show_quake', store.show_quake);
-            localStorage.setItem('show_calendar', store.show_calendar);
-            localStorage.setItem('show_timer', store.show_timer);
-            localStorage.setItem('show_memo', store.show_memo);
-            localStorage.setItem('show_music', store.show_music);
-            localStorage.setItem('show_podcast', store.show_podcast);
-            localStorage.setItem('bg_blur', store.bg_blur);
-
-            closeSettings();
-            fetchNotion(); initLocation(); resetTimer(); fetchGoogleCalendar(); fetchMusic(); updateBackgroundBySun();
-            applyVisibilityFromStore();
-            updateBgBlur(); // Ensure blur is updated on save
-        }
-        
-        function applyVisibilityFromStore() {
-            const toggleEl = (id, show) => {
-                const el = document.getElementById(id);
-                if(el) {
-                    if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
-                }
-            };
-
-            const notionCard = document.getElementById('widget-notion-card');
-            const mainGrid = document.getElementById('main-grid');
-            const multiWidget = document.getElementById('multi-widget-container');
-
-            if (store.show_notion) {
-                if(notionCard) notionCard.classList.remove('hidden');
-                if(mainGrid) { mainGrid.classList.remove('grid-cols-1'); mainGrid.classList.add('md:grid-cols-2'); }
-                if(multiWidget) multiWidget.classList.remove('max-w-xl', 'mx-auto');
-            } else {
-                if(notionCard) notionCard.classList.add('hidden');
-                if(mainGrid) { mainGrid.classList.remove('md:grid-cols-2'); mainGrid.classList.add('grid-cols-1'); }
-                if(multiWidget) multiWidget.classList.add('max-w-xl', 'mx-auto');
-            }
-
-            toggleEl('widget-weather-card', store.show_weather);
-            if(!store.show_quake) toggleEl('quake-widget-card', false);
-            toggleEl('widget-calendar-card', store.show_calendar);
-            toggleEl('widget-timer-card', store.show_timer);
-            toggleEl('widget-memo-card', store.show_memo);
-            toggleEl('widget-music-card', store.show_music);
-            toggleEl('widget-podcast-card', store.show_podcast);
-            
-            // Apply blur
-            const val = store.bg_blur ? '60px' : '0px';
-            document.documentElement.style.setProperty('--bg-blur', val);
-        }
-        
-        // Init
-        let startX=0; 
-        document.addEventListener('touchstart',e=>startX=e.changedTouches[0].screenX); 
-        document.addEventListener('touchend',e=>{if(startX<100 && e.changedTouches[0].screenX-startX>60) openSettings()});
-        document.addEventListener('mousedown',e=>startX=e.clientX); 
-        document.addEventListener('mouseup',e=>{if(startX<100 && e.clientX-startX>60) openSettings()});
-        
-        window.onload = function() {
-            // Check Tutorial
-            if (!localStorage.getItem('tutorial_done')) {
-                const hint = document.getElementById('tutorial-hint');
-                if(hint) hint.classList.add('visible');
-            }
-
-            setTimeout(initWidgetMap, 1000);
-            updateClock(); 
-            renderCalendar(); 
-            fetchGoogleCalendar(); 
-            fetchNotion(); 
-            initLocation(); 
-            resetTimer(); 
-            fetchPodcasts(); 
-            fetchMusic();
-            applyVisibilityFromStore(); // Apply initial visibility
-            initWeatherBlurObserver(); // 天気ウィジェット表示時のブラー制御を開始
-            
-            // Interval Settings
-            setInterval(updateClock, 1000); 
-            setInterval(fetchNotion, 60000); 
-            setInterval(fetchWeather, 60000*30); 
-            setInterval(checkQuake, 15000); 
-            setInterval(fetchGoogleCalendar, 60000*15); 
-            setInterval(updateBackgroundBySun, 60000*30);
-        };
-
-        function initWeatherBlurObserver() {
-            const scrollContainer = document.querySelector('.snap-container');
-            const weatherCard = document.getElementById('widget-weather-card');
-            const multiWidget = document.getElementById('multi-widget-container');
-
-            if (!scrollContainer || !weatherCard || !multiWidget) return;
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        // 天気ウィジェットが表示されている時: 親コンテナのスタイルを「天気用」に上書き
-                        multiWidget.style.backdropFilter = 'blur(10px)';
-                        multiWidget.style.webkitBackdropFilter = 'blur(10px)';
-                        multiWidget.style.background = 'rgba(0, 0, 0, 0.05)'; // 背景の黒を薄く
-                        multiWidget.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-                        
-                        // 背景画像のブラーをなくす (ウィジェットのすりガラス効果を目立たせるため)
-                        document.documentElement.style.setProperty('--bg-blur', '0px');
-                    } else {
-                        // それ以外: 親コンテナのインラインスタイルを削除し、デフォルトの.glassスタイルに戻す
-                        multiWidget.style.backdropFilter = '';
-                        multiWidget.style.webkitBackdropFilter = '';
-                        multiWidget.style.background = '';
-                        multiWidget.style.border = '';
-                        
-                        // 背景画像のブラーを復帰
-                        const isBlur = store.bg_blur;
-                        document.documentElement.style.setProperty('--bg-blur', isBlur ? '60px' : '0px');
-                        
-                        // 天気ウィジェットから離れたら、スライドを現在地（先頭）にリセット
-                        const slider = document.getElementById('w-slider-container');
-                        if(slider) slider.scrollLeft = 0;
-                    }
-                });
-            }, {
-                root: scrollContainer,
-                threshold: 0.6 // 60%以上見えたら切り替え
-            });
-
-            observer.observe(weatherCard);
-        }
-        
-        function initLocation() {
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(p=>{
-                    weatherLat=p.coords.latitude; weatherLon=p.coords.longitude;
-                    fetchLocationName(weatherLat, weatherLon); fetchWeather(); updateBackgroundBySun();
-                }, useManualOrFallback);
-            } else useManualOrFallback();
-        }
-        function useManualOrFallback() {
-            const mLat=parseFloat(store.lat), mLon=parseFloat(store.lon);
-            if(!isNaN(mLat)&&!isNaN(mLon)) { weatherLat=mLat; weatherLon=mLon; fetchLocationName(weatherLat, weatherLon); }
-            else { weatherLat=35.6895; weatherLon=139.6917; document.getElementById('w-location').textContent="TOKYO"; }
-            fetchWeather(); updateBackgroundBySun();
-        }
-        async function fetchLocationName(lat, lon) { 
-            try { 
-                const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ja`); 
-                const d = await r.json(); 
-                currentLocationName = (d.locality||d.city||d.principalSubdivision||"GPS").toUpperCase();
-                // Update slide 0 if exists
-                const el = document.getElementById('w-location-0');
-                if(el) el.textContent = currentLocationName;
-            } catch(e){} 
-        }
-        
-        let pWaveCircle=null, sWaveCircle=null;
-        async function checkQuake() {
-            // Check visibility setting first
-            if(!store.show_quake) return; 
-
-            try {
-                const r = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=1'); const d = await r.json();
-                if(!d || d.length===0) return;
-                const q=d[0], diff=(new Date()-new Date(q.time))/1000/60;
-                
-                // 1時間以上経過で非表示
-                const widget = document.getElementById('quake-widget-card');
-                if (diff < 60) {
-                    widget.classList.remove('hidden');
-                    updateQuakeMap(q);
-                    // Alert Overlay logic (< 10 mins & new ID)
-                    if(diff < 10 && q.id !== lastQuakeId) {
-                         document.getElementById('q-scale').textContent = {10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[q.earthquake.maxScale]||'?';
-                         document.getElementById('q-loc').textContent = q.earthquake.hypocenter.name;
-                         document.getElementById('q-time').textContent = q.time.split(' ')[1].substring(0, 5);
-                         document.getElementById('q-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
-                         if(store.quakeArea && q.points) {
-                             const p = q.points.find(p=>p.addr===store.quakeArea) || q.points.find(p=>p.addr.includes(store.quakeArea));
-                             document.getElementById('q-area-name').textContent = p ? p.addr : "情報なし";
-                             document.getElementById('q-est-scale').textContent = p ? ({10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[p.scale]||p.scale) : "--";
-                         }
-                         document.getElementById('quake-overlay').classList.add('visible'); 
-                         updateAlertMap(q);
-                         lastQuakeId = q.id;
-                    }
-                } else {
-                    widget.classList.add('hidden');
-                }
-
-            } catch(e){}
-        }
-
-        function updateQuakeMap(q) {
-            if(!mapInstance) initWidgetMap();
-            const lat=q.earthquake.hypocenter.latitude, lng=q.earthquake.hypocenter.longitude;
-            mapInstance.setView([lat, lng], 4.5);
-            document.getElementById('q-widget-scale').textContent = {10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[q.earthquake.maxScale]||'-';
-            document.getElementById('q-widget-loc').textContent = q.earthquake.hypocenter.name;
-            document.getElementById('q-widget-mag').textContent = `M${q.earthquake.hypocenter.magnitude}`;
-            
-            const elapsed = (new Date().getTime() - new Date(q.time).getTime())/1000;
-            if(store.quakeArea && q.points) {
-                const p = q.points.find(p=>p.addr===store.quakeArea) || q.points.find(p=>p.addr.includes(store.quakeArea));
-                const est = document.getElementById('q-widget-est-container');
-                if(p && elapsed < 600) {
-                    document.getElementById('q-widget-est-val').textContent = {10:'1',20:'2',30:'3',40:'4',45:'5-',50:'5+',55:'6-',60:'6+',70:'7'}[p.scale]||p.scale;
-                    est.classList.remove('hidden');
-                } else est.classList.add('hidden');
-            }
-
-            if(elapsed > 300) {
-                 if(pWaveCircle) mapInstance.removeLayer(pWaveCircle); if(sWaveCircle) mapInstance.removeLayer(sWaveCircle);
-                 L.circleMarker([lat, lng], { radius: 8, color: 'red', fillColor: '#f03', fillOpacity: 0.8 }).addTo(mapInstance);
-                 return;
-            }
-            const pR = 6000 * elapsed, sR = 3500 * elapsed;
-            if(pWaveCircle) { pWaveCircle.setLatLng([lat,lng]); pWaveCircle.setRadius(pR); } else pWaveCircle = L.circle([lat,lng], {color:'#4facfe', fillColor:'transparent', weight:1, radius:pR}).addTo(mapInstance);
-            if(sWaveCircle) { sWaveCircle.setLatLng([lat,lng]); sWaveCircle.setRadius(sR); } else sWaveCircle = L.circle([lat,lng], {color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.2, weight:2, radius:sR}).addTo(mapInstance);
-        }
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale,.steps-row').forEach(el => obs.observe(el));
     </script>
 </body>
+
 </html>
